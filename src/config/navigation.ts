@@ -1,0 +1,89 @@
+import type { NavItem } from "@/types";
+
+/**
+ * Top-level nav links for the Navbar.
+ * Keep this list short (5 max) — secondary links live in the sidebar/footer.
+ */
+export const NAV_LINKS: NavItem[] = [
+  { label: "PDF Tools", href: "/tools/pdf" },
+  { label: "Image Tools", href: "/tools/image" },
+  { label: "Resume Tools", href: "/tools/resume" },
+  { label: "AI Writing", href: "/tools/ai-writing" },
+  { label: "All Tools", href: "/tools" },
+];
+
+/**
+ * Category config used in the mobile menu and category grid.
+ * icon is a string emoji for simplicity — components render lucide icons
+ * by looking up the `iconName` field.
+ */
+export const TOOL_CATEGORIES = [
+  {
+    id: "pdf",
+    label: "PDF Tools",
+    description: "Compress, merge, split, convert, and sign PDF files.",
+    icon: "📄",
+    iconName: "FileText",
+    color: "rose",
+    gradient: "from-rose-500 to-orange-400",
+    toolCount: 14,
+    href: "/tools/pdf",
+  },
+  {
+    id: "image",
+    label: "Image Tools",
+    description: "Resize, compress, convert, and enhance images with AI.",
+    icon: "🖼️",
+    iconName: "Image",
+    color: "violet",
+    gradient: "from-violet-500 to-purple-400",
+    toolCount: 12,
+    href: "/tools/image",
+  },
+  {
+    id: "video",
+    label: "Video Tools",
+    description: "Trim, compress, convert, and extract audio from videos.",
+    icon: "🎬",
+    iconName: "Video",
+    color: "blue",
+    gradient: "from-blue-500 to-cyan-400",
+    toolCount: 9,
+    href: "/tools/video",
+  },
+  {
+    id: "ai-writing",
+    label: "AI Writing",
+    description: "Rewrite, summarize, translate, and improve any text with AI.",
+    icon: "✍️",
+    iconName: "Pen",
+    color: "emerald",
+    gradient: "from-emerald-500 to-teal-400",
+    toolCount: 13,
+    href: "/tools/ai-writing",
+  },
+  {
+    id: "converter",
+    label: "Converter",
+    description: "Convert between 100+ file formats instantly.",
+    icon: "🔄",
+    iconName: "ArrowRightLeft",
+    color: "sky",
+    gradient: "from-sky-500 to-indigo-400",
+    toolCount: 9,
+    href: "/tools/converter",
+  },
+  {
+    id: "resume",
+    label: "Resume Tools",
+    description: "Build, analyze, and optimize professional resumes with AI.",
+    icon: "📋",
+    iconName: "FileText",
+    color: "indigo",
+    gradient: "from-indigo-500 to-purple-600",
+    toolCount: 12,
+    href: "/tools/resume",
+  },
+] as const;
+
+export type ToolCategoryConfig = (typeof TOOL_CATEGORIES)[number];
