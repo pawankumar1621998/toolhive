@@ -88,7 +88,7 @@ api.interceptors.response.use(
     } catch {
       tokenStorage.clear();
       // Redirect to login if in browser
-      if (typeof window !== "undefined") window.location.href = "/login";
+      if (typeof window !== "undefined") window.location.href = "/auth/login";
       return Promise.reject(error);
     } finally {
       isRefreshing = false;
