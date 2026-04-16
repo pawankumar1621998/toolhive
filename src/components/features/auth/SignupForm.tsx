@@ -165,10 +165,9 @@ function OAuthButton({
   icon: React.ReactNode;
 }) {
   const handleClick = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
-    const base = apiUrl.replace(/\/api\/v\d+\/?$/, "");
-    const path = provider.toLowerCase() === "google" ? "/api/v1/auth/google" : "/api/v1/auth/facebook";
-    window.location.href = `${base}${path}`;
+    const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
+    const path = provider.toLowerCase() === "google" ? "auth/google" : "auth/facebook";
+    window.location.href = `${apiUrl}/${path}`;
   };
 
   return (
