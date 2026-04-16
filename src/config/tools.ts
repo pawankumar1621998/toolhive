@@ -576,6 +576,21 @@ export const TOOLS: Tool[] = [
     maxFiles: 1,
   },
   {
+    id: "image-rotate",
+    slug: "rotate",
+    name: "Rotate Image",
+    shortDescription: "Rotate images 90°, 180°, or any custom angle.",
+    description: "Rotate images clockwise or counter-clockwise by 90°, 180°, 270°, or any custom angle.",
+    category: "image",
+    icon: "RotateCw",
+    tags: ["rotate", "turn", "angle", "orientation"],
+    usageCount: 520_000,
+    estimatedTime: "~1s",
+    acceptedFileTypes: [".jpg", ".jpeg", ".png", ".webp", ".gif"],
+    maxFileSizeMB: 25,
+    maxFiles: 20,
+  },
+  {
     id: "image-flip",
     slug: "flip",
     name: "Image Flipper",
@@ -1083,7 +1098,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "resume-summary",
-    slug: "summary",
+    slug: "resume-summary",
     name: "Professional Summary Generator",
     description: "Generate a compelling professional summary for your resume in seconds. Enter your job title, years of experience, and key skills — get a polished 3-sentence summary instantly.",
     shortDescription: "Generate a compelling resume summary with AI.",
@@ -1100,7 +1115,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "resume-linkedin",
-    slug: "linkedin",
+    slug: "linkedin-writer",
     name: "LinkedIn Profile Writer",
     description: "Optimize your LinkedIn profile with AI. Generate a compelling headline, About section, and experience bullets that attract recruiters and rank higher in searches.",
     shortDescription: "Write an optimized LinkedIn profile with AI.",
@@ -1133,7 +1148,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "resume-keywords",
-    slug: "keywords",
+    slug: "keyword-optimizer",
     name: "Resume Keyword Optimizer",
     description: "Find and add the right keywords to your resume. Paste your resume and a job description to discover missing keywords, keyword density, and placement suggestions.",
     shortDescription: "Optimize resume keywords to beat ATS filters.",

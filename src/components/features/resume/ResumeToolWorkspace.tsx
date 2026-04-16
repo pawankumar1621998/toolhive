@@ -229,13 +229,13 @@ export function ResumeToolWorkspace({ tool }: { tool: Tool }) {
       return <ATSCheckerUI />;
     case "job-match":
       return <JobMatchUI />;
-    case "summary":
+    case "resume-summary":
       return <ResumeSummaryGen />;
-    case "linkedin":
+    case "linkedin-writer":
       return <LinkedInWriter />;
     case "interview-prep":
       return <InterviewPrepUI />;
-    case "keywords":
+    case "keyword-optimizer":
       return <KeywordOptimizer />;
     default:
       return <ComingSoon slug={tool.slug} />;
