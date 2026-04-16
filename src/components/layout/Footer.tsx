@@ -89,7 +89,6 @@ const FOOTER_COLUMNS = [
       { label: "Image Tools", href: "/tools/image"      },
       { label: "Video Tools", href: "/tools/video"      },
       { label: "AI Writing",  href: "/tools/ai-writing" },
-      { label: "Audio Tools",  href: "/tools/audio"      },
       { label: "Converters",   href: "/tools/converter"  },
       { label: "Resume Tools", href: "/tools/resume"     },
       { label: "All Tools",    href: "/tools"            },
