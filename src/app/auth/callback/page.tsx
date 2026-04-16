@@ -1,11 +1,10 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { tokenStorage } from "@/lib/api";
 
 function CallbackHandler() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -14,7 +13,8 @@ function CallbackHandler() {
 
     if (token) {
       tokenStorage.setAccess(token);
-      router.replace("/");
+      // Full page reload so AuthContext re-mounts and calls /auth/me with new token
+      window.location.href = "/";
     } else {
       const msg =
         error === "google_not_configured"
@@ -22,9 +22,9 @@ function CallbackHandler() {
           : error === "facebook_not_configured"
           ? "Facebook login is not configured yet."
           : "Login failed. Please try again.";
-      router.replace(`/auth/login?oauthError=${encodeURIComponent(msg)}`);
+      window.location.href = `/auth/login?oauthError=${encodeURIComponent(msg)}`;
     }
-  }, [router, searchParams]);
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
