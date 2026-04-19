@@ -26,7 +26,7 @@ export const TOOL_CATEGORIES = [
     iconName: "FileText",
     color: "rose",
     gradient: "from-rose-500 to-orange-400",
-    toolCount: 14,
+    toolCount: 26,
     href: "/tools/pdf",
   },
   {
@@ -37,7 +37,7 @@ export const TOOL_CATEGORIES = [
     iconName: "Image",
     color: "violet",
     gradient: "from-violet-500 to-purple-400",
-    toolCount: 26,
+    toolCount: 57,
     href: "/tools/image",
   },
   {
@@ -59,7 +59,7 @@ export const TOOL_CATEGORIES = [
     iconName: "Pen",
     color: "emerald",
     gradient: "from-emerald-500 to-teal-400",
-    toolCount: 16,
+    toolCount: 26,
     href: "/tools/ai-writing",
   },
   {

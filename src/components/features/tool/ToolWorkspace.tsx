@@ -467,17 +467,59 @@ export function ToolWorkspace({ tool, optionsChildren: optionsChildrenProp }: To
     const errorMap   = new Map<string, string>();
 
     try {
-      await simulateFileProcessing(files, {
-        onFileStart:    (id) => setFileStatus(id, "processing", 5),
-        onFileProgress: (id, p) => setFileProgress(id, p),
-        onFileDone:     (id, outputs) => {
-          outputMap.set(id, outputs);
-          setFileResult(id, outputs[0]?.downloadUrl ?? "");
-        },
-        onFileError:    (id, err) => {
-          errorMap.set(id, err);
-          setFileError(id, err);
-        },
+      // Show initial progress
+      files.forEach((f) => setFileStatus(f.id, "processing", 10));
+
+      // Build FormData for real backend
+      const formData = new FormData();
+      formData.append("toolSlug", tool.slug);
+      formData.append("options", JSON.stringify(toolOptions));
+      files.forEach((f) => formData.append("files", f.file, f.name));
+
+      // Simulate progress while waiting for response
+      const progressInterval = setInterval(() => {
+        files.forEach((f) => {
+          const current = outputMap.has(f.id) || errorMap.has(f.id) ? 100 : undefined;
+          if (!current) setFileProgress(f.id, Math.min(85, (Date.now() - startTimeRef.current) / 100));
+        });
+      }, 400);
+
+      let response: Response;
+      try {
+        response = await fetch("/api/tools/process", { method: "POST", body: formData });
+      } finally {
+        clearInterval(progressInterval);
+      }
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({ error: "Processing failed" })) as { error?: string };
+        throw new Error(errData.error ?? `Server error ${response.status}`);
+      }
+
+      const data = await response.json() as { files?: Array<{ name: string; data: string; type: string }>; error?: string };
+
+      if (data.error) throw new Error(data.error);
+      if (!data.files?.length) throw new Error("No output files returned");
+
+      // Convert base64 results to blob URLs and assign to files
+      const outFiles: BackendOutputFile[] = data.files.map((f) => {
+        const bytes = Uint8Array.from(atob(f.data), (c) => c.charCodeAt(0));
+        const blob = new Blob([bytes], { type: f.type });
+        return {
+          id: nanoid(),
+          name: f.name,
+          size: blob.size,
+          type: f.type,
+          downloadUrl: URL.createObjectURL(blob),
+          expiresAt: new Date(Date.now() + 3_600_000),
+        };
+      });
+
+      // Mark all input files done
+      files.forEach((f) => {
+        setFileProgress(f.id, 100);
+        outputMap.set(f.id, outFiles);
+        setFileResult(f.id, outFiles[0]?.downloadUrl ?? "");
       });
 
       const duration = Date.now() - startTimeRef.current;

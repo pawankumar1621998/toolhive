@@ -2,28 +2,33 @@
 
 import { useCallback, useState } from "react";
 
-const DEMO_RESPONSES: Record<string, string> = {
-  default: "This AI feature is in demo mode. Connect a backend with your preferred AI provider (OpenAI, Anthropic, etc.) to enable real content generation.",
-};
-
-function getDemoResponse(toolSlug: string): string {
-  return DEMO_RESPONSES[toolSlug] ?? DEMO_RESPONSES.default;
-}
-
 export function useAIGenerate(toolSlug: string) {
-  const [output,  setOutput]  = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState<string | null>(null);
+  const [output,   setOutput]   = useState("");
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState<string | null>(null);
+  const [provider, setProvider] = useState<string | null>(null);
 
   const generate = useCallback(
-    async (_body: Record<string, unknown>) => {
+    async (body: Record<string, unknown>) => {
       setLoading(true);
       setOutput("");
       setError(null);
+      setProvider(null);
       try {
-        // Simulate generation delay
-        await new Promise((r) => setTimeout(r, 1200 + Math.random() * 800));
-        setOutput(getDemoResponse(toolSlug));
+        const res = await fetch("/api/ai/generate", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ toolSlug, ...body }),
+        });
+
+        const data = await res.json() as { output?: string; error?: string; provider?: string };
+
+        if (!res.ok || data.error) {
+          throw new Error(data.error ?? "Generation failed. Please try again.");
+        }
+
+        setOutput(data.output ?? "");
+        setProvider(data.provider ?? null);
       } catch (err) {
         setError((err as Error).message ?? "Generation failed. Please try again.");
       } finally {
@@ -36,7 +41,8 @@ export function useAIGenerate(toolSlug: string) {
   const clear = useCallback(() => {
     setOutput("");
     setError(null);
+    setProvider(null);
   }, []);
 
-  return { output, loading, error, generate, clear, setOutput };
+  return { output, loading, error, provider, generate, clear, setOutput };
 }

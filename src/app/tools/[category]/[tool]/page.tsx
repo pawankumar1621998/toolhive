@@ -202,7 +202,7 @@ export default async function ToolPage({
                 <RelatedTools category={tool.category} currentToolId={tool.id} />
               </Suspense>
             </div>
-          ) : (tool.category === "image" && ["cleanup", "remove-watermark"].includes(tool.slug)) ? (
+          ) : (tool.category === "image" && ["cleanup", "remove-watermark", "blemish-remove", "retouch"].includes(tool.slug)) ? (
             <div className="py-6 max-w-5xl">
               <CanvasImageEditor tool={tool} editorMode="brush-remove" />
               <ToolInfoPanel tool={tool} />
@@ -211,7 +211,7 @@ export default async function ToolPage({
               </Suspense>
             </div>
 
-          ) : (tool.category === "image" && ["blur-background", "pixelate"].includes(tool.slug)) ? (
+          ) : (tool.category === "image" && ["blur-background", "pixelate", "blur-image", "blur-face", "pixelate-face", "censor"].includes(tool.slug)) ? (
             <div className="py-6 max-w-5xl">
               <CanvasImageEditor tool={tool} editorMode="brush-blur" />
               <ToolInfoPanel tool={tool} />
@@ -238,7 +238,7 @@ export default async function ToolPage({
               </Suspense>
             </div>
 
-          ) : (tool.category === "image" && tool.slug === "add-border") ? (
+          ) : (tool.category === "image" && ["add-border", "add-white-border"].includes(tool.slug)) ? (
             <div className="py-6 max-w-5xl">
               <CanvasImageEditor tool={tool} editorMode="add-border" />
               <ToolInfoPanel tool={tool} />
@@ -247,7 +247,7 @@ export default async function ToolPage({
               </Suspense>
             </div>
 
-          ) : (tool.category === "image" && tool.slug === "round-image") ? (
+          ) : (tool.category === "image" && ["round-image", "circle-crop"].includes(tool.slug)) ? (
             <div className="py-6 max-w-5xl">
               <CanvasImageEditor tool={tool} editorMode="round-image" />
               <ToolInfoPanel tool={tool} />
@@ -256,7 +256,7 @@ export default async function ToolPage({
               </Suspense>
             </div>
 
-          ) : (tool.category === "image" && tool.slug === "crop") ? (
+          ) : (tool.category === "image" && ["crop", "square-crop", "freehand-crop"].includes(tool.slug)) ? (
             <div className="py-6 max-w-5xl">
               <CanvasImageEditor tool={tool} editorMode="crop" />
               <ToolInfoPanel tool={tool} />
@@ -292,7 +292,7 @@ export default async function ToolPage({
               </Suspense>
             </div>
 
-          ) : (tool.category === "image" && ["combine", "collage"].includes(tool.slug)) ? (
+          ) : (tool.category === "image" && ["combine", "collage", "merge-signature"].includes(tool.slug)) ? (
             <div className="py-6 max-w-5xl">
               <CanvasImageEditor tool={tool} editorMode="combine" />
               <ToolInfoPanel tool={tool} />
@@ -304,6 +304,24 @@ export default async function ToolPage({
           ) : (tool.category === "image" && tool.slug === "profile-photo") ? (
             <div className="py-6 max-w-5xl">
               <CanvasImageEditor tool={tool} editorMode="profile-photo" />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : (tool.category === "image" && ["beautify", "unblur", "unblur-face", "motion-blur", "pixel-art", "photo-enhancer", "ai-face-gen"].includes(tool.slug)) ? (
+            <div className="py-6 max-w-5xl">
+              <CanvasImageEditor tool={tool} editorMode="ai-process" />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : (tool.category === "image" && ["add-text", "add-name-dob"].includes(tool.slug)) ? (
+            <div className="py-6 max-w-5xl">
+              <CanvasImageEditor tool={tool} editorMode="draw" />
               <ToolInfoPanel tool={tool} />
               <Suspense fallback={<SectionSkeleton rows={1} />}>
                 <RelatedTools category={tool.category} currentToolId={tool.id} />

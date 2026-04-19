@@ -1,12 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import type { Tool } from "@/types";
 import { useAIGenerate } from "@/hooks/useAIGenerate";
+
+// Provider color mapping
+const PROVIDER_STYLES: Record<string, { label: string; color: string }> = {
+  "Gemini":           { label: "Gemini AI",    color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+  "Groq":             { label: "Groq",          color: "bg-orange-500/10 text-orange-600 border-orange-500/20" },
+  "DeepSeek":         { label: "DeepSeek",      color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
+  "Claude (Anthropic)":{ label: "Claude AI",   color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
+  "demo":             { label: "Demo mode",     color: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" },
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared helpers & sub-components
@@ -2481,6 +2490,543 @@ function AIScriptWriter() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Story Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+const STORY_GENRES = ["General", "Romance", "Thriller", "Fantasy", "Sci-Fi", "Comedy", "Horror", "Adventure", "Mystery", "Drama"] as const;
+const STORY_EMOTIONS = ["Happy", "Sad", "Motivational", "Funny", "Romantic", "Emotional", "Suspenseful", "Inspiring", "Dark", "Nostalgic"] as const;
+const STORY_WORD_COUNTS = [100, 300, 500, 1000, 2000] as const;
+const STORY_LANGUAGES = ["English", "Hindi", "Urdu", "French", "Spanish", "German", "Arabic", "Chinese", "Japanese", "Portuguese"] as const;
+
+function StoryGenerator() {
+  const [topic, setTopic] = useState("");
+  const [genre, setGenre] = useState<typeof STORY_GENRES[number]>("General");
+  const [emotion, setEmotion] = useState<typeof STORY_EMOTIONS[number]>("Happy");
+  const [wordCount, setWordCount] = useState<typeof STORY_WORD_COUNTS[number]>(500);
+  const [language, setLanguage] = useState<typeof STORY_LANGUAGES[number]>("English");
+  const [characters, setCharacters] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("story-generator");
+
+  async function handleGenerate() {
+    if (!topic.trim()) return;
+    await generate({ topic, genre, emotion, wordCount, language, characters });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Story Topic / Idea <span className="text-rose-500">*</span></label>
+        <textarea className={inputClass} rows={3} placeholder="e.g. A young girl discovers she has magical powers on her 18th birthday..." value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={500} />
+        <p className="text-xs text-foreground-muted mt-1">{topic.length}/500</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Genre</p>
+          <div className="flex flex-wrap gap-1.5">
+            {STORY_GENRES.map((g) => (
+              <button key={g} onClick={() => setGenre(g)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", genre === g ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{g}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Emotion / Tone</p>
+          <div className="flex flex-wrap gap-1.5">
+            {STORY_EMOTIONS.map((e) => (
+              <button key={e} onClick={() => setEmotion(e)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", emotion === e ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{e}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Word Count</p>
+          <div className="flex flex-wrap gap-2">
+            {STORY_WORD_COUNTS.map((w) => (
+              <button key={w} onClick={() => setWordCount(w)} className={clsx("px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors", wordCount === w ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{w} words</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-2">Language</label>
+          <select className={clsx(inputClass, "cursor-pointer")} value={language} onChange={(e) => setLanguage(e.target.value as typeof STORY_LANGUAGES[number])}>
+            {STORY_LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Characters (optional)</label>
+        <input className={inputClass} placeholder="e.g. Sarah (brave girl, 18), Michael (wise mentor)" value={characters} onChange={(e) => setCharacters(e.target.value)} />
+      </div>
+
+      <button onClick={handleGenerate} disabled={!topic.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Writing story…</> : "✨ Generate Story"}
+      </button>
+
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label={`Story — ${genre} · ${emotion} · ${wordCount} words · ${language}`} />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Note Maker
+// ─────────────────────────────────────────────────────────────────────────────
+
+const NOTE_FORMATS = ["Bullet Points", "Numbered List", "Outline", "Mind Map Style", "Cornell Notes", "Summary"] as const;
+const NOTE_DETAILS = ["Brief", "Standard", "Detailed", "Comprehensive"] as const;
+const NOTE_LANGUAGES = ["English", "Hindi", "Urdu", "French", "Spanish", "German", "Arabic"] as const;
+
+function NoteMaker() {
+  const [topic, setTopic] = useState("");
+  const [format, setFormat] = useState<typeof NOTE_FORMATS[number]>("Bullet Points");
+  const [detail, setDetail] = useState<typeof NOTE_DETAILS[number]>("Standard");
+  const [language, setLanguage] = useState<typeof NOTE_LANGUAGES[number]>("English");
+  const { output, loading, error, generate, clear } = useAIGenerate("note-maker");
+
+  async function handleGenerate() {
+    if (!topic.trim()) return;
+    await generate({ topic, format, detail, language });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Topic / Subject <span className="text-rose-500">*</span></label>
+        <textarea className={inputClass} rows={4} placeholder="e.g. The French Revolution, Photosynthesis process, Python OOP concepts, World War 2..." value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={1000} />
+        <p className="text-xs text-foreground-muted mt-1">{topic.length}/1000</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Format</p>
+          <div className="flex flex-col gap-1.5">
+            {NOTE_FORMATS.map((f) => (
+              <button key={f} onClick={() => setFormat(f)} className={clsx("px-3 py-2 rounded-lg text-xs font-medium border text-left transition-colors", format === f ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{f}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Detail Level</p>
+          <div className="flex flex-col gap-1.5">
+            {NOTE_DETAILS.map((d) => (
+              <button key={d} onClick={() => setDetail(d)} className={clsx("px-3 py-2 rounded-lg text-xs font-medium border text-left transition-colors", detail === d ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{d}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Language</p>
+          <select className={clsx(inputClass, "cursor-pointer")} value={language} onChange={(e) => setLanguage(e.target.value as typeof NOTE_LANGUAGES[number])}>
+            {NOTE_LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <button onClick={handleGenerate} disabled={!topic.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Making notes…</> : "📝 Generate Notes"}
+      </button>
+
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label={`Notes — ${format} · ${detail} · ${language}`} />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Article Writer
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ARTICLE_TONES = ["Informative", "Persuasive", "Conversational", "Academic", "Journalistic", "SEO-Optimized"] as const;
+const ARTICLE_WORD_COUNTS = [300, 500, 800, 1200, 2000] as const;
+const ARTICLE_LANGUAGES = ["English", "Hindi", "Urdu", "French", "Spanish", "German", "Arabic", "Portuguese"] as const;
+
+function ArticleWriter() {
+  const [topic, setTopic] = useState("");
+  const [tone, setTone] = useState<typeof ARTICLE_TONES[number]>("Informative");
+  const [wordCount, setWordCount] = useState<typeof ARTICLE_WORD_COUNTS[number]>(800);
+  const [language, setLanguage] = useState<typeof ARTICLE_LANGUAGES[number]>("English");
+  const [sections, setSections] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("article-writer");
+
+  async function handleGenerate() {
+    if (!topic.trim()) return;
+    await generate({ topic, tone, wordCount, language, sections });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Article Topic <span className="text-rose-500">*</span></label>
+        <textarea className={inputClass} rows={3} placeholder="e.g. Benefits of meditation for students, How AI is changing healthcare, Top travel destinations in 2025..." value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={500} />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Writing Tone</p>
+          <div className="flex flex-wrap gap-1.5">
+            {ARTICLE_TONES.map((t) => (
+              <button key={t} onClick={() => setTone(t)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", tone === t ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{t}</button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm font-medium text-foreground mb-2">Word Count</p>
+            <div className="flex flex-wrap gap-1.5">
+              {ARTICLE_WORD_COUNTS.map((w) => (
+                <button key={w} onClick={() => setWordCount(w)} className={clsx("px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors", wordCount === w ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{w}w</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-1.5">Language</label>
+            <select className={clsx(inputClass, "cursor-pointer")} value={language} onChange={(e) => setLanguage(e.target.value as typeof ARTICLE_LANGUAGES[number])}>
+              {ARTICLE_LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Custom Sections (optional)</label>
+        <input className={inputClass} placeholder="e.g. Introduction, History, Benefits, Challenges, Future, Conclusion" value={sections} onChange={(e) => setSections(e.target.value)} />
+      </div>
+
+      <button onClick={handleGenerate} disabled={!topic.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Writing article…</> : "✍️ Write Article"}
+      </button>
+
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label={`Article — ${tone} · ${wordCount} words · ${language}`} />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Hashtag Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+const HASHTAG_PLATFORMS = ["Instagram", "TikTok", "Twitter/X", "LinkedIn", "YouTube"] as const;
+
+function HashtagGenerator() {
+  const [topic, setTopic] = useState("");
+  const [platform, setPlatform] = useState<typeof HASHTAG_PLATFORMS[number]>("Instagram");
+  const [niche, setNiche] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("hashtag-gen");
+
+  async function handleGenerate() {
+    if (!topic.trim()) return;
+    await generate({ topic, platform, niche });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <p className="text-sm font-medium text-foreground mb-2">Platform</p>
+        <div className="flex flex-wrap gap-2">
+          {HASHTAG_PLATFORMS.map((p) => (
+            <button key={p} onClick={() => setPlatform(p)} className={clsx("px-4 py-2 rounded-full text-xs font-medium border transition-colors", platform === p ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{p}</button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Post Topic <span className="text-rose-500">*</span></label>
+        <input className={inputClass} placeholder="e.g. morning workout, homemade pasta recipe, travel photography in Paris..." value={topic} onChange={(e) => setTopic(e.target.value)} />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Your Niche (optional)</label>
+        <input className={inputClass} placeholder="e.g. fitness coach, food blogger, travel vlogger, fashion..." value={niche} onChange={(e) => setNiche(e.target.value)} />
+      </div>
+      <button onClick={handleGenerate} disabled={!topic.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Generating hashtags…</> : "#️⃣ Generate Hashtags"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label={`Hashtags — ${platform}`} />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Business Name Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+const BIZ_STYLES = ["Creative", "Professional", "Catchy", "Technical", "Minimal", "Playful"] as const;
+const BIZ_INDUSTRIES = ["Technology", "Food & Restaurant", "Fashion", "Health & Fitness", "Education", "Finance", "Travel", "Beauty", "Real Estate", "E-commerce", "Consulting", "Entertainment"] as const;
+
+function BusinessNameGenerator() {
+  const [keywords, setKeywords] = useState("");
+  const [industry, setIndustry] = useState<typeof BIZ_INDUSTRIES[number]>("Technology");
+  const [style, setStyle] = useState<typeof BIZ_STYLES[number]>("Creative");
+  const { output, loading, error, generate, clear } = useAIGenerate("business-name");
+
+  async function handleGenerate() {
+    if (!keywords.trim()) return;
+    await generate({ keywords, industry, style, count: 20 });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Keywords / Business Description <span className="text-rose-500">*</span></label>
+        <input className={inputClass} placeholder="e.g. fast delivery, healthy food, premium coffee, AI-powered..." value={keywords} onChange={(e) => setKeywords(e.target.value)} />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-2">Industry</label>
+          <select className={clsx(inputClass, "cursor-pointer")} value={industry} onChange={(e) => setIndustry(e.target.value as typeof BIZ_INDUSTRIES[number])}>
+            {BIZ_INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
+          </select>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Name Style</p>
+          <div className="flex flex-wrap gap-1.5">
+            {BIZ_STYLES.map((s) => (
+              <button key={s} onClick={() => setStyle(s)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", style === s ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{s}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <button onClick={handleGenerate} disabled={!keywords.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Generating names…</> : "🏢 Generate Business Names"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label={`Business Names — ${industry} · ${style}`} />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ad Copy Writer
+// ─────────────────────────────────────────────────────────────────────────────
+
+const AD_PLATFORMS = ["Facebook Ads", "Google Ads", "Instagram Ads", "LinkedIn Ads", "TikTok Ads", "Twitter Ads"] as const;
+const AD_TONES = ["Persuasive", "Urgent", "Friendly", "Professional", "Emotional", "Humorous"] as const;
+
+function AdCopyWriter() {
+  const [product, setProduct] = useState("");
+  const [benefits, setBenefits] = useState("");
+  const [platform, setPlatform] = useState<typeof AD_PLATFORMS[number]>("Facebook Ads");
+  const [tone, setTone] = useState<typeof AD_TONES[number]>("Persuasive");
+  const { output, loading, error, generate, clear } = useAIGenerate("ad-copy");
+
+  async function handleGenerate() {
+    if (!product.trim() || !benefits.trim()) return;
+    await generate({ product, benefits, platform, tone, count: 3 });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Product / Service Name <span className="text-rose-500">*</span></label>
+        <input className={inputClass} placeholder="e.g. ProFit Gym App, Organic Coffee Blend, Online Spanish Course..." value={product} onChange={(e) => setProduct(e.target.value)} />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Key Benefits / Features <span className="text-rose-500">*</span></label>
+        <textarea className={inputClass} rows={3} placeholder="e.g. Lose weight in 30 days, 100% organic, 24/7 support, money-back guarantee..." value={benefits} onChange={(e) => setBenefits(e.target.value)} />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Ad Platform</p>
+          <div className="flex flex-wrap gap-1.5">
+            {AD_PLATFORMS.map((p) => (
+              <button key={p} onClick={() => setPlatform(p)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", platform === p ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{p}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Ad Tone</p>
+          <div className="flex flex-wrap gap-1.5">
+            {AD_TONES.map((t) => (
+              <button key={t} onClick={() => setTone(t)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", tone === t ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{t}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <button onClick={handleGenerate} disabled={!product.trim() || !benefits.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Writing ad copy…</> : "📢 Generate Ad Copy"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label={`Ad Copy — ${platform} · ${tone}`} />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Roast Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function RoastGenerator() {
+  const [name, setName] = useState("");
+  const [traits, setTraits] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("roast-gen");
+
+  async function handleGenerate() {
+    if (!name.trim()) return;
+    await generate({ name, traits });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 flex items-start gap-2">
+        <span className="text-lg">😄</span>
+        <p className="text-xs text-amber-700 dark:text-amber-400">Friendly roasts only! All jokes are lighthearted and fun — perfect for friends and parties.</p>
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Person&apos;s Name <span className="text-rose-500">*</span></label>
+        <input className={inputClass} placeholder="e.g. John, My best friend Alex..." value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Their Funny Traits / Habits (optional)</label>
+        <input className={inputClass} placeholder="e.g. always late, obsessed with coffee, can't parallel park, never stops talking..." value={traits} onChange={(e) => setTraits(e.target.value)} />
+      </div>
+      <button onClick={handleGenerate} disabled={!name.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 to-orange-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Preparing roast…</> : "🔥 Roast Them!"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="🔥 The Roast" />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dad Joke Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function DadJokeGenerator() {
+  const [topic, setTopic] = useState("");
+  const [count, setCount] = useState(5);
+  const { output, loading, error, generate, clear } = useAIGenerate("dad-jokes");
+
+  async function handleGenerate() {
+    await generate({ topic, count });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Topic (optional)</label>
+        <input className={inputClass} placeholder="e.g. animals, food, science, school, sports... leave empty for random!" value={topic} onChange={(e) => setTopic(e.target.value)} />
+      </div>
+      <div>
+        <p className="text-sm font-medium text-foreground mb-2">Number of jokes</p>
+        <div className="flex gap-2">
+          {[3, 5, 10, 15].map((n) => (
+            <button key={n} onClick={() => setCount(n)} className={clsx("px-4 py-2 rounded-lg text-sm font-medium border transition-colors", count === n ? "bg-amber-500 text-white border-amber-500" : "bg-background border-border text-foreground-muted hover:border-amber-500/50")}>{n}</button>
+          ))}
+        </div>
+      </div>
+      <button onClick={handleGenerate} disabled={loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 to-orange-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Groaning up jokes…</> : "😂 Generate Dad Jokes"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="👨 Dad Jokes" />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Emoji Translator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function EmojiTranslator() {
+  const [text, setText] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("emoji-translator");
+
+  async function handleGenerate() {
+    if (!text.trim()) return;
+    await generate({ text });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Text to Translate <span className="text-rose-500">*</span></label>
+        <textarea className={inputClass} rows={5} placeholder="I love pizza so much! Just had dinner with my friends and we laughed all night..." value={text} onChange={(e) => setText(e.target.value)} maxLength={500} />
+        <p className="text-xs text-foreground-muted mt-1">{text.length}/500</p>
+      </div>
+      <button onClick={handleGenerate} disabled={!text.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 to-orange-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Translating to emojis…</> : "😎 Translate to Emojis"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="🎭 Emoji Translation" />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shakespeare Translator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ShakespeareTranslator() {
+  const [text, setText] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("shakespeare");
+
+  async function handleGenerate() {
+    if (!text.trim()) return;
+    await generate({ text });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Modern Text <span className="text-rose-500">*</span></label>
+        <textarea className={inputClass} rows={5} placeholder="I can't believe you ate my lunch again. This is literally the worst thing ever." value={text} onChange={(e) => setText(e.target.value)} maxLength={500} />
+      </div>
+      <button onClick={handleGenerate} disabled={!text.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Translating, forsooth…</> : "🎭 Translate to Shakespeare"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="🎭 As The Bard Would Say…" />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Corporate Jargon Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function CorporateJargon() {
+  const [text, setText] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("corporate-jargon");
+
+  async function handleGenerate() {
+    if (!text.trim()) return;
+    await generate({ text });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-sky-500/20 bg-sky-500/5 p-3 flex items-start gap-2">
+        <span className="text-lg">💼</span>
+        <p className="text-xs text-sky-700 dark:text-sky-400">Turn simple sentences into confusing corporate speak that impresses no one but sounds very important!</p>
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Simple Statement <span className="text-rose-500">*</span></label>
+        <textarea className={inputClass} rows={4} placeholder="e.g. We need to fix this bug before Friday. The meeting is cancelled. I'm going on vacation." value={text} onChange={(e) => setText(e.target.value)} maxLength={300} />
+      </div>
+      <button onClick={handleGenerate} disabled={!text.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Synergizing paradigms…</> : "💼 Add Corporate Jargon"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="💼 Corporate Version" />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Default / Fallback
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -2552,6 +3098,167 @@ function CopyButton({ text }: { text: string }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Fortune Cookie
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FORTUNE_THEMES = ["General", "Love & Romance", "Career & Success", "Funny & Silly", "Wisdom & Philosophy", "Adventure & Travel"] as const;
+
+function FortuneCookie() {
+  const [theme, setTheme] = useState<typeof FORTUNE_THEMES[number]>("General");
+  const { output, loading, error, generate, clear } = useAIGenerate("fortune-cookie");
+
+  async function handleGenerate() {
+    await generate({ theme });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <p className="text-sm font-medium text-foreground mb-2">Fortune Theme</p>
+        <div className="flex flex-wrap gap-2">
+          {FORTUNE_THEMES.map((t) => (
+            <button key={t} onClick={() => setTheme(t)}
+              className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                theme === t ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={handleGenerate} disabled={loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Cracking open your fortune…</> : "🥠 Get My Fortune"}
+      </button>
+
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label={`Fortune — ${theme}`} />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Excuse Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+const EXCUSE_SITUATIONS = [
+  "Being late to work/school",
+  "Missing a deadline",
+  "Not replying to messages",
+  "Forgetting homework",
+  "Skipping a meeting",
+  "Breaking a promise",
+  "Custom situation",
+] as const;
+
+const CREATIVITY_LEVELS = ["Low (Believable)", "Medium (Creative)", "High (Outrageous)"] as const;
+
+function ExcuseGenerator() {
+  const [situation, setSituation] = useState<typeof EXCUSE_SITUATIONS[number]>("Being late to work/school");
+  const [customSituation, setCustomSituation] = useState("");
+  const [creativity, setCreativity] = useState<typeof CREATIVITY_LEVELS[number]>("Medium (Creative)");
+  const { output, loading, error, generate, clear } = useAIGenerate("excuse-gen");
+
+  async function handleGenerate() {
+    const finalSituation = situation === "Custom situation" ? customSituation : situation;
+    if (!finalSituation.trim()) return;
+    await generate({ situation: finalSituation, creativity });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <p className="text-sm font-medium text-foreground mb-2">Situation</p>
+        <div className="flex flex-wrap gap-2">
+          {EXCUSE_SITUATIONS.map((s) => (
+            <button key={s} onClick={() => setSituation(s)}
+              className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                situation === s ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {situation === "Custom situation" && (
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-1.5">Describe your situation <span className="text-rose-500">*</span></label>
+          <input className={inputClass} placeholder="e.g. I forgot my boss's birthday party..." value={customSituation} onChange={(e) => setCustomSituation(e.target.value)} />
+        </div>
+      )}
+
+      <div>
+        <p className="text-sm font-medium text-foreground mb-2">Creativity Level</p>
+        <div className="flex flex-wrap gap-2">
+          {CREATIVITY_LEVELS.map((c) => (
+            <button key={c} onClick={() => setCreativity(c)}
+              className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                creativity === c ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={handleGenerate}
+        disabled={loading || (situation === "Custom situation" && !customSituation.trim())}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Crafting your excuse…</> : "😅 Generate Excuses"}
+      </button>
+
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Your Excuses" />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Compliment Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+const COMPLIMENT_VIBES = ["Funny & Cheesy", "Sweet & Sincere", "Savage but Kind", "Over the Top", "Professional", "Poetic"] as const;
+
+function ComplimentGenerator() {
+  const [name, setName] = useState("");
+  const [vibe, setVibe] = useState<typeof COMPLIMENT_VIBES[number]>("Funny & Cheesy");
+  const { output, loading, error, generate, clear } = useAIGenerate("compliment-gen");
+
+  async function handleGenerate() {
+    await generate({ name: name.trim() || undefined, vibe, count: 5 });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Person&apos;s Name (optional)</label>
+        <input className={inputClass} placeholder="e.g. Sarah, My Boss, My Crush..." value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-foreground mb-2">Compliment Vibe</p>
+        <div className="flex flex-wrap gap-2">
+          {COMPLIMENT_VIBES.map((v) => (
+            <button key={v} onClick={() => setVibe(v)}
+              className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                vibe === v ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>
+              {v}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={handleGenerate} disabled={loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Generating compliments…</> : "💝 Generate Compliments"}
+      </button>
+
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label={`Compliments — ${vibe}`} />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Tool title map
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -2569,6 +3276,20 @@ const TOOL_TITLES: Record<string, string> = {
   description: "Description Writer",
   paraphrase: "AI Paraphraser",
   "script-writer": "AI Script Writer",
+  "story-generator": "AI Story Generator",
+  "note-maker": "AI Note Maker",
+  "article-writer": "AI Article Writer",
+  "hashtag-gen": "Hashtag Generator",
+  "business-name": "Business Name Generator",
+  "ad-copy": "Ad Copy Writer",
+  "roast-gen": "Roast Generator",
+  "dad-jokes": "Dad Joke Generator",
+  "emoji-translator": "Emoji Translator",
+  "shakespeare": "Shakespeare Translator",
+  "corporate-jargon": "Corporate Jargon Generator",
+  "fortune-cookie": "Fortune Cookie",
+  "excuse-gen": "Excuse Generator",
+  "compliment-gen": "Compliment Generator",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2576,6 +3297,17 @@ const TOOL_TITLES: Record<string, string> = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function AIWritingWorkspace({ tool }: { tool: Tool }) {
+  const [activeProvider, setActiveProvider] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/ai/generate")
+      .then((r) => r.json())
+      .then((d: { providers?: Array<{ id: string; name: string }> }) => {
+        if (d.providers?.[0]) setActiveProvider(d.providers[0].name);
+      })
+      .catch(() => {});
+  }, []);
+
   function renderTool() {
     switch (tool.slug) {
       case "summarize":
@@ -2604,6 +3336,34 @@ export function AIWritingWorkspace({ tool }: { tool: Tool }) {
         return <AIParaphraser />;
       case "script-writer":
         return <AIScriptWriter />;
+      case "story-generator":
+        return <StoryGenerator />;
+      case "note-maker":
+        return <NoteMaker />;
+      case "article-writer":
+        return <ArticleWriter />;
+      case "hashtag-gen":
+        return <HashtagGenerator />;
+      case "business-name":
+        return <BusinessNameGenerator />;
+      case "ad-copy":
+        return <AdCopyWriter />;
+      case "roast-gen":
+        return <RoastGenerator />;
+      case "dad-jokes":
+        return <DadJokeGenerator />;
+      case "emoji-translator":
+        return <EmojiTranslator />;
+      case "shakespeare":
+        return <ShakespeareTranslator />;
+      case "corporate-jargon":
+        return <CorporateJargon />;
+      case "fortune-cookie":
+        return <FortuneCookie />;
+      case "excuse-gen":
+        return <ExcuseGenerator />;
+      case "compliment-gen":
+        return <ComplimentGenerator />;
       default:
         return <DefaultTool tool={tool} />;
     }
@@ -2641,16 +3401,18 @@ export function AIWritingWorkspace({ tool }: { tool: Tool }) {
               </p>
             )}
           </div>
-          {tool.isNew && (
-            <Badge variant="new" size="sm" className="ml-auto">
-              New
-            </Badge>
-          )}
-          {tool.isPopular && !tool.isNew && (
-            <Badge variant="popular" size="sm" className="ml-auto">
-              Popular
-            </Badge>
-          )}
+          <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
+            {activeProvider && (() => {
+              const style = PROVIDER_STYLES[activeProvider] ?? { label: activeProvider, color: "bg-gray-500/10 text-gray-600 border-gray-500/20" };
+              return (
+                <span className={clsx("text-xs font-medium px-2.5 py-1 rounded-full border", style.color)}>
+                  ⚡ {style.label}
+                </span>
+              );
+            })()}
+            {tool.isNew && <Badge variant="new" size="sm">New</Badge>}
+            {tool.isPopular && !tool.isNew && <Badge variant="popular" size="sm">Popular</Badge>}
+          </div>
         </div>
 
         {/* Tool content */}
