@@ -281,6 +281,27 @@ export async function POST(request: NextRequest) {
       provider?: Provider;
     } & Record<string, unknown>;
 
+    // Try Render backend first
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (backendUrl) {
+      try {
+        const res = await fetch(`${backendUrl}/tools/ai/${toolSlug}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(params),
+          signal: AbortSignal.timeout(25000),
+        });
+        if (res.ok) {
+          const data = await res.json() as { result?: string; output?: string };
+          const output = (data.result ?? data.output ?? "").trim();
+          if (output) return NextResponse.json({ output, provider: "ToolHive AI" });
+        }
+      } catch {
+        // fall through to local providers
+      }
+    }
+
+    // Fallback: local AI providers with crafted prompts
     const prompt = buildPrompt(toolSlug, params);
     const { output, provider } = await callAI(prompt, preferredProvider);
 
@@ -298,6 +319,11 @@ export async function POST(request: NextRequest) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function GET() {
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (backendUrl) {
+    return NextResponse.json({ providers: [{ id: "render", name: "ToolHive AI" }] });
+  }
+
   const available = PROVIDER_ORDER
     .filter((p) => !!process.env[PROVIDERS[p].envKey]?.trim())
     .map((p) => ({ id: p, name: PROVIDERS[p].name }));
