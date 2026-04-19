@@ -9,19 +9,11 @@ import {
   Menu,
   X,
   Search,
-  ChevronDown,
   Zap,
-  User,
-  LogOut,
-  LayoutDashboard,
-  Heart,
   Clock,
   ArrowRight,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-import { useAuth } from "@/context/AuthContext";
 import { useSearch } from "@/hooks/useSearch";
 import { NAV_LINKS, TOOL_CATEGORIES } from "@/config/navigation";
 
@@ -270,211 +262,6 @@ function NavSearch() {
 }
 
 // ─────────────────────────────────────────────
-// User menu dropdown
-// ─────────────────────────────────────────────
-
-function UserMenu() {
-  const { user, isAuthenticated, logout } = useAuth();
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  // Close on outside click
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  // Close on Escape
-  useEffect(() => {
-    function handler(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, []);
-
-  // Guest state — hidden on mobile (shown inside drawer instead)
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="hidden md:flex items-center gap-2">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/auth/login">Sign in</Link>
-        </Button>
-        <Button variant="gradient" size="sm" asChild>
-          <Link href="/auth/signup">Get started</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  const initials = (user.name ?? user.email ?? "U")
-    .split(" ")
-    .map((n: string) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  return (
-    <div ref={menuRef} className="relative">
-      {/* Avatar trigger */}
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className={clsx(
-          "flex items-center gap-2 rounded-lg px-2 py-1.5",
-          "text-sm font-medium text-foreground",
-          "hover:bg-background-subtle transition-colors duration-150",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        )}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-label="User menu"
-      >
-        {user.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={user.avatarUrl}
-            alt=""
-            className="h-7 w-7 rounded-full object-cover ring-2 ring-border"
-            aria-hidden="true"
-          />
-        ) : (
-          <div
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-brand text-xs font-bold text-white ring-2 ring-border"
-            aria-hidden="true"
-          >
-            {initials}
-          </div>
-        )}
-        <span className="hidden lg:block max-w-[100px] truncate">
-          {(user.name ?? user.email ?? "").split(" ")[0]}
-        </span>
-        <ChevronDown
-          className={clsx(
-            "h-3.5 w-3.5 text-foreground-muted transition-transform duration-200",
-            open && "rotate-180"
-          )}
-          aria-hidden="true"
-        />
-      </button>
-
-      {/* Dropdown */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            role="menu"
-            aria-label="User menu"
-            initial={{ opacity: 0, scale: 0.96, y: -8 }}
-            animate={{ opacity: 1, scale: 1,    y: 0  }}
-            exit={{    opacity: 0, scale: 0.96, y: -8 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className={clsx(
-              "absolute right-0 top-full mt-2 w-56 z-modal",
-              "glass rounded-xl border border-border shadow-xl",
-              "py-1"
-            )}
-          >
-            {/* User info header */}
-            <div className="px-4 py-3 border-b border-border">
-              <div className="flex items-start gap-2.5">
-                {user.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={user.avatarUrl}
-                    alt=""
-                    className="h-8 w-8 rounded-full object-cover shrink-0"
-                  />
-                ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-brand text-xs font-bold text-white shrink-0">
-                    {initials}
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold truncate leading-tight">{user.name}</p>
-                  <p className="text-xs text-foreground-muted truncate">{user.email}</p>
-                  <Badge
-                    variant={user.plan === "pro" ? "gradient" : user.plan === "enterprise" ? "premium" : "free"}
-                    size="sm"
-                    className="mt-1"
-                  >
-                    {user.plan === "free"
-                      ? "Free plan"
-                      : user.plan === "pro"
-                      ? "Pro"
-                      : "Enterprise"}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            {/* Menu items */}
-            {[
-              { href: "/dashboard",          icon: LayoutDashboard, label: "Dashboard" },
-              { href: "/dashboard/history",  icon: Clock,           label: "History"   },
-              { href: "/dashboard/favorites",icon: Heart,           label: "Favorites" },
-              { href: "/dashboard/profile",  icon: User,            label: "Profile"   },
-            ].map(({ href, icon: Icon, label }) => (
-              <Link
-                key={href}
-                href={href}
-                role="menuitem"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-background-subtle transition-colors"
-              >
-                <Icon className="h-4 w-4 text-foreground-muted shrink-0" aria-hidden="true" />
-                {label}
-              </Link>
-            ))}
-
-            {/* Usage bar */}
-            {user.plan === "free" && (
-              <div className="mx-4 my-2 p-3 rounded-lg bg-background-subtle border border-border">
-                <div className="flex justify-between text-xs text-foreground-muted mb-1.5">
-                  <span>Monthly usage</span>
-                  <span className="font-medium text-foreground">
-                    {user.usageThisMonth} / {user.usageLimit}
-                  </span>
-                </div>
-                <div className="h-1.5 rounded-full bg-background-muted overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-brand transition-all duration-500"
-                    style={{ width: `${Math.min(100, (user.usageThisMonth / user.usageLimit) * 100)}%` }}
-                    aria-hidden="true"
-                  />
-                </div>
-                <Link
-                  href="/pricing"
-                  onClick={() => setOpen(false)}
-                  className="mt-2 block text-xs text-primary hover:underline underline-offset-2"
-                >
-                  Upgrade for unlimited access
-                </Link>
-              </div>
-            )}
-
-            {/* Sign out */}
-            <div className="border-t border-border mt-1 pt-1">
-              <button
-                role="menuitem"
-                onClick={async () => { setOpen(false); await logout(); }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/5 transition-colors"
-              >
-                <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
-                Sign out
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
 // Mobile drawer
 // ─────────────────────────────────────────────
 
@@ -485,7 +272,6 @@ function MobileDrawer({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const { isAuthenticated, user, logout } = useAuth();
   const pathname = usePathname();
 
   // Lock body scroll while drawer is open
@@ -607,41 +393,6 @@ function MobileDrawer({
               </div>
             </nav>
 
-            {/* Footer: auth actions — full-width buttons + safe area */}
-            <div className="shrink-0 border-t border-border p-4 pb-safe">
-              {isAuthenticated && user ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-brand text-xs font-bold text-white shrink-0">
-                      {user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold truncate">{user.name}</p>
-                      <p className="text-xs text-foreground-muted truncate">{user.email}</p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    fullWidth
-                    onClick={async () => { onClose(); await logout(); }}
-                    leftIcon={<LogOut className="h-3.5 w-3.5" />}
-                  >
-                    Sign out
-                  </Button>
-                </div>
-              ) : (
-                // Guest: full-width auth buttons in drawer footer
-                <div className="flex flex-col gap-2">
-                  <Button variant="outline" size="sm" fullWidth asChild>
-                    <Link href="/auth/login" onClick={onClose}>Sign in</Link>
-                  </Button>
-                  <Button variant="gradient" size="sm" fullWidth asChild>
-                    <Link href="/auth/signup" onClick={onClose}>Get started free</Link>
-                  </Button>
-                </div>
-              )}
-            </div>
           </motion.div>
         </>
       )}
@@ -680,6 +431,7 @@ export function Navbar() {
 
   // Close mobile drawer on route change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMobileOpen(false);
   }, [pathname]);
 
@@ -750,10 +502,6 @@ export function Navbar() {
               <ThemeToggle />
             </div>
 
-            {/* Auth / user menu (guest buttons hidden on mobile — shown in drawer) */}
-            <div className="ml-1">
-              <UserMenu />
-            </div>
           </div>
         </div>
       </header>

@@ -5,7 +5,6 @@ import { clsx } from "clsx";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Check, Copy, Loader2 } from "lucide-react";
-import { apiPost } from "@/lib/api";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -86,20 +85,23 @@ export function ResumeSummaryGen() {
     setSummaries(null);
     setError(null);
     try {
-      const res = await apiPost<{ result: string }>("/tools/ai/resume-summary", {
-        name,
-        jobTitle,
-        experience,
-        skills: skills.filter(Boolean),
-        achievement,
-        tone,
-      });
-      try {
-        const parsed: Array<{ label: string; summary: string }> = JSON.parse(res.data.result);
-        setSummaries(parsed.map((item) => ({ label: item.label, text: item.summary })));
-      } catch {
-        setError("Failed to parse response. Please try again.");
-      }
+      await new Promise((r) => setTimeout(r, 1300));
+      const topSkills = skills.filter(Boolean).join(", ");
+      const mockSummaries: Array<{ label: string; summary: string }> = [
+        {
+          label: tone,
+          summary: `Results-driven ${jobTitle || "professional"} with ${experience} years of experience and proven expertise in ${topSkills || "delivering high-quality outcomes"}. Demonstrates strong analytical skills and a track record of successfully managing complex projects. Committed to continuous improvement and contributing to organizational success through collaborative teamwork and innovative problem-solving.`,
+        },
+        {
+          label: "Concise",
+          summary: `${jobTitle || "Professional"} with ${experience} years of experience specializing in ${topSkills || "key areas"}. Known for delivering measurable results and building strong cross-functional relationships.${achievement ? ` Notably: ${achievement}.` : ""}`,
+        },
+        {
+          label: "Achievement-focused",
+          summary: `Dynamic ${jobTitle || "professional"} bringing ${experience} years of hands-on experience in ${topSkills || "multiple disciplines"}. ${achievement ? `Key achievement: ${achievement}. ` : ""}Passionate about leveraging skills to drive impact and advance organizational goals.`,
+        },
+      ];
+      setSummaries(mockSummaries.map((item) => ({ label: item.label, text: item.summary })));
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

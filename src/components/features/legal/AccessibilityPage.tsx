@@ -187,7 +187,7 @@ const SECTIONS: A11ySection[] = [
           </code>{" "}
           text or are marked{" "}
           <code className="text-xs bg-background-subtle px-1.5 py-0.5 rounded font-mono">
-            aria-hidden="true"
+            aria-hidden=&quot;true&quot;
           </code>{" "}
           when decorative.
         </P>

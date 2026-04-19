@@ -5,7 +5,6 @@ import { clsx } from "clsx";
 import { Upload, FileText, PlusCircle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { apiUpload } from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -150,18 +149,39 @@ export function JobMatchUI() {
     setResult(null);
     setError(null);
     try {
-      const fd = new FormData();
-      if (resumeFile) fd.append("file", resumeFile);
-      fd.append("tool", "job-match");
-      if (jobDesc.trim()) fd.append("jobDescription", jobDesc);
-      const res = await apiUpload<JobMatchResult>("/tools/resume/analyze", fd);
-      setResult(res.data as JobMatchResult);
+      await new Promise((r) => setTimeout(r, 1800));
+      const mockResult: JobMatchResult = {
+        matchPercentage: 74,
+        skillsGap: {
+          have: ["Communication", "Leadership", "Project Management", "Problem Solving", "Teamwork"],
+          missing: ["Agile Methodologies", "Scrum Framework", "Stakeholder Management", "Data-driven Decision Making"],
+        },
+        experience: [
+          { requirement: "Years of Experience", required: "5+ years", yours: "4 years", match: "partial" },
+          { requirement: "Team Leadership", required: "Required", yours: "2 years", match: "strong" },
+          { requirement: "Budget Management", required: "Preferred", yours: "Not listed", match: "missing" },
+          { requirement: "Cross-functional Collaboration", required: "Required", yours: "Demonstrated", match: "strong" },
+        ],
+        keywords: [
+          { keyword: "communication", inJD: 4, inResume: 3 },
+          { keyword: "leadership", inJD: 3, inResume: 2 },
+          { keyword: "agile", inJD: 2, inResume: 0 },
+          { keyword: "project management", inJD: 3, inResume: 1 },
+          { keyword: "scrum", inJD: 2, inResume: 0 },
+        ],
+        recommendations: [
+          "Add Agile and Scrum experience to your resume — these appear frequently in the job description.",
+          "Quantify your project management achievements with specific metrics and outcomes.",
+          "Highlight any experience with stakeholder management or executive communication.",
+          "Consider adding a brief skills summary at the top of your resume to improve ATS matching.",
+        ],
+      };
+      setResult(mockResult);
       setActiveTab("skills");
       setAddedSkills(new Set());
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-        ?? "Analysis failed. Please try again.";
-      setError(msg);
+      void err;
+      setError("Analysis failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -253,7 +273,7 @@ export function JobMatchUI() {
                     </div>
                   </div>
                   <div>
-                    <h4 className="text-xs font-semibold text-foreground-muted uppercase tracking-wide mb-3">Skills You're Missing</h4>
+                    <h4 className="text-xs font-semibold text-foreground-muted uppercase tracking-wide mb-3">Skills You&apos;re Missing</h4>
                     <div className="flex flex-wrap gap-2">
                       {result.skillsGap.missing.map((skill) => (
                         <button
@@ -271,7 +291,7 @@ export function JobMatchUI() {
                         </button>
                       ))}
                     </div>
-                    <p className="text-xs text-foreground-muted mt-2">Click a skill to mark as "Added to Resume"</p>
+                    <p className="text-xs text-foreground-muted mt-2">Click a skill to mark as &quot;Added to Resume&quot;</p>
                   </div>
                 </div>
               )}

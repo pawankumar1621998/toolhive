@@ -183,7 +183,7 @@ export function CtaSection() {
 
             {/* Secondary — ghost outline */}
             <Link
-              href="/auth/signup"
+              href="/tools/pdf"
               className={clsx(
                 "inline-flex w-full sm:w-auto items-center justify-center gap-2",
                 "rounded-xl border border-white/40 bg-white/10 px-8 py-3.5",
@@ -194,7 +194,7 @@ export function CtaSection() {
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
               )}
             >
-              Create Free Account
+              Try PDF Tools
             </Link>
           </motion.div>
 
@@ -206,7 +206,7 @@ export function CtaSection() {
             transition={{ duration: 0.5, delay: 0.28 }}
             className="text-xs text-white/55"
           >
-            No spam. No credit card required. Unsubscribe at any time.
+            No account needed &middot; No credit card &middot; 100% free forever
           </motion.p>
         </div>
       </div>

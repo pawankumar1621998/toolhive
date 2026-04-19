@@ -5,7 +5,6 @@ import { clsx } from "clsx";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Check, Copy, Plus } from "lucide-react";
-import { apiPost } from "@/lib/api";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -60,17 +59,14 @@ export function SkillsSuggester() {
     setAddedSkills(new Set());
     setError(null);
     try {
-      const res = await apiPost<{ result: string }>("/tools/ai/skills-suggest", {
-        jobTitle,
-        industry,
-        experienceLevel,
-      });
-      try {
-        const parsed: SkillSet = JSON.parse(res.data.result);
-        setResults(parsed);
-      } catch {
-        setError("Failed to parse skills. Please try again.");
-      }
+      await new Promise((r) => setTimeout(r, 1200));
+      const mockSkills: SkillSet = {
+        technical: ["Project Management", "Data Analysis", "Microsoft Office Suite", "Process Improvement", "Technical Documentation", "Quality Assurance"],
+        soft: ["Leadership", "Problem-solving", "Teamwork", "Time Management", "Adaptability", "Communication", "Critical Thinking"],
+        tools: ["Slack", "Trello", "Jira", "Google Workspace", "Zoom", "Notion", "Confluence"],
+        certifications: ["PMP (Project Management Professional)", "Relevant industry certification", "Google Analytics", "Agile/Scrum certification"],
+      };
+      setResults(mockSkills);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

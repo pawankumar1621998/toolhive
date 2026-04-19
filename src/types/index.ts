@@ -11,7 +11,8 @@ export type ToolCategory =
   | "ai-writing"
   | "audio"
   | "converter"
-  | "resume";
+  | "resume"
+  | "calculator";
 
 export type ToolStatus = "idle" | "uploading" | "processing" | "done" | "error";
 

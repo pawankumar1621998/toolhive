@@ -285,7 +285,7 @@ function NewsletterBox() {
       <h3 className="text-lg font-bold text-foreground mb-1">Weekly digest</h3>
       <p className="text-sm text-foreground-muted mb-4">Tips & product updates, every Tuesday. No spam.</p>
       {sent ? (
-        <p className="text-sm font-medium text-primary">✓ You're subscribed!</p>
+        <p className="text-sm font-medium text-primary">✓ You&apos;re subscribed!</p>
       ) : (
         <form onSubmit={(e) => { e.preventDefault(); if (email) setSent(true); }} className="space-y-2">
           <input

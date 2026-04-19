@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 import {
@@ -14,14 +14,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
-  LogOut,
   FileText,
   Image,
   Video,
   Pen,
   ExternalLink,
 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
 import { Badge } from "@/components/ui/Badge";
 
 // ─────────────────────────────────────────────
@@ -149,98 +147,33 @@ function SidebarNavItem({ item, isActive, collapsed }: NavItemProps) {
 }
 
 // ─────────────────────────────────────────────
-// User avatar section (sidebar bottom)
+// Guest section (sidebar bottom)
 // ─────────────────────────────────────────────
 
-function SidebarUserSection({
-  collapsed,
-  onLogout,
-}: {
-  collapsed: boolean;
-  onLogout: () => void;
-}) {
-  const { user } = useAuth();
-
-  const initials = (user?.name ?? "U")
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
+function SidebarGuestSection({ collapsed }: { collapsed: boolean }) {
   return (
     <div
       className={clsx(
         "flex items-center border-t border-sidebar-border mt-auto",
-        collapsed ? "flex-col gap-2 px-2 py-3" : "gap-3 px-4 py-3"
+        collapsed ? "justify-center px-2 py-3" : "gap-3 px-4 py-3"
       )}
     >
-      {/* Avatar */}
-      <div className="relative shrink-0">
-        {user?.avatarUrl ? (
-          <img
-            src={user.avatarUrl}
-            alt={`${user.name} avatar`}
-            className="h-8 w-8 rounded-full object-cover ring-2 ring-primary/20"
-          />
-        ) : (
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-brand text-xs font-bold text-white">
-            {initials}
-          </div>
-        )}
-        {/* Online dot */}
-        <span
-          className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-success ring-1 ring-sidebar-background"
-          aria-hidden="true"
-        />
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background-muted border border-border">
+        <User className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
       </div>
-
       <AnimatePresence initial={false}>
         {!collapsed && (
           <motion.div
-            key="user-info"
+            key="guest-info"
             initial={{ opacity: 0, width: 0 }}
             animate={{ opacity: 1, width: "auto" }}
             exit={{ opacity: 0, width: 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
             className="flex-1 min-w-0 overflow-hidden"
           >
-            <p className="text-sm font-semibold text-foreground truncate leading-tight">
-              {user?.name ?? "User"}
-            </p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span
-                className={clsx(
-                  "inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-semibold",
-                  user?.plan === "pro"
-                    ? "bg-gradient-brand text-white"
-                    : user?.plan === "enterprise"
-                    ? "bg-warning/20 text-warning-foreground"
-                    : "bg-background-muted text-foreground-muted border border-border"
-                )}
-              >
-                {user?.plan === "free" ? "Free" : user?.plan === "pro" ? "Pro" : "Ent"}
-              </span>
-            </div>
+            <p className="text-sm font-semibold text-foreground truncate leading-tight">Guest</p>
+            <p className="text-[10px] text-foreground-muted truncate">Free forever</p>
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence initial={false}>
-        {!collapsed && (
-          <motion.button
-            key="logout-btn"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            onClick={onLogout}
-            className="shrink-0 rounded-lg p-1.5 text-foreground-muted hover:text-destructive hover:bg-destructive/10 transition-colors"
-            aria-label="Log out"
-            title="Log out"
-          >
-            <LogOut className="h-4 w-4" />
-          </motion.button>
         )}
       </AnimatePresence>
     </div>
@@ -254,10 +187,9 @@ function SidebarUserSection({
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
-  onLogout: () => void;
 }
 
-function Sidebar({ collapsed, onToggle, onLogout }: SidebarProps) {
+function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -381,8 +313,8 @@ function Sidebar({ collapsed, onToggle, onLogout }: SidebarProps) {
         </div>
       </nav>
 
-      {/* User section */}
-      <SidebarUserSection collapsed={collapsed} onLogout={onLogout} />
+      {/* Guest section */}
+      <SidebarGuestSection collapsed={collapsed} />
     </motion.aside>
   );
 }
@@ -513,44 +445,10 @@ interface DashboardShellProps {
  * - Extra bottom padding on mobile accounts for 56px bottom nav + safe area
  */
 export function DashboardShell({ children }: DashboardShellProps) {
-  const { isAuthenticated, isLoading, logout } = useAuth();
-  const router = useRouter();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
   const handleToggle = useCallback(() => setCollapsed((c) => !c), []);
-
-  const handleLogout = useCallback(async () => {
-    await logout();
-    router.replace("/");
-  }, [logout, router]);
-
-  // Auth guard — redirect unauthenticated users
-  React.useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.replace("/auth/login?redirect=/dashboard");
-    }
-  }, [isLoading, isAuthenticated, router]);
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-brand shadow-md">
-            <Zap className="h-5 w-5 text-white animate-pulse" aria-hidden="true" />
-          </div>
-          <div
-            className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent"
-            role="status"
-            aria-label="Loading dashboard"
-          />
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) return null;
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -558,7 +456,6 @@ export function DashboardShell({ children }: DashboardShellProps) {
       <Sidebar
         collapsed={collapsed}
         onToggle={handleToggle}
-        onLogout={handleLogout}
       />
 
       {/* Main content column */}

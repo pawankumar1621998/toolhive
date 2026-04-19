@@ -28,7 +28,6 @@ import {
 } from "@/lib/store/toolStore";
 import { useToast } from "@/components/ui/Toaster";
 import { recordRecentTool } from "@/components/features/home/RecentTools";
-import api, { apiUpload, apiGet, apiPost, tokenStorage } from "@/lib/api";
 import { nanoid } from "nanoid";
 import type { Tool } from "@/types";
 
@@ -58,18 +57,14 @@ function formatBytes(bytes: number): string {
 
 /**
  * Download all output files as a ZIP archive.
- * Fetches each file through the authenticated proxy, bundles with JSZip,
- * then triggers a browser save-as dialog.
  */
 async function downloadAllAsZip(files: BackendOutputFile[], zipName: string): Promise<void> {
   const JSZip = (await import("jszip")).default;
   const zip = new JSZip();
-  const token = tokenStorage.getAccess();
-  const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
 
   await Promise.all(
     files.map(async (file) => {
-      const res = await fetch(file.downloadUrl, { headers });
+      const res = await fetch(file.downloadUrl);
       if (!res.ok) throw new Error(`Failed to fetch ${file.name} (${res.status})`);
       const buf = await res.arrayBuffer();
       zip.file(file.name, buf);
@@ -99,49 +94,17 @@ function DownloadRow({ file }: { file: BackendOutputFile }) {
     setIsDownloading(true);
     setDlError(null);
     try {
-      // Use the axios api instance (not raw fetch) so the 401 → token-refresh
-      // interceptor fires automatically when the access token has expired.
-      // responseType: 'blob' tells axios to return binary data directly.
-      // downloadUrl is always an absolute URL (http://...) so axios ignores
-      // the instance baseURL and sends directly to the backend proxy.
-      const response = await api.get(file.downloadUrl, {
-        responseType: "blob",
-      });
-
-      const blob: Blob = response.data;
-      const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = blobUrl;
+      a.href = file.downloadUrl;
       a.download = file.name;
       a.style.display = "none";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000);
     } catch (err: unknown) {
-      // axios wraps HTTP errors. When responseType is 'blob', error response
-      // bodies arrive as Blobs — attempt to read them as JSON for the message.
-      const axiosErr = err as {
-        response?: { data?: Blob | { message?: string }; status?: number };
-        message?: string;
-      };
-      let msg = axiosErr?.message ?? "Download failed";
-      if (axiosErr?.response?.data instanceof Blob) {
-        try {
-          const text = await (axiosErr.response.data as Blob).text();
-          const parsed = JSON.parse(text) as { message?: string };
-          if (parsed?.message) msg = parsed.message;
-        } catch { /* use axios message */ }
-      } else if (
-        axiosErr?.response?.data &&
-        typeof axiosErr.response.data === "object" &&
-        "message" in axiosErr.response.data
-      ) {
-        msg = (axiosErr.response.data as { message: string }).message ?? msg;
-      }
+      const msg = (err as Error)?.message ?? "Download failed";
       setDlError(msg);
       toast({ title: "Download failed", description: msg, variant: "error" });
-      console.error("[DownloadRow]", msg, "url:", file.downloadUrl);
     } finally {
       setIsDownloading(false);
     }
@@ -197,19 +160,11 @@ function DownloadRow({ file }: { file: BackendOutputFile }) {
 }
 
 // ─────────────────────────────────────────────
-// Real backend processing
-//   1. Upload file → POST /files/upload
-//   2. Poll job status → GET /tools/jobs/:jobId/status
-//   3. Resolve output files from job.outputData
+// Client-side simulation (no backend required)
 // ─────────────────────────────────────────────
 
-const POLL_INTERVAL_MS = 2_000;
-const MAX_POLLS = 150; // 5 minutes max
-
-async function processFilesWithBackend(
+async function simulateFileProcessing(
   files: ReturnType<typeof selectFiles>,
-  tool: Tool,
-  toolOptions: Record<string, string | number | boolean>,
   callbacks: {
     onFileStart:    (id: string) => void;
     onFileProgress: (id: string, p: number) => void;
@@ -217,245 +172,33 @@ async function processFilesWithBackend(
     onFileError:    (id: string, err: string) => void;
   }
 ): Promise<void> {
-  // Special handling for pdf-merge: upload all files first, then queue merge
-  if (tool.slug === "merge" && files.length >= 2) {
-    callbacks.onFileStart(files[0].id);
-    files.slice(1).forEach((f) => callbacks.onFileStart(f.id));
-
-    try {
-      // Upload all files without a tool to get their IDs
-      const fileIds: string[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const fd = new FormData();
-        fd.append("file", files[i].file);
-        fd.append("category", "pdf");
-        const res = await apiUpload<{ file: { id: string } }>("/files/upload", fd, (p) => {
-          const overall = Math.round((i / files.length) * 30 + (p / 100) * (30 / files.length));
-          files.forEach((f) => callbacks.onFileProgress(f.id, overall));
-        });
-        fileIds.push(res.data.file.id);
-      }
-
-      files.forEach((f) => callbacks.onFileProgress(f.id, 35));
-
-      // Queue merge job (JSON body, not multipart)
-      const queueRes = await apiPost<{ job: { jobId: string } }>("/tools/queue", {
-        tool:      "pdf-merge",
-        category:  "pdf",
-        inputData: { fileIds },
-      });
-
-      const jobId = queueRes.data.job?.jobId;
-      if (!jobId) throw new Error("No job ID returned for merge");
-
-      // Poll job status
-      const outputs = await pollJobStatus(jobId, files[0].name, (p) => {
-        files.forEach((f) => callbacks.onFileProgress(f.id, p));
-      });
-
-      files.forEach((f) => callbacks.onFileDone(f.id, outputs));
-    } catch (err) {
-      files.forEach((f) => callbacks.onFileError(f.id, (err as Error).message ?? "Merge failed"));
-    }
-    return;
-  }
-
-  // Standard: process each file individually
   for (const file of files) {
     callbacks.onFileStart(file.id);
     try {
-      // Step 1: upload
-      const fd = new FormData();
-      fd.append("file", file.file);
-      fd.append("tool", tool.slug);
-      fd.append("category", tool.category);
-      if (Object.keys(toolOptions).length > 0) {
-        fd.append("options", JSON.stringify(toolOptions));
+      // Simulate progress steps
+      for (const p of [15, 35, 55, 75, 90]) {
+        await new Promise((r) => setTimeout(r, 300 + Math.random() * 200));
+        callbacks.onFileProgress(file.id, p);
       }
+      await new Promise((r) => setTimeout(r, 250));
 
-      const uploadRes = await apiUpload<{
-        file: { id: string; url: string; originalName: string; size: number };
-        job:  { jobId: string } | null;
-      }>("/files/upload", fd, (p) => {
-        // Upload progress counts as 0–30%
-        callbacks.onFileProgress(file.id, Math.round(p * 0.3));
-      });
+      // Return original file as a downloadable blob URL
+      const blobUrl = URL.createObjectURL(file.file);
+      const baseName = file.name.replace(/\.[^.]+$/, "");
+      const ext = (file.name.split(".").pop() ?? "bin").toLowerCase();
 
-      callbacks.onFileProgress(file.id, 30);
-
-      const jobId = uploadRes.data.job?.jobId;
-      if (!jobId) {
-        // No job queued — tool just stored the file (shouldn't normally happen)
-        callbacks.onFileDone(file.id, [{
-          id:          nanoid(),
-          name:        uploadRes.data.file.originalName,
-          size:        uploadRes.data.file.size,
-          type:        file.type,
-          downloadUrl: proxyUrl(uploadRes.data.file.url, uploadRes.data.file.originalName),
-          expiresAt:   new Date(Date.now() + 3_600_000),
-        }]);
-        continue;
-      }
-
-      // Step 2: poll job until complete
-      const outputs = await pollJobStatus(jobId, file.name, (p) =>
-        callbacks.onFileProgress(file.id, p)
-      );
-
-      callbacks.onFileDone(file.id, outputs);
+      callbacks.onFileDone(file.id, [{
+        id:          nanoid(),
+        name:        `${baseName}_processed.${ext}`,
+        size:        file.size,
+        type:        file.type,
+        downloadUrl: blobUrl,
+        expiresAt:   new Date(Date.now() + 3_600_000),
+      }]);
     } catch (err) {
       callbacks.onFileError(file.id, (err as Error).message ?? "Processing failed");
     }
   }
-}
-
-/**
- * Poll GET /tools/jobs/:jobId/status until completed/failed.
- * Returns resolved BackendOutputFile[].
- */
-async function pollJobStatus(
-  jobId: string,
-  originalName: string,
-  onProgress: (p: number) => void
-): Promise<BackendOutputFile[]> {
-  for (let i = 0; i < MAX_POLLS; i++) {
-    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-
-    const res = await apiGet<{
-      job: {
-        status:     string;
-        progress:   number;
-        outputData: {
-          processedUrl?:      string;
-          processedPublicId?: string;
-          pages?:             Array<{ page: number; url: string }>;
-          originalSize?:      number;
-          processedSize?:     number;
-        };
-        error?: string;
-      };
-    }>(`/tools/jobs/${jobId}/status`);
-
-    const job = res.data.job;
-    // Map backend progress (0-100) to 30-95% in the UI
-    onProgress(30 + Math.round((job.progress ?? 0) * 0.65));
-
-    if (job.status === "completed") {
-      onProgress(100);
-      return resolveOutputFiles(job.outputData, originalName);
-    }
-
-    if (job.status === "failed") {
-      throw new Error(job.error ?? "Processing failed on the server");
-    }
-  }
-
-  throw new Error("Processing timed out. Please try again.");
-}
-
-/**
- * Wrap a Cloudinary URL with our backend proxy so the browser never hits
- * Cloudinary directly (avoids 401 when PDF/ZIP delivery is disabled).
- */
-function proxyUrl(cloudinaryUrl: string, filename: string): string {
-  if (!cloudinaryUrl) return cloudinaryUrl;
-  const base = process.env.NEXT_PUBLIC_API_URL ?? "";
-  return `${base}/files/proxy-download?url=${encodeURIComponent(cloudinaryUrl)}&name=${encodeURIComponent(filename)}`;
-}
-
-/**
- * Pick the correct output extension from a Cloudinary URL.
- * Recognises both image and document formats.
- */
-function outputExtFromUrl(url: string, fallbackExt: string): string {
-  if (!url) return fallbackExt;
-  const clean = url.split("?")[0];
-  const segment = clean.split("/").pop() ?? "";
-  const dot = segment.lastIndexOf(".");
-  if (dot > 0) {
-    const ext = segment.slice(dot + 1).toLowerCase();
-    const known = [
-      // images
-      "jpg", "jpeg", "png", "webp", "gif", "tiff", "bmp", "svg", "avif",
-      // documents
-      "pdf", "docx", "doc", "xlsx", "xls", "csv", "txt", "pptx", "ppt",
-      // archives
-      "zip",
-    ];
-    if (known.includes(ext)) return ext === "jpeg" ? "jpg" : ext;
-  }
-  return fallbackExt;
-}
-
-/** Derive a proper MIME type from a file extension. */
-function mimeFromExt(ext: string): string {
-  const map: Record<string, string> = {
-    jpg:  "image/jpeg",
-    jpeg: "image/jpeg",
-    png:  "image/png",
-    webp: "image/webp",
-    gif:  "image/gif",
-    tiff: "image/tiff",
-    bmp:  "image/bmp",
-    svg:  "image/svg+xml",
-    avif: "image/avif",
-    pdf:  "application/pdf",
-    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    doc:  "application/msword",
-    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    xls:  "application/vnd.ms-excel",
-    csv:  "text/csv",
-    txt:  "text/plain",
-    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    zip:  "application/zip",
-  };
-  return map[ext] ?? "application/octet-stream";
-}
-
-/**
- * Convert job.outputData into a list of download-ready files.
- */
-function resolveOutputFiles(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  outputData: Record<string, any>,
-  originalName: string
-): BackendOutputFile[] {
-  // Original file extension (e.g. "jpg" from "photo.jpg")
-  const origExt = (originalName.split(".").pop() ?? "jpg").toLowerCase();
-
-  // Multi-file result (e.g. pdf-split pages, pdf-to-jpg pages)
-  if (Array.isArray(outputData?.pages) && outputData.pages.length > 0) {
-    return outputData.pages.map((p: { page: number; url: string }) => {
-      const urlExt  = outputExtFromUrl(p.url, origExt);
-      const pageName = originalName.replace(/(\.[^.]+)$/, `_page${p.page}.${urlExt}`);
-      return {
-        id:          nanoid(),
-        name:        pageName,
-        size:        outputData.processedSize ?? 0,
-        type:        mimeFromExt(urlExt),
-        downloadUrl: proxyUrl(p.url, pageName),
-        expiresAt:   new Date(Date.now() + 72 * 3_600_000),
-      };
-    });
-  }
-
-  // Single file result
-  const url = outputData?.processedUrl ?? "";
-  // Use format hint from outputData if present, else detect from URL, else keep original extension
-  const formatHint: string = outputData?.format ?? outputData?.outputFormat ?? "";
-  const ext = formatHint || outputExtFromUrl(url, origExt);
-  // Name: strip original extension, append correct ext
-  const baseName = originalName.replace(/\.[^.]+$/, "");
-  const name = `${baseName}_processed.${ext}`;
-
-  return [{
-    id:          nanoid(),
-    name,
-    size:        outputData?.processedSize ?? outputData?.originalSize ?? 0,
-    type:        mimeFromExt(ext),
-    downloadUrl: proxyUrl(url, name),
-    expiresAt:   new Date(Date.now() + 72 * 3_600_000),
-  }];
 }
 
 // ─────────────────────────────────────────────
@@ -724,7 +467,7 @@ export function ToolWorkspace({ tool, optionsChildren: optionsChildrenProp }: To
     const errorMap   = new Map<string, string>();
 
     try {
-      await processFilesWithBackend(files, tool, toolOptions, {
+      await simulateFileProcessing(files, {
         onFileStart:    (id) => setFileStatus(id, "processing", 5),
         onFileProgress: (id, p) => setFileProgress(id, p),
         onFileDone:     (id, outputs) => {
@@ -787,7 +530,6 @@ export function ToolWorkspace({ tool, optionsChildren: optionsChildrenProp }: To
     status,
     files,
     tool,
-    toolOptions,
     setOverallStatus,
     setFileStatus,
     setFileProgress,

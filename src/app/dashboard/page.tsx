@@ -8,13 +8,7 @@ export const metadata: Metadata = {
 /**
  * /dashboard — Overview page
  *
- * Renders:
- * - WelcomeBanner       — "Good morning, {name}!" with monthly usage bar
- * - StatsGrid           — Files Today, Total Files, Tools Used, Storage
- * - MostUsedTools       — 6-item quick-launch grid
- * - RecentActivity      — Last 5 operations timeline
- * - JumpTo              — Quick nav cards
- * - ProUpgradeBanner    — Shown only to free-tier users
+ * Renders: WelcomeBanner, StatsGrid, MostUsedTools, RecentActivity, JumpTo
  */
 export default function DashboardPage() {
   return <DashboardOverview />;

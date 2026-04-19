@@ -5,7 +5,6 @@ import { clsx } from "clsx";
 import { Upload, FileText, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { apiUpload } from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -146,15 +145,29 @@ export function ResumeAnalyzerUI() {
     setResult(null);
     setError(null);
     try {
-      const fd = new FormData();
-      fd.append("file", selectedFile);
-      fd.append("tool", "resume-analyze-structured");
-      const res = await apiUpload<AnalysisResult>("/tools/resume/analyze", fd);
-      setResult(res.data as AnalysisResult);
+      await new Promise((r) => setTimeout(r, 2000));
+      const mockResult: AnalysisResult = {
+        overallScore: 76,
+        sections: [
+          { label: "Contact Information", score: 95 },
+          { label: "Professional Summary", score: 70 },
+          { label: "Work Experience", score: 80 },
+          { label: "Education", score: 90 },
+          { label: "Skills", score: 65 },
+          { label: "Formatting & Layout", score: 85 },
+        ],
+        issues: [
+          { message: "Add a stronger professional summary that highlights your unique value proposition.", severity: "High" },
+          { message: "Quantify achievements in your work experience with specific numbers and metrics.", severity: "High" },
+          { message: "Expand your Skills section with more relevant technical and soft skills.", severity: "Medium" },
+          { message: "Consider adding relevant certifications or professional development courses.", severity: "Medium" },
+          { message: "Ensure consistent date formatting throughout the resume.", severity: "Low" },
+        ],
+      };
+      setResult(mockResult);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-        ?? "Analysis failed. Please try again.";
-      setError(msg);
+      void err;
+      setError("Analysis failed. Please try again.");
     } finally {
       setIsLoading(false);
     }

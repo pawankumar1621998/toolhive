@@ -37,7 +37,7 @@ export const TOOL_CATEGORIES = [
     iconName: "Image",
     color: "violet",
     gradient: "from-violet-500 to-purple-400",
-    toolCount: 12,
+    toolCount: 26,
     href: "/tools/image",
   },
   {
@@ -59,7 +59,7 @@ export const TOOL_CATEGORIES = [
     iconName: "Pen",
     color: "emerald",
     gradient: "from-emerald-500 to-teal-400",
-    toolCount: 13,
+    toolCount: 16,
     href: "/tools/ai-writing",
   },
   {
@@ -70,7 +70,7 @@ export const TOOL_CATEGORIES = [
     iconName: "ArrowRightLeft",
     color: "sky",
     gradient: "from-sky-500 to-indigo-400",
-    toolCount: 9,
+    toolCount: 16,
     href: "/tools/converter",
   },
   {
@@ -83,6 +83,17 @@ export const TOOL_CATEGORIES = [
     gradient: "from-indigo-500 to-purple-600",
     toolCount: 12,
     href: "/tools/resume",
+  },
+  {
+    id: "calculator",
+    label: "Calculators",
+    description: "Age, BMI, percentage, EMI, tip, discount — instant calculators for everyday use.",
+    icon: "🧮",
+    iconName: "Calculator",
+    color: "orange",
+    gradient: "from-orange-500 to-amber-400",
+    toolCount: 7,
+    href: "/tools/calculator",
   },
 ] as const;
 

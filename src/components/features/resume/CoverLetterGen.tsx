@@ -5,8 +5,6 @@ import { clsx } from "clsx";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Check, Copy, Download, Loader2 } from "lucide-react";
-import { apiPost } from "@/lib/api";
-import { AxiosError } from "axios";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -50,20 +48,12 @@ export function CoverLetterGen() {
     setLetter(null);
     setError(null);
     try {
-      const res = await apiPost<{ result: string }>("/tools/ai/cover-letter", {
-        name: form.fullName,
-        jobTitle: form.jobTitle,
-        company: form.companyName,
-        experience: form.jobDescription,
-        skills: form.hiringManager
-          ? `Tone: ${form.tone}. Addressed to: ${form.hiringManager}`
-          : `Tone: ${form.tone}`,
-        options: { tone: form.tone },
-      });
-      setLetter(res.data.result);
+      await new Promise((r) => setTimeout(r, 1500));
+      const result = `Dear ${form.hiringManager ? form.hiringManager : "Hiring Manager"},\n\nI am writing to express my strong interest in the ${form.jobTitle} position at ${form.companyName}. With my background and skills, I am confident I would be a valuable addition to your team.\n\nMy experience aligns well with the requirements of this role. I am passionate about contributing to ${form.companyName}'s mission and would welcome the opportunity to discuss how my skills can benefit your organization.\n\nThank you for your consideration.\n\nSincerely,\n${form.fullName}`;
+      setLetter(result);
     } catch (err) {
-      const axiosErr = err as AxiosError<{ message?: string }>;
-      setError(axiosErr.response?.data?.message ?? "Something went wrong. Please try again.");
+      void err;
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }

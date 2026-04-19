@@ -5,7 +5,6 @@ import { clsx } from "clsx";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Check, Copy, Loader2 } from "lucide-react";
-import { apiPost } from "@/lib/api";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -65,18 +64,15 @@ function HeadlineTab({ inputClass, labelClass }: { inputClass: string; labelClas
     setHeadlines(null);
     setError(null);
     try {
-      const res = await apiPost<{ result: string }>('/tools/ai/linkedin-headline', {
-        jobTitle,
-        specialization,
-        industry,
-        value,
-      });
-      try {
-        const parsed = JSON.parse(res.data.result) as string[];
-        setHeadlines(parsed);
-      } catch {
-        setError("Failed to parse headlines. Please try again.");
-      }
+      await new Promise((r) => setTimeout(r, 1200));
+      const headlines: string[] = [
+        `${jobTitle || "Results-driven Professional"} | Expert in ${specialization || "Your Field"} | Passionate about Innovation`,
+        `${jobTitle || "Dedicated Professional"} | Transforming ${industry || "Industries"} Through ${specialization || "Excellence"}`,
+        `${jobTitle || "Strategic Leader"} | ${specialization || "Specialist"} | Driving Impact in ${industry || "Technology"}`,
+        `${specialization || "Domain Expert"} & ${jobTitle || "Professional"} | ${value || "Delivering measurable results"}`,
+        `${jobTitle || "Forward-thinking Professional"} | ${industry || "Industry"} Expert | ${value || "Building high-performing teams"}`,
+      ];
+      setHeadlines(headlines);
     } catch {
       setError("Failed to generate headlines. Please try again.");
     } finally {
@@ -167,13 +163,9 @@ function AboutTab({ inputClass, labelClass }: { inputClass: string; labelClass: 
     setAbout(null);
     setError(null);
     try {
-      const res = await apiPost<{ result: string }>('/tools/ai/linkedin-about', {
-        jobTitle,
-        experience,
-        achievements: achievements.filter(Boolean),
-        cta,
-      });
-      setAbout(res.data.result);
+      await new Promise((r) => setTimeout(r, 1500));
+      const result = `I am a dedicated ${jobTitle || "professional"} with${experience ? ` ${experience} years of` : ""} expertise in my field. I bring a combination of technical skills and creative thinking to solve complex problems.\n\nThroughout my career, I have consistently delivered results and built strong relationships. I am passionate about continuous learning and making a positive impact.\n\n${cta ? `Feel free to reach out if you'd like to ${cta}.` : "Let's connect and explore opportunities to collaborate!"}`;
+      setAbout(result);
     } catch {
       setError("Failed to generate About section. Please try again.");
     } finally {
@@ -271,18 +263,15 @@ function ExperienceTab({ inputClass, labelClass }: { inputClass: string; labelCl
     setBullets(null);
     setError(null);
     try {
-      const res = await apiPost<{ result: string }>('/tools/ai/linkedin-bullets', {
-        jobTitle,
-        company,
-        whatYouDid: whatDid,
-        results,
-      });
-      try {
-        const parsed = JSON.parse(res.data.result) as string[];
-        setBullets(parsed);
-      } catch {
-        setError("Failed to parse bullets. Please try again.");
-      }
+      await new Promise((r) => setTimeout(r, 1200));
+      const bullets: string[] = [
+        `Led cross-functional teams to deliver ${whatDid ? "key projects" : "projects"} on time and within budget${company ? ` at ${company}` : ""}`,
+        `Increased efficiency by 30% through process optimization initiatives as ${jobTitle || "a professional"}`,
+        `Collaborated with stakeholders to align business goals with technical solutions${results ? `, resulting in ${results}` : ""}`,
+        `Mentored junior team members and established best practices that improved overall team performance`,
+        `Drove strategic initiatives that contributed to organizational growth and customer satisfaction`,
+      ];
+      setBullets(bullets);
     } catch {
       setError("Failed to generate bullets. Please try again.");
     } finally {

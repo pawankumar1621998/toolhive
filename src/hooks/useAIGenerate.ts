@@ -1,8 +1,14 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { apiPost } from "@/lib/api";
-import { AxiosError } from "axios";
+
+const DEMO_RESPONSES: Record<string, string> = {
+  default: "This AI feature is in demo mode. Connect a backend with your preferred AI provider (OpenAI, Anthropic, etc.) to enable real content generation.",
+};
+
+function getDemoResponse(toolSlug: string): string {
+  return DEMO_RESPONSES[toolSlug] ?? DEMO_RESPONSES.default;
+}
 
 export function useAIGenerate(toolSlug: string) {
   const [output,  setOutput]  = useState("");
@@ -10,18 +16,16 @@ export function useAIGenerate(toolSlug: string) {
   const [error,   setError]   = useState<string | null>(null);
 
   const generate = useCallback(
-    async (body: Record<string, unknown>) => {
+    async (_body: Record<string, unknown>) => {
       setLoading(true);
       setOutput("");
       setError(null);
       try {
-        const res = await apiPost<{ result: string }>(`/tools/ai/${toolSlug}`, body);
-        setOutput(res.data.result ?? "");
+        // Simulate generation delay
+        await new Promise((r) => setTimeout(r, 1200 + Math.random() * 800));
+        setOutput(getDemoResponse(toolSlug));
       } catch (err) {
-        const msg =
-          (err as AxiosError<{ message: string }>).response?.data?.message ??
-          "Generation failed. Please try again.";
-        setError(msg);
+        setError((err as Error).message ?? "Generation failed. Please try again.");
       } finally {
         setLoading(false);
       }

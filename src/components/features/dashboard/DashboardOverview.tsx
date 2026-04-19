@@ -14,20 +14,17 @@ import {
   TrendingUp,
   HardDrive,
   ArrowRight,
-  Sparkles,
   CheckCircle2,
   AlertCircle,
   RefreshCw,
   FileImage,
   FileAudio,
   Repeat2,
-  Star,
   Loader2,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useAuth } from "@/context/AuthContext";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { useDashboard } from "@/hooks/useDashboard";
 import type { ActivityJob } from "@/hooks/useDashboard";
 
@@ -317,62 +314,6 @@ function QuickToolCard({
 }
 
 // ─────────────────────────────────────────────
-// Pro Upgrade Banner
-// ─────────────────────────────────────────────
-
-function ProUpgradeBanner() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.4 }}
-      className="relative overflow-hidden rounded-2xl bg-gradient-brand p-6"
-    >
-      {/* Decorative orbs */}
-      <div
-        className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute -bottom-4 right-1/3 h-24 w-24 rounded-full bg-white/10 blur-xl"
-        aria-hidden="true"
-      />
-
-      <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-          <Sparkles className="h-6 w-6 text-white" aria-hidden="true" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-base font-bold text-white">Upgrade to Pro</h3>
-          <p className="mt-0.5 text-sm text-white/80">
-            Unlimited files, priority processing, advanced AI tools, and 50GB storage.
-          </p>
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-            {["Unlimited files", "50GB storage", "Priority queue", "API access"].map((f) => (
-              <span key={f} className="flex items-center gap-1 text-xs text-white/90">
-                <Star className="h-3 w-3 fill-white/80 text-white/80" aria-hidden="true" />
-                {f}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="shrink-0">
-          <Link href="/pricing">
-            <Button
-              variant="secondary"
-              size="sm"
-              className="bg-white text-primary hover:bg-white/90 font-semibold border-0 shadow-md"
-            >
-              Upgrade now
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// ─────────────────────────────────────────────
 // DashboardOverview
 // ─────────────────────────────────────────────
 
@@ -382,7 +323,7 @@ export function DashboardOverview() {
 
   const hour      = new Date().getHours();
   const greeting  = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  const firstName = user?.name?.split(" ")[0] ?? "there";
+  const firstName = user?.name?.split(" ")[0] ?? "Explorer";
 
   const dailyUsed    = data?.usage.daily.used    ?? 0;
   const dailyLimit   = data?.usage.daily.limit   ?? 10;
@@ -503,11 +444,8 @@ export function DashboardOverview() {
             />
           </div>
           {usagePercent >= 70 && (
-            <p className="mt-2 text-xs text-warning font-medium">
-              {usagePercent}% used —{" "}
-              <Link href="/pricing" className="text-primary underline underline-offset-2">
-                upgrade for unlimited access
-              </Link>
+            <p className="mt-2 text-xs text-success font-medium">
+              All tools are free — unlimited access
             </p>
           )}
         </div>
@@ -651,8 +589,6 @@ export function DashboardOverview() {
         </div>
       </section>
 
-      {/* ── Pro Upgrade Banner (free users only) ── */}
-      {user?.plan === "free" && <ProUpgradeBanner />}
     </div>
   );
 }

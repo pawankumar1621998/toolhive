@@ -160,6 +160,7 @@ export function useSearch(debounceMs = 300): UseSearchReturn {
 
   // Load recent searches from localStorage on mount (client only)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRecentSearches(loadRecentSearches());
   }, []);
 

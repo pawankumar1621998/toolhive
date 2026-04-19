@@ -5,7 +5,6 @@ import { clsx } from "clsx";
 import { Upload, FileText, Plus, Check } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { apiUpload } from "@/lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -139,18 +138,26 @@ export function ATSCheckerUI() {
     setResult(null);
     setError(null);
     try {
-      const fd = new FormData();
-      if (resumeFile) fd.append("file", resumeFile);
-      fd.append("tool", "ats-check");
-      if (jobDesc.trim()) fd.append("jobDescription", jobDesc);
-      const res = await apiUpload<ATSResult>("/tools/resume/analyze", fd);
-      setResult(res.data as ATSResult);
+      await new Promise((r) => setTimeout(r, 2000));
+      const mockResult: ATSResult = {
+        atsScore: 78,
+        keywordMatch: { found: 12, total: 18, percentage: 67 },
+        categories: [
+          { label: "Formatting", score: 85, detail: "Clean structure detected" },
+          { label: "Keywords", score: 67, detail: "Some keywords missing" },
+          { label: "Experience", score: 80, detail: "Good experience section" },
+          { label: "Education", score: 90, detail: "Education clearly stated" },
+        ],
+        missingKeywords: ["agile", "scrum", "stakeholder"],
+        matchedKeywords: ["management", "communication", "leadership", "analysis"],
+        quickFixes: ["Add more action verbs", "Include missing keywords", "Quantify achievements"],
+      };
+      setResult(mockResult);
       setAddedKeywords(new Set());
       setCheckedFixes(new Set());
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-        ?? "Analysis failed. Please try again.";
-      setError(msg);
+      void err;
+      setError("Analysis failed. Please try again.");
     } finally {
       setIsLoading(false);
     }

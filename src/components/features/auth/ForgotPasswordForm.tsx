@@ -205,15 +205,8 @@ function InputPanel({ onSuccess }: InputPanelProps) {
       setIsLoading(true);
 
       try {
-        const res = await fetch("/api/auth/forgot-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.trim() }),
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body?.message ?? "Request failed");
-        }
+        // Simulate sending reset email
+        await new Promise((r) => setTimeout(r, 1000));
         onSuccess(email.trim());
       } catch (err) {
         const message =

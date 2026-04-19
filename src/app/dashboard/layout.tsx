@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import React from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 
 export const metadata: Metadata = {
@@ -24,5 +25,9 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardShell>{children}</DashboardShell>;
+  return (
+    <React.Suspense>
+      <DashboardShell>{children}</DashboardShell>
+    </React.Suspense>
+  );
 }

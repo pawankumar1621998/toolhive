@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { apiGet } from "@/lib/api";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+/**
+ * useDashboard — returns local mock data.
+ * No auth / API required — all tools are free.
+ */
 
 export interface DashboardStats {
-  totalFiles: number;
+  totalFiles:     number;
   processedFiles: number;
-  pendingFiles: number;
+  pendingFiles:   number;
 }
 
 export interface UsageSummary {
@@ -18,14 +18,14 @@ export interface UsageSummary {
 }
 
 export interface ActivityJob {
-  _id: string;
-  tool: string;
-  category: string;
-  status: "pending" | "processing" | "completed" | "failed";
-  createdAt: string;
-  completedAt?: string;
+  _id:             string;
+  tool:            string;
+  category:        string;
+  status:          "pending" | "processing" | "completed" | "failed";
+  createdAt:       string;
+  completedAt?:    string;
   processingTime?: number;
-  error?: string;
+  error?:          string;
 }
 
 export interface DashboardData {
@@ -35,27 +35,24 @@ export interface DashboardData {
   plan:           string;
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
+const MONTH = new Date().toLocaleString("default", { month: "long" });
+
+const DEFAULT_DATA: DashboardData = {
+  stats: { totalFiles: 0, processedFiles: 0, pendingFiles: 0 },
+  recentActivity: [],
+  usage: {
+    daily:   { used: 0, limit: 999, remaining: null },
+    monthly: { used: 0, limit: 999, remaining: null, month: MONTH },
+    isUnlimited: true,
+  },
+  plan: "free",
+};
 
 export function useDashboard() {
-  const [data,    setData]    = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState<string | null>(null);
-
-  const fetch = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await apiGet<DashboardData>("/dashboard/overview");
-      setData(res.data);
-    } catch {
-      setError("Failed to load dashboard data");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetch(); }, [fetch]);
-
-  return { data, loading, error, refresh: fetch };
+  return {
+    data:    DEFAULT_DATA,
+    loading: false,
+    error:   null,
+    refresh: () => {},
+  };
 }

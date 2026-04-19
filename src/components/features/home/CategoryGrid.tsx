@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { clsx } from "clsx";
 import * as LucideIcons from "lucide-react";
@@ -68,7 +68,7 @@ function CategoryCard({
   href,
   shouldReduce,
 }: CategoryCardProps) {
-  const Icon = resolveLucideIcon(iconName);
+  const Icon = useMemo(() => resolveLucideIcon(iconName), [iconName]);
 
   return (
     <motion.div variants={shouldReduce ? undefined : cardVariants}>
@@ -108,6 +108,7 @@ function CategoryCard({
             )}
             aria-hidden="true"
           >
+            {/* eslint-disable-next-line react-hooks/static-components */}
             <Icon className="h-6 w-6 text-white" />
           </div>
 
@@ -158,7 +159,7 @@ function MobileCategoryCard({
   toolCount,
   href,
 }: Omit<CategoryCardProps, "description" | "shouldReduce">) {
-  const Icon = resolveLucideIcon(iconName);
+  const Icon = useMemo(() => resolveLucideIcon(iconName), [iconName]);
 
   return (
     <Link
@@ -183,6 +184,7 @@ function MobileCategoryCard({
         )}
         aria-hidden="true"
       >
+        {/* eslint-disable-next-line react-hooks/static-components */}
         <Icon className="h-6 w-6 text-white" />
       </div>
 

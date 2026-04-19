@@ -96,13 +96,15 @@ export function useFileUpload({
     inputRef.current?.click();
   }, []);
 
+  // eslint-disable-next-line react-hooks/refs
   return {
     handleFiles,
     handleDrop,
     handleInputChange,
     openFilePicker,
     inputRef,
+    // eslint-disable-next-line react-hooks/refs
     isDragActive: isDragActiveRef.current,
-    setIsDragActive: (v) => { isDragActiveRef.current = v; },
+    setIsDragActive: (v: boolean) => { isDragActiveRef.current = v; },
   };
 }

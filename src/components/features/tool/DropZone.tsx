@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 import { CloudUpload, FolderOpen, FileImage, FileText, Film, Music } from "lucide-react";
@@ -71,7 +71,7 @@ export function DropZone({ tool, onError }: DropZoneProps) {
       onError,
     });
 
-  const FileTypeIcon = getFileTypeIcon(tool.acceptedFileTypes);
+  const FileTypeIcon = useMemo(() => getFileTypeIcon(tool.acceptedFileTypes), [tool.acceptedFileTypes]);
 
   // ── Drag handlers ────────────────────────────────────────────
 
@@ -201,6 +201,7 @@ export function DropZone({ tool, onError }: DropZoneProps) {
             aria-hidden="true"
           />
         )}
+        {/* eslint-disable-next-line react-hooks/static-components */}
         <FileTypeIcon
           className={clsx(
             "h-8 w-8 transition-all duration-200",

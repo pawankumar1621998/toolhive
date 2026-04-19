@@ -26,6 +26,7 @@ const SUB_CATEGORIES: Record<ToolCategory, string[]> = {
   audio: ["Convert", "Trim", "Enhance", "Transcribe"],
   converter: ["Document", "Image", "Video", "Audio", "Archive"],
   resume: ["Builder", "Templates", "Analyzer", "Skills", "Cover Letter", "ATS"],
+  calculator: ["Finance", "Health", "Math", "Date", "Shopping"],
 };
 
 // ─────────────────────────────────────────────────────────────────

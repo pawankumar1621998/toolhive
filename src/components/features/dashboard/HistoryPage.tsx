@@ -19,6 +19,7 @@ import {
   ChevronDown,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { clsx } from "clsx";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -210,7 +211,7 @@ function EmptyState({ isFiltered }: { isFiltered: boolean }) {
           className="mt-5"
           asChild
         >
-          <a href="/tools">Browse tools</a>
+          <Link href="/tools">Browse tools</Link>
         </Button>
       )}
     </motion.div>

@@ -10,6 +10,7 @@ import { QRCodeGenerator } from "@/components/features/image/QRCodeGenerator";
 import { MemeGeneratorUI } from "@/components/features/image/MemeGeneratorUI";
 import { VideoDownloader } from "@/components/features/video/VideoDownloader";
 import { ConverterTextWorkspace } from "@/components/features/converter/ConverterTextWorkspace";
+import { CalcWorkspace } from "@/components/features/calculator/CalcWorkspace";
 import { CanvasImageEditor } from "@/components/features/image/CanvasImageEditor";
 import { RelatedTools } from "@/components/features/tool/RelatedTools";
 import { ToolInfoPanel } from "@/components/features/tool/ToolInfoPanel";
@@ -185,9 +186,17 @@ export default async function ToolPage({
                 <RelatedTools category={tool.category} currentToolId={tool.id} />
               </Suspense>
             </div>
-          ) : (tool.slug === "json-formatter" || tool.slug === "base64") ? (
+          ) : tool.category === "converter" ? (
             <div className="py-8 sm:py-10 max-w-5xl">
               <ConverterTextWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+          ) : tool.category === "calculator" ? (
+            <div className="py-8 sm:py-10 max-w-4xl">
+              <CalcWorkspace tool={tool} />
               <ToolInfoPanel tool={tool} />
               <Suspense fallback={<SectionSkeleton rows={1} />}>
                 <RelatedTools category={tool.category} currentToolId={tool.id} />

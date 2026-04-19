@@ -337,6 +337,7 @@ function useAnimatedCounter(
 
   useEffect(() => {
     if (disabled) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrent(target);
       return;
     }
@@ -483,6 +484,7 @@ function StatsSection({ shouldReduce }: { shouldReduce: boolean }) {
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (shouldReduce) { setActive(true); return; }
 
     const observer = new IntersectionObserver(

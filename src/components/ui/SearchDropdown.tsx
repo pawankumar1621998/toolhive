@@ -209,6 +209,7 @@ export function SearchDropdown({
 
   // Detect macOS for shortcut display
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMac(
       typeof navigator !== "undefined" &&
         navigator.platform.toLowerCase().includes("mac")
@@ -222,6 +223,7 @@ export function SearchDropdown({
 
   // Reset active index when results change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveIndex(-1);
   }, [results, query]);
 

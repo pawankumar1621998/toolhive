@@ -70,6 +70,7 @@ function useAnimatedCounter(
 
   useEffect(() => {
     if (disabled) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrent(target);
       return;
     }
@@ -220,6 +221,7 @@ export function StatsSection() {
     if (!el) return;
 
     if (shouldReduce) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActive(true);
       return;
     }

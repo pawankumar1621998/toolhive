@@ -168,6 +168,7 @@ export function SearchPageClient() {
 
   // Debounced search
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsSearching(true);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {

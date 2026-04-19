@@ -21,6 +21,8 @@ const CATEGORY_GRADIENT: Record<string, string> = {
   "ai-writing": "from-emerald-500 to-teal-400",
   audio: "from-amber-500 to-yellow-400",
   converter: "from-sky-500 to-indigo-400",
+  resume: "from-indigo-500 to-purple-600",
+  calculator: "from-orange-500 to-amber-400",
 };
 
 // ─────────────────────────────────────────────────────────────────

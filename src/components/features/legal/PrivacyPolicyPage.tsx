@@ -236,7 +236,7 @@ const SECTIONS: PolicySection[] = [
         <P>
           We do not embed third-party advertising networks, social tracking pixels,
           or any technology that shares your behaviour with companies outside
-          ToolHive's data-processing chain.
+          ToolHive&apos;s data-processing chain.
         </P>
       </Prose>
     ),

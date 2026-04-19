@@ -63,6 +63,8 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
   "ai-writing": "from-emerald-500 to-teal-400",
   audio: "from-amber-500 to-yellow-400",
   converter: "from-sky-500 to-indigo-400",
+  resume: "from-indigo-500 to-purple-600",
+  calculator: "from-orange-500 to-amber-400",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -72,6 +74,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   "ai-writing": "AI Writing",
   audio: "Audio",
   converter: "Converter",
+  resume: "Resume",
+  calculator: "Calculator",
 };
 
 // ─────────────────────────────────────────────
@@ -84,7 +88,7 @@ interface ToolCardProps {
 }
 
 const ToolCard = React.memo(function ToolCard({ tool, shouldReduce }: ToolCardProps) {
-  const Icon = resolveLucideIcon(tool.icon);
+  const Icon = useMemo(() => resolveLucideIcon(tool.icon), [tool.icon]);
   const href = `/tools/${tool.category}/${tool.slug}`;
   const gradient = CATEGORY_GRADIENTS[tool.category] ?? "from-violet-500 to-blue-400";
 
@@ -129,6 +133,7 @@ const ToolCard = React.memo(function ToolCard({ tool, shouldReduce }: ToolCardPr
               )}
               aria-hidden="true"
             >
+              {/* eslint-disable-next-line react-hooks/static-components */}
               <Icon className="h-5 w-5 text-white" />
             </div>
 
@@ -208,7 +213,7 @@ const ToolCard = React.memo(function ToolCard({ tool, shouldReduce }: ToolCardPr
 // ─────────────────────────────────────────────
 
 const MobileToolCard = React.memo(function MobileToolCard({ tool }: { tool: Tool }) {
-  const Icon = resolveLucideIcon(tool.icon);
+  const Icon = useMemo(() => resolveLucideIcon(tool.icon), [tool.icon]);
   const href = `/tools/${tool.category}/${tool.slug}`;
   const gradient = CATEGORY_GRADIENTS[tool.category] ?? "from-violet-500 to-blue-400";
 
@@ -234,6 +239,7 @@ const MobileToolCard = React.memo(function MobileToolCard({ tool }: { tool: Tool
         )}
         aria-hidden="true"
       >
+        {/* eslint-disable-next-line react-hooks/static-components */}
         <Icon className="h-5 w-5 text-white" />
       </div>
 
@@ -279,7 +285,7 @@ const MobileToolCard = React.memo(function MobileToolCard({ tool }: { tool: Tool
  */
 export function FeaturedTools() {
   const shouldReduce = useReducedMotion() ?? false;
-  const tools = useMemo(() => getFeaturedTools(8), []);
+  const tools = useMemo(() => getFeaturedTools(12), []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollHint, setShowScrollHint] = useState(true);
 
