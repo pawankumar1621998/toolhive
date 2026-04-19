@@ -10,11 +10,12 @@ import { useAIGenerate } from "@/hooks/useAIGenerate";
 
 // Provider color mapping
 const PROVIDER_STYLES: Record<string, { label: string; color: string }> = {
-  "Gemini":           { label: "Gemini AI",    color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
-  "Groq":             { label: "Groq",          color: "bg-orange-500/10 text-orange-600 border-orange-500/20" },
-  "DeepSeek":         { label: "DeepSeek",      color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
-  "Claude (Anthropic)":{ label: "Claude AI",   color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
-  "demo":             { label: "Demo mode",     color: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" },
+  "ToolHive AI":      { label: "ToolHive AI",   color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
+  "Gemini":           { label: "Gemini AI",     color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+  "Groq":             { label: "Groq",           color: "bg-orange-500/10 text-orange-600 border-orange-500/20" },
+  "DeepSeek":         { label: "DeepSeek",       color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
+  "Claude (Anthropic)":{ label: "Claude AI",    color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
+  "demo":             { label: "Demo mode",      color: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
