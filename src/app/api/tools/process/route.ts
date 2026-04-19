@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import sharp from "sharp";
-import {
-  PDFDocument,
-  rgb,
-  degrees,
-  StandardFonts,
-} from "pdf-lib";
+import { PDFDocument, rgb, degrees, StandardFonts } from "pdf-lib";
+
+// Lazy-load sharp so PDF tools still work even if sharp binary is unavailable
+async function getSharp() {
+  const s = await import("sharp");
+  return s.default;
+}
 
 // ─────────────────────────────────────────────
 // Helpers
@@ -39,6 +39,7 @@ async function processImage(
   opts: Record<string, string>,
   filename: string
 ): Promise<{ name: string; data: string; type: string }> {
+  const sharp = await getSharp();
   let pipeline = sharp(buf);
   let outExt = ext(filename);
   let outMime = `image/${outExt === "jpg" ? "jpeg" : outExt}`;
@@ -197,6 +198,25 @@ async function processImage(
       }
       return outputs[0]; // caller must handle multi-file case; handled below
     }
+    case "remove-background":
+    case "bg-remove": {
+      const apiKey = process.env.REMOVE_BG_API_KEY;
+      if (!apiKey?.trim()) throw new Error("Background removal API key not configured. Add REMOVE_BG_API_KEY to environment variables.");
+      const fd = new FormData();
+      fd.append("image_file", new Blob([buf], { type: outMime }), filename);
+      fd.append("size", "auto");
+      const bgRes = await fetch("https://api.remove.bg/v1.0/removebg", {
+        method: "POST",
+        headers: { "X-Api-Key": apiKey },
+        body: fd,
+      });
+      if (!bgRes.ok) {
+        const errText = await bgRes.text();
+        throw new Error(`remove.bg error ${bgRes.status}: ${errText}`);
+      }
+      const resultBuf = Buffer.from(await bgRes.arrayBuffer());
+      return { name: `${baseName(filename)}_nobg.png`, data: resultBuf.toString("base64"), type: "image/png" };
+    }
     case "image-to-pdf":
     case "image-to-pdf-conv": {
       // Convert image to PDF using pdf-lib
@@ -240,6 +260,7 @@ async function processPDF(
   slug: string,
   opts: Record<string, string>
 ): Promise<{ name: string; data: string; type: string }[]> {
+  const sharp = await getSharp();
   const mime = "application/pdf";
 
   switch (slug) {
@@ -493,6 +514,7 @@ export async function POST(request: NextRequest) {
     if (isImageInput) {
       // Handle split-image specially (multi-output)
       if (toolSlug === "split-image") {
+        const sharp = await getSharp();
         const cols = parseInt(opts.cols ?? "3", 10);
         const meta = await sharp(bufs[0]).metadata();
         const w = meta.width ?? 900;
