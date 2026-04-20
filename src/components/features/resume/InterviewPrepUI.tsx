@@ -146,39 +146,21 @@ export function InterviewPrepUI() {
     setQuestions(null);
     setError(null);
     try {
-      await new Promise((r) => setTimeout(r, 1500));
-      const mockQuestions: QuestionSet = {
-        behavioral: [
-          { id: 1, text: "Tell me about a time you demonstrated leadership.", modelAnswer: "Use the STAR method: describe a Situation, the Task you faced, the Action you took, and the Result you achieved.", practiced: false },
-          { id: 2, text: "Describe a challenging situation and how you handled it.", modelAnswer: "Focus on your problem-solving process and what you learned from the experience.", practiced: false },
-          { id: 3, text: "Give an example of when you worked effectively in a team.", modelAnswer: "Highlight your collaboration skills and how you contributed to the team's success.", practiced: false },
-          { id: 4, text: "Tell me about a time you failed and what you learned.", modelAnswer: "Be honest about the failure, focus on the lessons learned and how you improved.", practiced: false },
-          { id: 5, text: "Describe a situation where you had to meet a tight deadline.", modelAnswer: "Explain your prioritization strategy and how you managed your time effectively.", practiced: false },
-        ],
-        technical: [
-          { id: 6, text: `What key technical skills do you bring to the ${jobTitle || "role"}?`, modelAnswer: "Highlight your most relevant technical skills and provide concrete examples of how you've used them.", practiced: false },
-          { id: 7, text: "How do you stay up to date with industry trends and technologies?", modelAnswer: "Mention specific resources like blogs, courses, conferences, and communities you engage with.", practiced: false },
-          { id: 8, text: "Walk me through how you approach solving a complex technical problem.", modelAnswer: "Describe your systematic approach: gather requirements, research, prototype, iterate, and validate.", practiced: false },
-          { id: 9, text: "How do you ensure quality in your work?", modelAnswer: "Discuss testing strategies, code reviews, documentation, and continuous improvement practices.", practiced: false },
-          { id: 10, text: "Describe your experience with relevant tools and technologies.", modelAnswer: "Be specific about tools you've used and the impact they had on your projects.", practiced: false },
-        ],
-        situational: [
-          { id: 11, text: "What would you do if you disagreed with your manager's decision?", modelAnswer: "Explain how you would respectfully voice your concerns, listen to their perspective, and ultimately support the team decision.", practiced: false },
-          { id: 12, text: "How would you handle a situation where you had multiple urgent priorities?", modelAnswer: "Describe how you would assess urgency and importance, communicate with stakeholders, and delegate if possible.", practiced: false },
-          { id: 13, text: "What would you do if a project you were leading was falling behind schedule?", modelAnswer: "Talk about early escalation, root cause analysis, replanning, and transparent communication.", practiced: false },
-          { id: 14, text: "How would you onboard yourself in the first 30 days in this role?", modelAnswer: "Outline a structured approach: learn the team, understand goals, identify quick wins, build relationships.", practiced: false },
-          { id: 15, text: "How would you handle a difficult stakeholder or client?", modelAnswer: "Emphasize active listening, empathy, clear communication, and finding common ground.", practiced: false },
-        ],
-        about: [
-          { id: 16, text: "Tell me about yourself.", modelAnswer: "Craft a 2-minute narrative covering your background, key achievements, and why you're excited about this opportunity.", practiced: false },
-          { id: 17, text: "Why do you want to work here?", modelAnswer: "Research the company's mission, products, and culture. Connect their goals to your own career aspirations.", practiced: false },
-          { id: 18, text: "Where do you see yourself in 5 years?", modelAnswer: "Show ambition while aligning your goals with the company's growth. Focus on skills you want to develop.", practiced: false },
-        ],
-      };
-      setQuestions(mockQuestions);
+      const res = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ toolSlug: "interview-prep", jobTitle, experienceLevel }),
+      });
+      const data = await res.json() as { output?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Generation failed");
+      const raw = (data.output ?? "").trim();
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Invalid response format. Please try again.");
+      const parsed = JSON.parse(jsonMatch[0]) as QuestionSet;
+      setQuestions(parsed);
       setActiveTab("behavioral");
-    } catch {
-      setError("Failed to generate questions. Please try again.");
+    } catch (err) {
+      setError((err as Error).message ?? "Failed to generate questions. Please try again.");
     } finally {
       setIsLoading(false);
     }

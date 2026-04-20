@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { clsx } from "clsx";
-import { Upload, FileText, Plus, Check } from "lucide-react";
+import { Upload, FileText, Plus, Check, AlertCircle, AlertTriangle, Info, Copy } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 
@@ -14,6 +14,13 @@ interface CategoryScore {
   detail?: string;
 }
 
+interface ImprovementItem {
+  section: string;
+  issue: string;
+  fix: string;
+  priority: "Critical" | "High" | "Medium" | "Low";
+}
+
 interface ATSResult {
   atsScore: number;
   keywordMatch: { found: number; total: number; percentage: number };
@@ -21,6 +28,7 @@ interface ATSResult {
   missingKeywords: string[];
   matchedKeywords: string[];
   quickFixes: string[];
+  improvements?: ImprovementItem[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -125,6 +133,7 @@ function FileUploadZone({
 
 export function ATSCheckerUI() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeText, setResumeText] = useState("");
   const [jobDesc, setJobDesc] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ATSResult | null>(null);
@@ -133,31 +142,27 @@ export function ATSCheckerUI() {
   const [checkedFixes, setCheckedFixes] = useState<Set<number>>(new Set());
 
   async function handleCheck() {
-    if (!resumeFile && !jobDesc.trim()) return;
+    if (!resumeFile && !resumeText.trim() && !jobDesc.trim()) return;
     setIsLoading(true);
     setResult(null);
     setError(null);
     try {
-      await new Promise((r) => setTimeout(r, 2000));
-      const mockResult: ATSResult = {
-        atsScore: 78,
-        keywordMatch: { found: 12, total: 18, percentage: 67 },
-        categories: [
-          { label: "Formatting", score: 85, detail: "Clean structure detected" },
-          { label: "Keywords", score: 67, detail: "Some keywords missing" },
-          { label: "Experience", score: 80, detail: "Good experience section" },
-          { label: "Education", score: 90, detail: "Education clearly stated" },
-        ],
-        missingKeywords: ["agile", "scrum", "stakeholder"],
-        matchedKeywords: ["management", "communication", "leadership", "analysis"],
-        quickFixes: ["Add more action verbs", "Include missing keywords", "Quantify achievements"],
-      };
-      setResult(mockResult);
+      const res = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ toolSlug: "ats-checker", resumeText, jobDesc }),
+      });
+      const data = await res.json() as { output?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Analysis failed");
+      const raw = (data.output ?? "").trim();
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Invalid response. Please try again.");
+      const parsed = JSON.parse(jsonMatch[0]) as ATSResult;
+      setResult(parsed);
       setAddedKeywords(new Set());
       setCheckedFixes(new Set());
     } catch (err: unknown) {
-      void err;
-      setError("Analysis failed. Please try again.");
+      setError((err as Error).message ?? "Analysis failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -186,6 +191,19 @@ export function ATSCheckerUI() {
         <FileUploadZone label="Upload Your Resume" file={resumeFile} onFile={setResumeFile} />
 
         <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-foreground-muted">
+            Paste Resume Text <span className="text-foreground-muted font-normal">(for AI analysis)</span>
+          </label>
+          <textarea
+            rows={5}
+            value={resumeText}
+            onChange={(e) => setResumeText(e.target.value)}
+            placeholder="Paste your resume text here…"
+            className="border border-border rounded-lg px-3 py-2 text-sm bg-background w-full focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground resize-none"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-foreground-muted">Paste Job Description</label>
           <textarea
             rows={8}
@@ -201,7 +219,7 @@ export function ATSCheckerUI() {
           fullWidth
           isLoading={isLoading}
           loadingText="Checking…"
-          disabled={!resumeFile && !jobDesc.trim()}
+          disabled={!resumeFile && !resumeText.trim() && !jobDesc.trim()}
           onClick={handleCheck}
           className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 hover:opacity-90"
         >
@@ -299,26 +317,67 @@ export function ATSCheckerUI() {
               <h3 className="text-sm font-semibold text-foreground">Quick Fixes</h3>
               <div className="flex flex-col gap-2">
                 {result.quickFixes.map((fix, idx) => (
-                  <label
-                    key={idx}
-                    className="flex items-start gap-3 cursor-pointer group"
-                  >
+                  <label key={idx} className="flex items-start gap-3 cursor-pointer group">
                     <input
                       type="checkbox"
                       checked={checkedFixes.has(idx)}
                       onChange={() => toggleFix(idx)}
                       className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary cursor-pointer"
                     />
-                    <span className={clsx(
-                      "text-sm text-foreground transition-colors",
-                      checkedFixes.has(idx) && "line-through text-foreground-muted"
-                    )}>
+                    <span className={clsx("text-sm text-foreground transition-colors", checkedFixes.has(idx) && "line-through text-foreground-muted")}>
                       {fix}
                     </span>
                   </label>
                 ))}
               </div>
             </div>
+
+            {/* Improvement Guide */}
+            {result.improvements && result.improvements.length > 0 && (
+              <div className="border border-card-border bg-card rounded-2xl p-6 flex flex-col gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Improvement Guide</h3>
+                  <p className="text-xs text-foreground-muted mt-1">Specific changes to make your resume ATS-ready. Click the copy icon to copy the suggested text.</p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {result.improvements.map((item, idx) => {
+                    const priorityStyle = item.priority === "Critical"
+                      ? { border: "border-red-500/30", bg: "bg-red-500/5", icon: <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />, badge: "bg-red-500/10 text-red-600" }
+                      : item.priority === "High"
+                      ? { border: "border-amber-500/30", bg: "bg-amber-500/5", icon: <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />, badge: "bg-amber-500/10 text-amber-600" }
+                      : { border: "border-blue-500/30", bg: "bg-blue-500/5", icon: <Info className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />, badge: "bg-blue-500/10 text-blue-600" };
+                    return (
+                      <div key={idx} className={clsx("rounded-xl border p-4 flex flex-col gap-2", priorityStyle.border, priorityStyle.bg)}>
+                        <div className="flex items-start gap-2">
+                          {priorityStyle.icon}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs font-bold text-foreground uppercase tracking-wide">{item.section}</span>
+                              <span className={clsx("text-xs font-medium px-2 py-0.5 rounded-full", priorityStyle.badge)}>{item.priority}</span>
+                            </div>
+                            <p className="text-sm text-foreground-muted mt-1">{item.issue}</p>
+                          </div>
+                        </div>
+                        <div className="ml-6 rounded-lg bg-background border border-border p-3 flex items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-primary mb-1">What to add / change:</p>
+                            <p className="text-sm text-foreground">{item.fix}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => navigator.clipboard.writeText(item.fix)}
+                            className="shrink-0 p-1.5 rounded-md hover:bg-background-subtle transition-colors text-foreground-muted hover:text-foreground"
+                            title="Copy suggestion"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

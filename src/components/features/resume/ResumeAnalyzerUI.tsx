@@ -108,6 +108,7 @@ export function ResumeAnalyzerUI() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [resumeText, setResumeText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +117,11 @@ export function ResumeAnalyzerUI() {
     setSelectedFile(file);
     setResult(null);
     setError(null);
+    if (file.type === "text/plain") {
+      const reader = new FileReader();
+      reader.onload = (e) => setResumeText((e.target?.result as string) ?? "");
+      reader.readAsText(file);
+    }
   }
 
   function handleDragOver(e: React.DragEvent) {
@@ -140,34 +146,25 @@ export function ResumeAnalyzerUI() {
   }
 
   async function handleAnalyze() {
-    if (!selectedFile) return;
+    if (!selectedFile && !resumeText.trim()) return;
     setIsLoading(true);
     setResult(null);
     setError(null);
     try {
-      await new Promise((r) => setTimeout(r, 2000));
-      const mockResult: AnalysisResult = {
-        overallScore: 76,
-        sections: [
-          { label: "Contact Information", score: 95 },
-          { label: "Professional Summary", score: 70 },
-          { label: "Work Experience", score: 80 },
-          { label: "Education", score: 90 },
-          { label: "Skills", score: 65 },
-          { label: "Formatting & Layout", score: 85 },
-        ],
-        issues: [
-          { message: "Add a stronger professional summary that highlights your unique value proposition.", severity: "High" },
-          { message: "Quantify achievements in your work experience with specific numbers and metrics.", severity: "High" },
-          { message: "Expand your Skills section with more relevant technical and soft skills.", severity: "Medium" },
-          { message: "Consider adding relevant certifications or professional development courses.", severity: "Medium" },
-          { message: "Ensure consistent date formatting throughout the resume.", severity: "Low" },
-        ],
-      };
-      setResult(mockResult);
+      const res = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ toolSlug: "resume-analyzer", resumeText }),
+      });
+      const data = await res.json() as { output?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Analysis failed");
+      const raw = (data.output ?? "").trim();
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Invalid response. Please try again.");
+      const parsed = JSON.parse(jsonMatch[0]) as AnalysisResult;
+      setResult(parsed);
     } catch (err: unknown) {
-      void err;
-      setError("Analysis failed. Please try again.");
+      setError((err as Error).message ?? "Analysis failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -220,12 +217,25 @@ export function ResumeAnalyzerUI() {
           )}
         </div>
 
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-foreground-muted">
+            Paste Resume Text <span className="text-foreground-muted font-normal">(required for AI analysis)</span>
+          </label>
+          <textarea
+            rows={6}
+            value={resumeText}
+            onChange={(e) => setResumeText(e.target.value)}
+            placeholder="Paste your resume text here for accurate AI analysis…"
+            className="border border-border rounded-lg px-3 py-2 text-sm bg-background w-full focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground resize-none"
+          />
+        </div>
+
         <Button
           variant="primary"
           fullWidth
           isLoading={isLoading}
           loadingText="Analyzing…"
-          disabled={!selectedFile}
+          disabled={!selectedFile && !resumeText.trim()}
           onClick={handleAnalyze}
           className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 hover:opacity-90"
         >

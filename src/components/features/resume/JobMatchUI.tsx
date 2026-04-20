@@ -136,6 +136,7 @@ const TABS: { id: TabId; label: string }[] = [
 
 export function JobMatchUI() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeText, setResumeText] = useState("");
   const [jobDesc, setJobDesc] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<JobMatchResult | null>(null);
@@ -144,44 +145,27 @@ export function JobMatchUI() {
   const [addedSkills, setAddedSkills] = useState<Set<string>>(new Set());
 
   async function handleAnalyze() {
-    if (!resumeFile && !jobDesc.trim()) return;
+    if (!resumeFile && !resumeText.trim() && !jobDesc.trim()) return;
     setIsLoading(true);
     setResult(null);
     setError(null);
     try {
-      await new Promise((r) => setTimeout(r, 1800));
-      const mockResult: JobMatchResult = {
-        matchPercentage: 74,
-        skillsGap: {
-          have: ["Communication", "Leadership", "Project Management", "Problem Solving", "Teamwork"],
-          missing: ["Agile Methodologies", "Scrum Framework", "Stakeholder Management", "Data-driven Decision Making"],
-        },
-        experience: [
-          { requirement: "Years of Experience", required: "5+ years", yours: "4 years", match: "partial" },
-          { requirement: "Team Leadership", required: "Required", yours: "2 years", match: "strong" },
-          { requirement: "Budget Management", required: "Preferred", yours: "Not listed", match: "missing" },
-          { requirement: "Cross-functional Collaboration", required: "Required", yours: "Demonstrated", match: "strong" },
-        ],
-        keywords: [
-          { keyword: "communication", inJD: 4, inResume: 3 },
-          { keyword: "leadership", inJD: 3, inResume: 2 },
-          { keyword: "agile", inJD: 2, inResume: 0 },
-          { keyword: "project management", inJD: 3, inResume: 1 },
-          { keyword: "scrum", inJD: 2, inResume: 0 },
-        ],
-        recommendations: [
-          "Add Agile and Scrum experience to your resume — these appear frequently in the job description.",
-          "Quantify your project management achievements with specific metrics and outcomes.",
-          "Highlight any experience with stakeholder management or executive communication.",
-          "Consider adding a brief skills summary at the top of your resume to improve ATS matching.",
-        ],
-      };
-      setResult(mockResult);
+      const res = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ toolSlug: "job-match", resumeText, jobDesc }),
+      });
+      const data = await res.json() as { output?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Analysis failed");
+      const raw = (data.output ?? "").trim();
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Invalid response. Please try again.");
+      const parsed = JSON.parse(jsonMatch[0]) as JobMatchResult;
+      setResult(parsed);
       setActiveTab("skills");
       setAddedSkills(new Set());
     } catch (err: unknown) {
-      void err;
-      setError("Analysis failed. Please try again.");
+      setError((err as Error).message ?? "Analysis failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -191,7 +175,21 @@ export function JobMatchUI() {
     <div className="flex flex-col gap-6">
       {/* ── Inputs ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <FileUploadZone file={resumeFile} onFile={setResumeFile} />
+        <div className="flex flex-col gap-3">
+          <FileUploadZone file={resumeFile} onFile={setResumeFile} />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-foreground-muted">
+              Paste Resume Text <span className="text-foreground-muted font-normal">(for AI analysis)</span>
+            </label>
+            <textarea
+              rows={5}
+              value={resumeText}
+              onChange={(e) => setResumeText(e.target.value)}
+              placeholder="Paste your resume text here…"
+              className="border border-border rounded-lg px-3 py-2 text-sm bg-background w-full focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground resize-none"
+            />
+          </div>
+        </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-foreground-muted">Paste Job Description</label>
           <textarea
@@ -209,7 +207,7 @@ export function JobMatchUI() {
         fullWidth
         isLoading={isLoading}
         loadingText="Analyzing match…"
-        disabled={!resumeFile && !jobDesc.trim()}
+        disabled={!resumeFile && !resumeText.trim() && !jobDesc.trim()}
         onClick={handleAnalyze}
         className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 hover:opacity-90"
       >

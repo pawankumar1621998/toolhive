@@ -85,25 +85,28 @@ export function ResumeSummaryGen() {
     setSummaries(null);
     setError(null);
     try {
-      await new Promise((r) => setTimeout(r, 1300));
-      const topSkills = skills.filter(Boolean).join(", ");
-      const mockSummaries: Array<{ label: string; summary: string }> = [
-        {
-          label: tone,
-          summary: `Results-driven ${jobTitle || "professional"} with ${experience} years of experience and proven expertise in ${topSkills || "delivering high-quality outcomes"}. Demonstrates strong analytical skills and a track record of successfully managing complex projects. Committed to continuous improvement and contributing to organizational success through collaborative teamwork and innovative problem-solving.`,
-        },
-        {
-          label: "Concise",
-          summary: `${jobTitle || "Professional"} with ${experience} years of experience specializing in ${topSkills || "key areas"}. Known for delivering measurable results and building strong cross-functional relationships.${achievement ? ` Notably: ${achievement}.` : ""}`,
-        },
-        {
-          label: "Achievement-focused",
-          summary: `Dynamic ${jobTitle || "professional"} bringing ${experience} years of hands-on experience in ${topSkills || "multiple disciplines"}. ${achievement ? `Key achievement: ${achievement}. ` : ""}Passionate about leveraging skills to drive impact and advance organizational goals.`,
-        },
-      ];
-      setSummaries(mockSummaries.map((item) => ({ label: item.label, text: item.summary })));
-    } catch {
-      setError("Something went wrong. Please try again.");
+      const res = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          toolSlug: "resume-summary",
+          name, jobTitle, experience,
+          skills: skills.filter(Boolean).join(", "),
+          achievement, tone,
+        }),
+      });
+      const data = await res.json() as { output?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Generation failed");
+      const raw = (data.output ?? "").trim();
+      const jsonMatch = raw.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]) as Array<{ label: string; text: string }>;
+        setSummaries(parsed);
+      } else {
+        setSummaries([{ label: tone, text: raw }]);
+      }
+    } catch (err) {
+      setError((err as Error).message ?? "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }

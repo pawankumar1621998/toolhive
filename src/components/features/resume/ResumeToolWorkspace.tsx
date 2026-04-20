@@ -179,10 +179,13 @@ function ResumeFormatter() {
             className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 hover:opacity-90"
             leftIcon={<Download className="h-4 w-4" />}
             onClick={() => {
+              if (!selectedFile) return;
+              const url = URL.createObjectURL(selectedFile);
               const link = document.createElement("a");
-              link.href = "#";
-              link.download = selectedFile?.name.replace(/\.[^.]+$/, "_formatted.pdf") ?? "resume_formatted.pdf";
+              link.href = url;
+              link.download = selectedFile.name.replace(/\.[^.]+$/, "_formatted.pdf");
               link.click();
+              URL.revokeObjectURL(url);
             }}
           >
             Download Formatted Resume

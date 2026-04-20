@@ -75,7 +75,7 @@ const FILTER_CATEGORIES: { label: string; value: "all" | ToolCategory }[] = [
   { label: "Image", value: "image" },
   { label: "Video", value: "video" },
   { label: "AI Writing", value: "ai-writing" },
-  { label: "Audio", value: "audio" },
+  { label: "Calculator", value: "calculator" },
 ];
 
 // ─────────────────────────────────────────────

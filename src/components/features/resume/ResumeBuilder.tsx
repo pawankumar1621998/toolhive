@@ -540,12 +540,14 @@ function StepSummary({
   onSummaryChange,
   onDownload,
   downloaded,
+  isGenerating = false,
 }: {
   data: ResumeData;
   summary: string;
   onSummaryChange: (val: string) => void;
   onDownload: () => void;
   downloaded: boolean;
+  isGenerating?: boolean;
 }) {
   const { personalInfo: p, workExperience, education, skills } = data;
 
@@ -694,6 +696,8 @@ function StepSummary({
               variant="outline"
               size="sm"
               onClick={onDownload}
+              isLoading={isGenerating}
+              loadingText="Generating…"
               leftIcon={<Download className="h-4 w-4" />}
             >
               Download Again
@@ -712,6 +716,8 @@ function StepSummary({
               size="lg"
               leftIcon={<Download className="h-5 w-5" />}
               onClick={onDownload}
+              isLoading={isGenerating}
+              loadingText="Generating PDF…"
               className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
             >
               Download PDF
@@ -728,9 +734,141 @@ function StepSummary({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+async function generateResumePDF(data: ResumeData): Promise<Blob> {
+  const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+
+  const pdfDoc = await PDFDocument.create();
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  const W = 595, H = 842, MX = 50, CW = W - 2 * MX;
+  let page = pdfDoc.addPage([W, H]);
+  let y = H - 52;
+
+  function newPage() {
+    page = pdfDoc.addPage([W, H]);
+    y = H - 52;
+  }
+
+  function guard(need: number) {
+    if (y - need < 55) newPage();
+  }
+
+  function drawWrapped(text: string, x: number, maxW: number, size: number, font: typeof bold, r = 0.15, g = 0.15, b = 0.15) {
+    const lh = size * 1.45;
+    const words = text.split(" ");
+    let line = "";
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      if (font.widthOfTextAtSize(test, size) > maxW && line) {
+        guard(lh);
+        page.drawText(line, { x, y, size, font, color: rgb(r, g, b) });
+        y -= lh;
+        line = word;
+      } else {
+        line = test;
+      }
+    }
+    if (line) {
+      guard(lh);
+      page.drawText(line, { x, y, size, font, color: rgb(r, g, b) });
+      y -= lh;
+    }
+  }
+
+  function sectionHead(title: string) {
+    y -= 7;
+    guard(20);
+    page.drawText(title.toUpperCase(), { x: MX, y, size: 8, font: bold, color: rgb(0.3, 0.3, 0.3) });
+    y -= 5;
+    page.drawLine({ start: { x: MX, y }, end: { x: W - MX, y }, thickness: 0.5, color: rgb(0.65, 0.65, 0.65) });
+    y -= 10;
+  }
+
+  const { personalInfo: p, workExperience, education, skills, summary } = data;
+
+  // Name (centered)
+  const name = p.fullName || "Resume";
+  const nSize = 20;
+  const nW = bold.widthOfTextAtSize(name, nSize);
+  page.drawText(name, { x: (W - nW) / 2, y, size: nSize, font: bold, color: rgb(0.05, 0.05, 0.05) });
+  y -= 26;
+
+  // Contact line (centered)
+  const contact = [p.email, p.phone, p.location, p.linkedin, p.portfolio].filter(Boolean).join("  |  ");
+  if (contact) {
+    const cW = regular.widthOfTextAtSize(contact, 9);
+    page.drawText(contact, { x: Math.max(MX, (W - cW) / 2), y, size: 9, font: regular, color: rgb(0.4, 0.4, 0.4) });
+    y -= 6;
+  }
+  page.drawLine({ start: { x: MX, y }, end: { x: W - MX, y }, thickness: 1, color: rgb(0.12, 0.12, 0.12) });
+  y -= 13;
+
+  // Summary
+  if (summary.trim()) {
+    sectionHead("Professional Summary");
+    drawWrapped(summary.trim(), MX, CW, 10, regular);
+    y -= 3;
+  }
+
+  // Experience
+  const jobs = workExperience.filter(j => j.jobTitle || j.company);
+  if (jobs.length) {
+    sectionHead("Work Experience");
+    for (const job of jobs) {
+      guard(26);
+      const title = [job.jobTitle, job.company].filter(Boolean).join(" — ");
+      const dates = [job.startDate, job.isPresent ? "Present" : job.endDate].filter(Boolean).join(" – ");
+      page.drawText(title, { x: MX, y, size: 10, font: bold, color: rgb(0.1, 0.1, 0.1) });
+      if (dates) {
+        const dW = regular.widthOfTextAtSize(dates, 9);
+        page.drawText(dates, { x: W - MX - dW, y, size: 9, font: regular, color: rgb(0.45, 0.45, 0.45) });
+      }
+      y -= 13;
+      if (job.description.trim()) {
+        for (const line of job.description.split("\n").filter(Boolean)) {
+          const bullet = line.startsWith("•") || line.startsWith("-") ? line : `• ${line}`;
+          drawWrapped(bullet, MX + 8, CW - 8, 9.5, regular);
+        }
+      }
+      y -= 5;
+    }
+  }
+
+  // Education
+  const edu = education.filter(e => e.degree || e.school);
+  if (edu.length) {
+    sectionHead("Education");
+    for (const e of edu) {
+      guard(18);
+      const deg = [e.degree, e.fieldOfStudy && `in ${e.fieldOfStudy}`, e.school && `— ${e.school}`].filter(Boolean).join(" ");
+      page.drawText(deg, { x: MX, y, size: 10, font: bold, color: rgb(0.1, 0.1, 0.1) });
+      if (e.graduationYear) {
+        const yw = regular.widthOfTextAtSize(e.graduationYear, 9);
+        page.drawText(e.graduationYear, { x: W - MX - yw, y, size: 9, font: regular, color: rgb(0.45, 0.45, 0.45) });
+      }
+      y -= 15;
+    }
+    y -= 3;
+  }
+
+  // Skills
+  if (skills.technical.length || skills.soft.length) {
+    sectionHead("Skills");
+    if (skills.technical.length)
+      drawWrapped(`Technical:  ${skills.technical.join(" · ")}`, MX, CW, 10, regular);
+    if (skills.soft.length)
+      drawWrapped(`Soft Skills:  ${skills.soft.join(" · ")}`, MX, CW, 10, regular);
+  }
+
+  const bytes = await pdfDoc.save();
+  return new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
+}
+
 export function ResumeBuilder() {
   const [step, setStep] = useState(0);
   const [downloaded, setDownloaded] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const [resumeData, setResumeData] = useState<ResumeData>({
     personalInfo: {
@@ -750,16 +888,26 @@ export function ResumeBuilder() {
     summary: "",
   });
 
-  function handleDownload() {
-    setDownloaded(true);
-    // In a real implementation this would trigger PDF generation
-    alert(
-      `Downloading PDF: ${
-        resumeData.personalInfo.fullName
-          ? `${resumeData.personalInfo.fullName.replace(/\s+/g, "_")}_Resume.pdf`
-          : "resume.pdf"
-      }`
-    );
+  async function handleDownload() {
+    setIsGenerating(true);
+    try {
+      const blob = await generateResumePDF(resumeData);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = resumeData.personalInfo.fullName
+        ? `${resumeData.personalInfo.fullName.replace(/\s+/g, "_")}_Resume.pdf`
+        : "resume.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setDownloaded(true);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   const canGoBack = step > 0;
@@ -907,6 +1055,7 @@ export function ResumeBuilder() {
                 }
                 onDownload={handleDownload}
                 downloaded={downloaded}
+                isGenerating={isGenerating}
               />
             )}
           </motion.div>
@@ -945,6 +1094,8 @@ export function ResumeBuilder() {
             size="md"
             leftIcon={<Download className="h-4 w-4" />}
             onClick={handleDownload}
+            isLoading={isGenerating}
+            loadingText="Generating…"
             className="bg-gradient-to-r from-indigo-500 to-purple-600"
           >
             Download PDF

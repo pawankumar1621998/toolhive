@@ -262,6 +262,130 @@ function buildPrompt(toolSlug: string, params: Record<string, unknown>): string 
       const { name, vibe, count } = params as { name?: string; vibe?: string; count?: number };
       return `Generate ${count || 5} ${vibe || "funny"} compliments${name ? ` for ${name}` : ""}.\n\nVibe: ${vibe || "Funny & Cheesy"}\nMake them genuine but with the right vibe. Number them 1-${count || 5}. Each compliment should be 1-2 sentences.`;
     }
+    case "resume-summary": {
+      const { name, jobTitle, experience, skills, achievement, tone } = params as { name: string; jobTitle: string; experience: string; skills: string; achievement?: string; tone: string };
+      return `Generate 3 professional resume summary variations for ${name || "a candidate"} targeting the role of ${jobTitle} with ${experience} years of experience. Key skills: ${skills}.${achievement ? ` Notable achievement: ${achievement}.` : ""} Primary tone: ${tone}.
+
+Return ONLY a valid JSON array (no markdown, no code block, no explanation):
+[{"label":"${tone}","text":"...full summary here..."},{"label":"Concise","text":"...concise 2-sentence summary..."},{"label":"Achievement-focused","text":"...achievement-driven summary..."}]`;
+    }
+
+    case "linkedin-headlines": {
+      const { jobTitle, specialization, industry, value } = params as { jobTitle: string; specialization?: string; industry?: string; value?: string };
+      return `Generate 5 compelling LinkedIn headline options for a ${jobTitle}${specialization ? ` specializing in ${specialization}` : ""}${industry ? ` in the ${industry} industry` : ""}${value ? `. Unique value: ${value}` : ""}.
+
+Return ONLY a valid JSON array of exactly 5 strings (no markdown, no explanation):
+["Headline option 1","Headline option 2","Headline option 3","Headline option 4","Headline option 5"]`;
+    }
+
+    case "linkedin-about": {
+      const { jobTitle, experience, achievements, cta } = params as { jobTitle: string; experience?: string; achievements?: string; cta?: string };
+      return `Write a compelling LinkedIn About section for a ${jobTitle}${experience ? ` with ${experience} years of experience` : ""}${achievements ? `. Top achievements: ${achievements}` : ""}.${cta ? ` Close with a CTA about: ${cta}.` : ""}
+
+Write 2-3 engaging paragraphs. Return ONLY the plain text (no JSON, no markdown, no quotes).`;
+    }
+
+    case "linkedin-bullets": {
+      const { jobTitle, company, whatDid, results } = params as { jobTitle: string; company?: string; whatDid: string; results?: string };
+      return `Generate 5 strong resume/LinkedIn experience bullet points for a ${jobTitle}${company ? ` at ${company}` : ""}. What they did: ${whatDid}.${results ? ` Results/Impact: ${results}.` : ""}
+
+Each bullet must start with a strong action verb. Return ONLY a valid JSON array of 5 strings (no markdown, no explanation):
+["Led cross-functional...","Increased efficiency...","Collaborated with...","Developed...","Delivered..."]`;
+    }
+
+    case "interview-prep": {
+      const { jobTitle, experienceLevel } = params as { jobTitle?: string; experienceLevel?: string };
+      return `Generate personalized interview questions for a ${jobTitle || "professional"} at ${experienceLevel || "mid"} experience level.
+
+Return ONLY a valid JSON object (no markdown, no code blocks) with this exact structure — IDs 1-18:
+{"behavioral":[{"id":1,"text":"...","modelAnswer":"STAR method framework hint","practiced":false},{"id":2,"text":"...","modelAnswer":"...","practiced":false},{"id":3,"text":"...","modelAnswer":"...","practiced":false},{"id":4,"text":"...","modelAnswer":"...","practiced":false},{"id":5,"text":"...","modelAnswer":"...","practiced":false}],"technical":[{"id":6,"text":"...","modelAnswer":"...","practiced":false},{"id":7,"text":"...","modelAnswer":"...","practiced":false},{"id":8,"text":"...","modelAnswer":"...","practiced":false},{"id":9,"text":"...","modelAnswer":"...","practiced":false},{"id":10,"text":"...","modelAnswer":"...","practiced":false}],"situational":[{"id":11,"text":"...","modelAnswer":"...","practiced":false},{"id":12,"text":"...","modelAnswer":"...","practiced":false},{"id":13,"text":"...","modelAnswer":"...","practiced":false},{"id":14,"text":"...","modelAnswer":"...","practiced":false},{"id":15,"text":"...","modelAnswer":"...","practiced":false}],"about":[{"id":16,"text":"...","modelAnswer":"...","practiced":false},{"id":17,"text":"...","modelAnswer":"...","practiced":false},{"id":18,"text":"...","modelAnswer":"...","practiced":false}]}`;
+    }
+
+    case "resume-analyzer": {
+      const { resumeText } = params as { resumeText?: string };
+      return `Analyze the following resume and return scores and improvement suggestions.
+
+Resume text:
+${resumeText || "(No resume text provided — give general resume feedback)"}
+
+Return ONLY a valid JSON object (no markdown, no explanation):
+{"overallScore":<0-100>,"sections":[{"label":"Contact Information","score":<0-100>},{"label":"Professional Summary","score":<0-100>},{"label":"Work Experience","score":<0-100>},{"label":"Education","score":<0-100>},{"label":"Skills","score":<0-100>},{"label":"Formatting & Layout","score":<0-100>}],"issues":[{"message":"specific actionable tip","severity":"High"},{"message":"specific actionable tip","severity":"Medium"},{"message":"specific actionable tip","severity":"Low"}]}
+Include 4-6 issues.`;
+    }
+
+    case "ats-checker": {
+      const { resumeText, jobDesc } = params as { resumeText?: string; jobDesc?: string };
+      return `You are an expert ATS (Applicant Tracking System) resume coach. Analyze this resume against the job description and give SPECIFIC, ACTIONABLE improvement advice.
+
+Resume: ${resumeText || "(not provided — give general advice)"}
+Job Description: ${jobDesc || "(not provided — give general advice)"}
+
+Return ONLY a valid JSON object (no markdown, no code blocks):
+{
+  "atsScore": <0-100>,
+  "keywordMatch": {"found": <n>, "total": <n>, "percentage": <n>},
+  "categories": [
+    {"label": "Formatting", "score": <0-100>, "detail": "specific note about formatting"},
+    {"label": "Keywords", "score": <0-100>, "detail": "specific note about keywords"},
+    {"label": "Experience", "score": <0-100>, "detail": "specific note about experience section"},
+    {"label": "Education", "score": <0-100>, "detail": "specific note about education section"}
+  ],
+  "missingKeywords": ["keyword1", "keyword2", "keyword3"],
+  "matchedKeywords": ["keyword1", "keyword2", "keyword3"],
+  "quickFixes": ["Quick fix 1 with specific action", "Quick fix 2", "Quick fix 3"],
+  "improvements": [
+    {
+      "section": "Professional Summary",
+      "issue": "Specific problem found",
+      "fix": "EXACT text or phrase to add: 'example phrase to add'",
+      "priority": "Critical"
+    },
+    {
+      "section": "Work Experience",
+      "issue": "Specific problem found",
+      "fix": "EXACT bullet point to add or how to rewrite: 'example text'",
+      "priority": "High"
+    },
+    {
+      "section": "Skills",
+      "issue": "Specific problem found",
+      "fix": "EXACT skills to add: 'Skill A, Skill B, Skill C'",
+      "priority": "High"
+    },
+    {
+      "section": "Keywords",
+      "issue": "Missing important keywords",
+      "fix": "Add these exact phrases to your resume: 'phrase 1', 'phrase 2'",
+      "priority": "Medium"
+    }
+  ]
+}
+Include 4-6 improvement items with SPECIFIC text to add. Return ONLY valid JSON.`;
+    }
+
+    case "job-match": {
+      const { resumeText, jobDesc } = params as { resumeText?: string; jobDesc?: string };
+      return `Analyze how well this resume matches the job description.
+
+Resume: ${resumeText || "(not provided)"}
+Job Description: ${jobDesc || "(not provided)"}
+
+Return ONLY a valid JSON object (no markdown, no explanation):
+{"matchPercentage":<0-100>,"skillsGap":{"have":["skill1","skill2"],"missing":["skill1","skill2"]},"experience":[{"requirement":"Years of Experience","required":"X years","yours":"Y years","match":"strong"},{"requirement":"Another req","required":"...","yours":"...","match":"partial"}],"keywords":[{"keyword":"word","inJD":<n>,"inResume":<n>}],"recommendations":["rec1","rec2","rec3","rec4"]}`;
+    }
+
+    case "keyword-optimizer": {
+      const { resumeText, jobDescText } = params as { resumeText?: string; jobDescText?: string };
+      return `Analyze keyword optimization for this resume vs job description.
+
+Resume: ${resumeText || "(not provided)"}
+Job Description: ${jobDescText || "(not provided)"}
+
+Return ONLY a valid JSON object (no markdown, no explanation):
+{"overallScore":<0-100>,"densityTable":[{"keyword":"word","inResume":<n>,"inJD":<n>,"status":"Good"},{"keyword":"word","inResume":<n>,"inJD":<n>,"status":"Low"},{"keyword":"word","inResume":0,"inJD":<n>,"status":"Missing"}],"missingKeywords":[{"keyword":"word","suggestion":"Where and how to add this keyword"}],"recommendations":["rec1","rec2","rec3","rec4"]}
+Include 4-8 keywords in densityTable, 2-4 missingKeywords.`;
+    }
+
     default: {
       const { text, topic } = params as { text?: string; topic?: string };
       return `${text ?? topic ?? "Generate helpful content for " + toolSlug}`;

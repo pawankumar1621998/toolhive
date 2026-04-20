@@ -21,6 +21,7 @@ import {
   PenLine,
   BookOpen,
   Zap,
+  Calculator,
 } from "lucide-react";
 import { TOOL_CATEGORIES } from "@/config/navigation";
 
@@ -223,6 +224,37 @@ const CATEGORY_NAV: CategoryNav = {
       tools: [
         { slug: "linkedin-writer", label: "LinkedIn Writer", href: "/tools/resume/linkedin-writer" },
         { slug: "interview-prep",  label: "Interview Prep",  href: "/tools/resume/interview-prep"  },
+      ],
+    },
+  ],
+
+  calculator: [
+    {
+      id: "health",
+      label: "Health",
+      Icon: Sparkles,
+      tools: [
+        { slug: "age",        label: "Age Calculator", href: "/tools/calculator/age"        },
+        { slug: "bmi",        label: "BMI Calculator", href: "/tools/calculator/bmi"        },
+      ],
+    },
+    {
+      id: "finance",
+      label: "Finance",
+      Icon: Calculator,
+      tools: [
+        { slug: "percentage", label: "Percentage",     href: "/tools/calculator/percentage" },
+        { slug: "emi",        label: "EMI Calculator", href: "/tools/calculator/emi"        },
+        { slug: "tip",        label: "Tip Calculator", href: "/tools/calculator/tip"        },
+        { slug: "discount",   label: "Discount Calc.", href: "/tools/calculator/discount"   },
+      ],
+    },
+    {
+      id: "date",
+      label: "Date & Time",
+      Icon: FileText,
+      tools: [
+        { slug: "date-diff",  label: "Date Difference", href: "/tools/calculator/date-diff" },
       ],
     },
   ],

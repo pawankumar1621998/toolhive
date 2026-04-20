@@ -23,7 +23,6 @@ const SUB_CATEGORIES: Record<ToolCategory, string[]> = {
   image: ["Compress", "Resize", "Convert", "Enhance", "Background"],
   video: ["Compress", "Trim", "Convert", "Audio", "Subtitle"],
   "ai-writing": ["Summarize", "Translate", "Rewrite", "Grammar", "Generate"],
-  audio: ["Convert", "Trim", "Enhance", "Transcribe"],
   converter: ["Document", "Image", "Video", "Audio", "Archive"],
   resume: ["Builder", "Templates", "Analyzer", "Skills", "Cover Letter", "ATS"],
   calculator: ["Finance", "Health", "Math", "Date", "Shopping"],

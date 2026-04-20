@@ -9,7 +9,6 @@ export type ToolCategory =
   | "image"
   | "video"
   | "ai-writing"
-  | "audio"
   | "converter"
   | "resume"
   | "calculator";

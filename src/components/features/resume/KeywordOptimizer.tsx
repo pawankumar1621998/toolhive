@@ -93,33 +93,20 @@ export function KeywordOptimizer() {
     setResult(null);
     setError(null);
     try {
-      await new Promise((r) => setTimeout(r, 1300));
-      const mockResult: OptimizationResult = {
-        overallScore: 72,
-        densityTable: [
-          { keyword: "communication", inResume: 3, inJD: 4, status: "Good" },
-          { keyword: "leadership", inResume: 2, inJD: 3, status: "Good" },
-          { keyword: "project management", inResume: 1, inJD: 3, status: "Low" },
-          { keyword: "agile", inResume: 0, inJD: 2, status: "Missing" },
-          { keyword: "scrum", inResume: 0, inJD: 2, status: "Missing" },
-          { keyword: "stakeholder management", inResume: 0, inJD: 1, status: "Missing" },
-        ],
-        missingKeywords: [
-          { keyword: "agile", suggestion: "Add 'experienced with agile methodologies' in your experience section or skills summary." },
-          { keyword: "scrum", suggestion: "Mention 'participated in daily scrum meetings' or 'worked in a scrum environment' in a relevant role." },
-          { keyword: "stakeholder management", suggestion: "Include 'managed stakeholder relationships' in your key responsibilities or achievements." },
-        ],
-        recommendations: [
-          "Add the missing keywords naturally throughout your resume to improve ATS matching.",
-          "Increase mentions of 'project management' from 1 to at least 3 occurrences across different sections.",
-          "Consider adding a dedicated Skills section listing technical and soft skills with relevant keywords.",
-          "Quantify your achievements with numbers and metrics to strengthen impact statements.",
-        ],
-      };
-      setResult(mockResult);
+      const res = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ toolSlug: "keyword-optimizer", resumeText, jobDescText }),
+      });
+      const data = await res.json() as { output?: string; error?: string };
+      if (!res.ok || data.error) throw new Error(data.error ?? "Optimization failed");
+      const raw = (data.output ?? "").trim();
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Invalid response format. Please try again.");
+      const parsed = JSON.parse(jsonMatch[0]) as OptimizationResult;
+      setResult(parsed);
     } catch (err: unknown) {
-      void err;
-      setError("Optimization failed. Please try again.");
+      setError((err as Error).message ?? "Optimization failed. Please try again.");
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument, rgb, degrees, StandardFonts } from "pdf-lib";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require("pdf-parse/lib/pdf-parse.js") as (buf: Buffer) => Promise<{ text: string; numpages: number }>;
 
 // Lazy-load sharp so PDF tools still work even if sharp binary is unavailable
 async function getSharp() {
@@ -203,7 +205,7 @@ async function processImage(
       const apiKey = process.env.REMOVE_BG_API_KEY;
       if (!apiKey?.trim()) throw new Error("Background removal API key not configured. Add REMOVE_BG_API_KEY to environment variables.");
       const fd = new FormData();
-      fd.append("image_file", new Blob([buf], { type: outMime }), filename);
+      fd.append("image_file", new Blob([buf.buffer as ArrayBuffer], { type: outMime }), filename);
       fd.append("size", "auto");
       const bgRes = await fetch("https://api.remove.bg/v1.0/removebg", {
         method: "POST",
@@ -260,7 +262,6 @@ async function processPDF(
   slug: string,
   opts: Record<string, string>
 ): Promise<{ name: string; data: string; type: string }[]> {
-  const sharp = await getSharp();
   const mime = "application/pdf";
 
   switch (slug) {
@@ -316,11 +317,7 @@ async function processPDF(
     }
 
     case "protect": {
-      // pdf-lib 1.x encryption support via PDFDocumentOptions
-      const pdfDoc = await PDFDocument.load(new Uint8Array(bufs[0]));
-      // Note: pdf-lib doesn't support encryption natively — save with metadata note
-      const saved = await pdfDoc.save();
-      return [{ name: `${baseName(filenames[0])}_protected.pdf`, data: Buffer.from(saved).toString("base64"), type: mime }];
+      throw new Error("PDF password protection requires an encryption library (e.g. qpdf) that is not available in this environment. Please use Adobe Acrobat or a PDF encryption service to add password protection.");
     }
 
     case "unlock": {
@@ -379,6 +376,7 @@ async function processPDF(
     }
 
     case "jpg-to-pdf": {
+      const sharp = await getSharp();
       const pdfDoc = await PDFDocument.create();
       for (let i = 0; i < bufs.length; i++) {
         const fileExt = ext(filenames[i]);
@@ -386,7 +384,6 @@ async function processPDF(
         if (fileExt === "png") {
           imgEmbed = await pdfDoc.embedPng(new Uint8Array(bufs[i]));
         } else {
-          // Convert to JPEG first
           const jpgBuf = await sharp(bufs[i]).jpeg({ quality: 95 }).toBuffer();
           imgEmbed = await pdfDoc.embedJpg(new Uint8Array(jpgBuf));
         }
@@ -440,7 +437,7 @@ async function processPDF(
     }
 
     case "scan-to-pdf": {
-      // Images → PDF (same as jpg-to-pdf but with scan-optimized quality)
+      const sharp = await getSharp();
       const pdfDoc = await PDFDocument.create();
       for (let i = 0; i < bufs.length; i++) {
         const jpgBuf = await sharp(bufs[i]).jpeg({ quality: 90 }).toBuffer();
@@ -465,6 +462,73 @@ async function processPDF(
         }
       }
       return results;
+    }
+
+    case "pdf-to-word":
+    case "pdf-to-docx": {
+      const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import("docx");
+      const results: { name: string; data: string; type: string }[] = [];
+      for (let fi = 0; fi < bufs.length; fi++) {
+        const pdfData = await pdfParse(bufs[fi]);
+        const lines = pdfData.text.split("\n");
+        const paragraphs = lines.map((line: string) => {
+          const trimmed = line.trim();
+          // Simple heuristic: short ALL-CAPS lines are headings
+          const isHeading = trimmed.length > 0 && trimmed.length < 60 && trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed);
+          if (isHeading) {
+            return new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: trimmed, bold: true })] });
+          }
+          return new Paragraph({ children: [new TextRun(trimmed)] });
+        });
+        const doc = new Document({ sections: [{ properties: {}, children: paragraphs }] });
+        const docxBuf = await Packer.toBuffer(doc);
+        results.push({
+          name: `${baseName(filenames[fi])}.docx`,
+          data: Buffer.from(docxBuf).toString("base64"),
+          type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        });
+      }
+      return results;
+    }
+
+    case "pdf-to-excel":
+    case "pdf-to-xlsx": {
+      const ExcelJS = await import("exceljs");
+      const results: { name: string; data: string; type: string }[] = [];
+      for (let fi = 0; fi < bufs.length; fi++) {
+        const pdfData = await pdfParse(bufs[fi]);
+        const lines = pdfData.text.split("\n").filter((l: string) => l.trim().length > 0);
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet("Sheet1");
+        // Header row with page count info
+        sheet.addRow([`Extracted from: ${filenames[fi]}`, `Pages: ${pdfData.numpages}`]);
+        sheet.addRow([]);
+        for (const line of lines) {
+          // Split on 2+ spaces or tabs to detect columns
+          const cols = line.split(/\t|\s{2,}/).map((c: string) => c.trim()).filter((c: string) => c.length > 0);
+          sheet.addRow(cols.length > 1 ? cols : [line.trim()]);
+        }
+        // Auto-fit first column
+        sheet.getColumn(1).width = 60;
+        const xlsxBuf = await workbook.xlsx.writeBuffer();
+        results.push({
+          name: `${baseName(filenames[fi])}.xlsx`,
+          data: Buffer.from(xlsxBuf as ArrayBuffer).toString("base64"),
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+      }
+      return results;
+    }
+
+    case "pdf-to-jpg":
+    case "pdf-to-jpeg":
+    case "pdf-to-png":
+    case "pdf-to-image": {
+      throw new Error("PDF to Image conversion requires a PDF rendering engine (e.g. Ghostscript or Poppler) that is not available in this environment. Try smallpdf.com or use your PDF viewer to export pages as images.");
+    }
+
+    case "ocr": {
+      throw new Error("PDF OCR requires a Tesseract or cloud OCR service. This feature needs a configured OCR_API_KEY environment variable. Please add OCR support to your server configuration.");
     }
 
     default: {

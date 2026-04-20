@@ -1265,13 +1265,6 @@ export function ToolOptions({ tool }: { tool: Tool }) {
     if (slug === "convert")       return <VideoConvertOptions />;
   }
 
-  // Audio tools
-  if (category === "audio") {
-    if (slug === "compress")  return <AudioCompressOptions />;
-    if (slug === "convert")   return <AudioConvertOptions />;
-    if (slug === "trim")      return <AudioTrimOptions />;
-    if (slug === "transcribe") return <AudioTranscribeOptions />;
-  }
 
   // Converter tools
   if (category === "converter") {
