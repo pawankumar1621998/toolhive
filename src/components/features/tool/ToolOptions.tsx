@@ -1448,6 +1448,81 @@ function PdfRedactOptions() {
   );
 }
 
+function PdfHeaderFooterOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  return (
+    <>
+      <OptionRow>
+        <Label htmlFor="pdf-header">Header Text</Label>
+        <TextInput
+          id="pdf-header"
+          value={(opts.headerText as string) || ""}
+          onChange={(v) => set("headerText", v)}
+          placeholder="e.g. Company Confidential · {page}"
+        />
+        <p className="text-xs text-foreground-subtle mt-1">Use {"{page}"} for page number, {"{total}"} for total pages.</p>
+      </OptionRow>
+      <OptionRow>
+        <Label htmlFor="pdf-footer">Footer Text</Label>
+        <TextInput
+          id="pdf-footer"
+          value={(opts.footerText as string) || ""}
+          onChange={(v) => set("footerText", v)}
+          placeholder="e.g. Page {page} of {total}"
+        />
+      </OptionRow>
+      <OptionRow>
+        <Label htmlFor="pdf-hf-size">Font Size</Label>
+        <RangeSlider
+          id="pdf-hf-size"
+          value={Number(opts.fontSize ?? 10)}
+          min={7}
+          max={16}
+          step={1}
+          onChange={(v) => set("fontSize", v)}
+        />
+      </OptionRow>
+    </>
+  );
+}
+
+function PdfEditOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  return (
+    <OptionRow>
+      <Label htmlFor="pdf-annotation">Annotation / Note Text</Label>
+      <TextInput
+        id="pdf-annotation"
+        value={(opts.text as string) || ""}
+        onChange={(v) => set("text", v)}
+        placeholder="e.g. DRAFT - For Internal Review Only"
+      />
+      <p className="text-xs text-foreground-subtle mt-1">This text will be added as a highlighted banner at the top of every page.</p>
+    </OptionRow>
+  );
+}
+
+function PdfHtmlToPdfOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  return (
+    <OptionRow>
+      <Label htmlFor="pdf-html-text">HTML or Plain Text</Label>
+      <textarea
+        id="pdf-html-text"
+        rows={6}
+        value={(opts.htmlText as string) || ""}
+        onChange={(e) => set("htmlText", e.target.value)}
+        placeholder="Paste your HTML or plain text content here..."
+        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+      />
+      <p className="text-xs text-foreground-subtle mt-1">HTML tags will be stripped. Plain text is recommended for best results.</p>
+    </OptionRow>
+  );
+}
+
 // ─────────────────────────────────────────────
 // Main component — dispatches to the right panel
 // ─────────────────────────────────────────────
@@ -1460,8 +1535,6 @@ export function ToolOptions({ tool }: { tool: Tool }) {
     if (slug === "compress")     return <PdfCompressOptions />;
     if (slug === "split")        return <PdfSplitOptions />;
     if (slug === "rotate")       return <PdfRotateOptions />;
-    if (slug === "protect")      return <PdfProtectOptions />;
-    if (slug === "unlock")       return <PdfUnlockOptions />;
     if (slug === "watermark")    return <PdfWatermarkOptions />;
     if (slug === "page-numbers") return <PdfPageNumbersOptions />;
     if (slug === "ocr")            return <PdfOcrOptions />;
@@ -1469,6 +1542,9 @@ export function ToolOptions({ tool }: { tool: Tool }) {
     if (slug === "sign")           return <PdfSignOptions />;
     if (slug === "translate-pdf")  return <PdfTranslatePdfOptions />;
     if (slug === "redact-pdf")     return <PdfRedactOptions />;
+    if (slug === "header-footer")  return <PdfHeaderFooterOptions />;
+    if (slug === "edit-pdf")       return <PdfEditOptions />;
+    if (slug === "html-to-pdf")    return <PdfHtmlToPdfOptions />;
   }
 
   // Image tools

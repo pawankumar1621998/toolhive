@@ -625,22 +625,27 @@ async function processPDF(
     }
 
     case "sign": {
-      const signerName = opts.signerName ?? "Signed";
+      const signerName = opts.signerName?.trim() || "Signed";
+      const signDate = new Date().toLocaleDateString("en-GB");
       const results: { name: string; data: string; type: string }[] = [];
       for (let fi = 0; fi < bufs.length; fi++) {
         const pdfDoc = await PDFDocument.load(new Uint8Array(bufs[fi]), { ignoreEncryption: true });
-        const font = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+        const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const italicFont  = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
         const pages = pdfDoc.getPages();
         const lastPage = pages[pages.length - 1];
         const { width } = lastPage.getSize();
-        lastPage.drawText(`✎ ${signerName}`, {
-          x: 40,
-          y: 40,
-          size: 14,
-          font,
-          color: rgb(0.1, 0.1, 0.6),
-        });
-        lastPage.drawLine({ start: { x: 40, y: 38 }, end: { x: Math.min(width - 40, 40 + signerName.length * 8 + 30), y: 38 }, thickness: 1, color: rgb(0.4, 0.4, 0.4) });
+        const boxX = 40, boxY = 30, boxW = Math.min(280, width - 80), boxH = 60;
+        // Signature box background
+        lastPage.drawRectangle({ x: boxX, y: boxY, width: boxW, height: boxH, color: rgb(0.97, 0.97, 1), borderColor: rgb(0.6, 0.6, 0.8), borderWidth: 1 });
+        // Label
+        lastPage.drawText("Digitally Signed By:", { x: boxX + 8, y: boxY + boxH - 16, size: 7, font: regularFont, color: rgb(0.5, 0.5, 0.5) });
+        // Signature name
+        lastPage.drawText(signerName, { x: boxX + 8, y: boxY + 28, size: 14, font: italicFont, color: rgb(0.05, 0.1, 0.5) });
+        // Date
+        lastPage.drawText(`Date: ${signDate}`, { x: boxX + 8, y: boxY + 10, size: 8, font: regularFont, color: rgb(0.4, 0.4, 0.4) });
+        // Underline for name
+        lastPage.drawLine({ start: { x: boxX + 8, y: boxY + 26 }, end: { x: boxX + boxW - 8, y: boxY + 26 }, thickness: 0.5, color: rgb(0.4, 0.4, 0.6) });
         const saved = await pdfDoc.save();
         results.push({ name: `${baseName(filenames[fi])}_signed.pdf`, data: Buffer.from(saved).toString("base64"), type: mime });
       }
@@ -711,11 +716,53 @@ async function processPDF(
       return [{ name: "comparison.txt", data: Buffer.from(txt).toString("base64"), type: "text/plain" }];
     }
 
+    case "pdf-to-text": {
+      const results: { name: string; data: string; type: string }[] = [];
+      for (let fi = 0; fi < bufs.length; fi++) {
+        const pdfData = await pdfParse(bufs[fi]);
+        const header = `=== ${filenames[fi]} ===\nPages: ${pdfData.numpages}\nExtracted: ${new Date().toLocaleDateString()}\n${"=".repeat(50)}\n\n`;
+        results.push({ name: `${baseName(filenames[fi])}.txt`, data: Buffer.from(header + pdfData.text).toString("base64"), type: "text/plain" });
+      }
+      return results;
+    }
+
+    case "header-footer": {
+      const headerText = opts.headerText ?? "";
+      const footerText = opts.footerText ?? "";
+      if (!headerText.trim() && !footerText.trim()) throw new Error("Please enter header or footer text in the options.");
+      const results: { name: string; data: string; type: string }[] = [];
+      for (let fi = 0; fi < bufs.length; fi++) {
+        const pdfDoc = await PDFDocument.load(new Uint8Array(bufs[fi]), { ignoreEncryption: true });
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontSize = parseInt(opts.fontSize ?? "10", 10);
+        pdfDoc.getPages().forEach((page, idx) => {
+          const { width, height } = page.getSize();
+          const pageText = (t: string) => t.replace("{page}", String(idx + 1)).replace("{total}", String(pdfDoc.getPageCount()));
+          if (headerText.trim()) {
+            const text = pageText(headerText);
+            const textW = font.widthOfTextAtSize(text, fontSize);
+            page.drawText(text, { x: (width - textW) / 2, y: height - 20, size: fontSize, font, color: rgb(0.2, 0.2, 0.2) });
+            page.drawLine({ start: { x: 40, y: height - 25 }, end: { x: width - 40, y: height - 25 }, thickness: 0.5, color: rgb(0.7, 0.7, 0.7) });
+          }
+          if (footerText.trim()) {
+            const text = pageText(footerText);
+            const textW = font.widthOfTextAtSize(text, fontSize);
+            page.drawLine({ start: { x: 40, y: 22 }, end: { x: width - 40, y: 22 }, thickness: 0.5, color: rgb(0.7, 0.7, 0.7) });
+            page.drawText(text, { x: (width - textW) / 2, y: 8, size: fontSize, font, color: rgb(0.2, 0.2, 0.2) });
+          }
+        });
+        const saved = await pdfDoc.save();
+        results.push({ name: `${baseName(filenames[fi])}_headerfooter.pdf`, data: Buffer.from(saved).toString("base64"), type: mime });
+      }
+      return results;
+    }
+
     case "summarize-pdf": {
       const pdfData = await pdfParse(bufs[0]);
-      const text = pdfData.text.slice(0, 6000);
+      const fullText = pdfData.text.trim();
+      const chunk = fullText.slice(0, 8000);
       const summary = await callLocalAI(
-        `Summarize the following PDF document in clear bullet points. Cover the main topics, key findings, and important details.\n\nDocument text:\n${text}`
+        `You are an expert document analyst. Read the following PDF content and write a comprehensive summary.\n\nReturn your summary in this format:\n📄 DOCUMENT OVERVIEW\n[2-3 sentence overview]\n\n🔑 KEY POINTS\n• [point 1]\n• [point 2]\n• [point 3]\n...\n\n📊 MAIN TOPICS\n[list main topics covered]\n\n💡 CONCLUSION\n[brief conclusion]\n\nDocument content (${pdfData.numpages} pages):\n${chunk}${fullText.length > 8000 ? "\n\n[Document continues — summarizing first portion]" : ""}`
       );
       return [{ name: `${baseName(filenames[0])}_summary.txt`, data: Buffer.from(summary).toString("base64"), type: "text/plain" }];
     }
@@ -723,11 +770,26 @@ async function processPDF(
     case "translate-pdf": {
       const pdfData = await pdfParse(bufs[0]);
       const targetLang = opts.targetLanguage ?? "Hindi";
-      const text = pdfData.text.slice(0, 5000);
-      const translated = await callLocalAI(
-        `Translate the following PDF text to ${targetLang}. Preserve paragraph structure. Return ONLY the translated text.\n\nText:\n${text}`
-      );
-      return [{ name: `${baseName(filenames[0])}_${targetLang.toLowerCase()}.txt`, data: Buffer.from(translated).toString("base64"), type: "text/plain" }];
+      const fullText = pdfData.text.trim();
+      const CHUNK = 3500;
+      const chunks = [];
+      for (let i = 0; i < Math.min(fullText.length, CHUNK * 3); i += CHUNK) {
+        chunks.push(fullText.slice(i, i + CHUNK));
+      }
+      const header = `=== TRANSLATED DOCUMENT ===\nOriginal: ${filenames[0]}\nTarget Language: ${targetLang}\nPages: ${pdfData.numpages}\nTranslated: ${new Date().toLocaleDateString()}\n${"=".repeat(50)}\n\n`;
+      const parts = [header];
+      for (let i = 0; i < chunks.length; i++) {
+        const translated = await callLocalAI(
+          `You are a professional translator. Translate the following text accurately to ${targetLang}.\nPreserve paragraph structure, headings, and formatting.\nDo NOT add any explanations, notes, or translator comments.\nReturn ONLY the translated text.\n\nText to translate:\n${chunks[i]}`
+        );
+        parts.push(translated.trim());
+        if (chunks.length > 1) parts.push(`\n\n--- [Part ${i + 1} of ${chunks.length}] ---\n\n`);
+      }
+      if (fullText.length > CHUNK * 3) {
+        parts.push(`\n\n[Note: Original document had ${pdfData.numpages} pages. Only the first portion was translated due to length limits.]`);
+      }
+      const result = parts.join("");
+      return [{ name: `${baseName(filenames[0])}_${targetLang.replace(/\s/g, "_")}.txt`, data: Buffer.from(result).toString("base64"), type: "text/plain" }];
     }
 
     case "redact-pdf": {
@@ -749,6 +811,59 @@ async function processPDF(
         results.push({ name: `${baseName(filenames[fi])}_redacted.pdf`, data: Buffer.from(saved).toString("base64"), type: mime });
       }
       return results;
+    }
+
+    case "edit-pdf": {
+      // Basic PDF annotation: add a text note at the top of each page
+      const noteText = opts.text?.trim() || opts.annotation?.trim() || "";
+      if (!noteText) throw new Error("Please enter text to add in the options (annotation field).");
+      const results: { name: string; data: string; type: string }[] = [];
+      for (let fi = 0; fi < bufs.length; fi++) {
+        const pdfDoc = await PDFDocument.load(new Uint8Array(bufs[fi]), { ignoreEncryption: true });
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        pdfDoc.getPages().forEach((page) => {
+          const { width, height } = page.getSize();
+          page.drawRectangle({ x: 0, y: height - 30, width, height: 30, color: rgb(1, 1, 0.7), opacity: 0.85 });
+          page.drawText(noteText.slice(0, 120), { x: 8, y: height - 19, size: 10, font, color: rgb(0.1, 0.1, 0.1), maxWidth: width - 16 });
+        });
+        const saved = await pdfDoc.save();
+        results.push({ name: `${baseName(filenames[fi])}_annotated.pdf`, data: Buffer.from(saved).toString("base64"), type: mime });
+      }
+      return results;
+    }
+
+    case "html-to-pdf": {
+      // Convert plain/HTML text to a simple PDF
+      const htmlText = opts.htmlText?.trim() || opts.text?.trim() || "";
+      if (!htmlText) throw new Error("Please paste your HTML or text content in the options field.");
+      // Strip HTML tags for basic text extraction
+      const plainText = htmlText.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
+      const pdfDoc = await PDFDocument.create();
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const PAGE_W = 595, PAGE_H = 842, MARGIN = 50, LINE_H = 16, FONT_SIZE = 11;
+      const maxW = PAGE_W - MARGIN * 2;
+      const words = plainText.split(/\s+/);
+      const lines: string[] = [];
+      let current = "";
+      for (const word of words) {
+        const test = current ? `${current} ${word}` : word;
+        if (font.widthOfTextAtSize(test, FONT_SIZE) > maxW) {
+          if (current) lines.push(current);
+          current = word;
+        } else {
+          current = test;
+        }
+      }
+      if (current) lines.push(current);
+      let page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+      let y = PAGE_H - MARGIN;
+      for (const line of lines) {
+        if (y < MARGIN + LINE_H) { page = pdfDoc.addPage([PAGE_W, PAGE_H]); y = PAGE_H - MARGIN; }
+        page.drawText(line, { x: MARGIN, y, size: FONT_SIZE, font, color: rgb(0, 0, 0) });
+        y -= LINE_H;
+      }
+      const saved = await pdfDoc.save();
+      return [{ name: "converted.pdf", data: Buffer.from(saved).toString("base64"), type: mime }];
     }
 
     case "pdf-to-jpg":
@@ -799,7 +914,7 @@ export async function POST(request: NextRequest) {
     const isPDF = firstExt === "pdf" || toolSlug.startsWith("pdf-") || toolSlug === "merge" || toolSlug === "split" || toolSlug === "rotate" && firstExt === "pdf" || toolSlug === "watermark" && firstExt === "pdf" || ["compress", "unlock", "protect", "page-numbers", "jpg-to-pdf", "organize-pdf", "reorder", "crop-pdf", "pdf-to-pdfa", "scan-to-pdf", "repair-pdf"].includes(toolSlug);
 
     const isImageInput = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "avif"].includes(firstExt);
-    const isPDFSlug = ["compress-pdf", "merge", "split", "rotate", "watermark", "protect", "unlock", "page-numbers", "jpg-to-pdf", "organize-pdf", "crop-pdf", "pdf-to-pdfa", "scan-to-pdf", "repair-pdf", "excel-to-pdf", "redact-pdf", "compare-pdf", "sign", "summarize-pdf", "translate-pdf"].includes(toolSlug) || firstExt === "pdf";
+    const isPDFSlug = ["compress-pdf", "merge", "split", "rotate", "watermark", "page-numbers", "jpg-to-pdf", "organize-pdf", "crop-pdf", "pdf-to-pdfa", "scan-to-pdf", "repair-pdf", "excel-to-pdf", "redact-pdf", "compare-pdf", "sign", "summarize-pdf", "translate-pdf", "pdf-to-text", "header-footer", "edit-pdf", "html-to-pdf"].includes(toolSlug) || firstExt === "pdf";
 
     if (isPDFSlug || firstExt === "pdf") {
       const results = await processPDF(bufs, filenames, toolSlug, opts);
