@@ -191,16 +191,14 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
   async function handleDownload() {
     if (isDownloading || downloadDone) return;
     setIsDownloading(true);
-    setDownloadProgress(0);
+    setDownloadProgress(10);
     setDownloadError(null);
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10 * 60_000); // 10 min for large files
+    const timer = setTimeout(() => controller.abort(), 60_000);
 
     try {
-      const apiUrl = `${BACKEND_URL}/video/download`;
-
-      const res = await fetch(apiUrl, {
+      const res = await fetch(`${BACKEND_URL}/video/download`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ url: url.trim(), quality: selectedQuality }),
@@ -209,59 +207,36 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
 
       clearTimeout(timer);
 
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        throw new Error((json as { message?: string }).message || `Server error ${res.status}`);
+      const data = await res.json() as { success: boolean; downloadUrl?: string; filename?: string; message?: string };
+
+      if (!data.success || !data.downloadUrl) {
+        throw new Error(data.message || `Download failed (${res.status})`);
       }
 
-      // Stream response with progress tracking
-      const contentLength = res.headers.get("Content-Length");
-      const totalBytes    = contentLength ? parseInt(contentLength, 10) : 0;
-      const reader        = res.body!.getReader();
-      const chunks: ArrayBuffer[] = [];
-      let loaded = 0;
+      setDownloadProgress(80);
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength));
-        loaded += value.length;
-        if (totalBytes > 0) {
-          setDownloadProgress(Math.min(Math.round((loaded / totalBytes) * 100), 99));
-        } else {
-          // No Content-Length — show indeterminate progress
-          setDownloadProgress((prev) => Math.min(prev + 2, 90));
-        }
-      }
-
-      setDownloadProgress(100);
-
-      // Trigger browser download
-      const mimeType =
-        selectedOption.format === "mp3"  ? "audio/mpeg" :
-        selectedOption.format === "webm" ? "video/webm" : "video/mp4";
-
-      const blob    = new Blob(chunks, { type: mimeType });
-      const blobUrl = URL.createObjectURL(blob);
-      const a       = document.createElement("a");
-      a.href        = blobUrl;
-      a.download    = `toolhive_video.${selectedOption.format}`;
+      // Open the direct URL — browser handles the download natively
+      const a = document.createElement("a");
+      a.href = data.downloadUrl;
+      a.download = data.filename || `video.${selectedOption.format}`;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
 
+      setDownloadProgress(100);
       setTimeout(() => {
         setIsDownloading(false);
         setDownloadDone(true);
-      }, 300);
+      }, 400);
 
     } catch (err: unknown) {
       clearTimeout(timer);
       const msg = err instanceof Error ? err.message : "Download failed. Please try again.";
       setDownloadError(
         msg.includes("aborted") || msg.includes("AbortError")
-          ? "Download timed out. Please try a lower quality or try again."
+          ? "Request timed out. Please try again."
           : msg
       );
       setIsDownloading(false);
