@@ -194,6 +194,10 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
     setDownloadProgress(10);
     setDownloadError(null);
 
+    // Open a blank tab NOW (synchronous, inside click handler) so popup
+    // blockers don't kill it. We navigate it to the real URL after the fetch.
+    const downloadTab = window.open("about:blank", "_blank");
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 60_000);
 
@@ -210,20 +214,27 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
       const data = await res.json() as { success: boolean; downloadUrl?: string; filename?: string; message?: string };
 
       if (!data.success || !data.downloadUrl) {
+        if (downloadTab) downloadTab.close();
         throw new Error(data.message || `Download failed (${res.status})`);
       }
 
       setDownloadProgress(80);
 
-      // Navigate to the URL without opening a new tab.
-      // Server sets Content-Disposition: attachment, so the browser downloads
-      // the file in the background and stays on the current page.
-      const a = document.createElement("a");
-      a.href = data.downloadUrl;
-      a.download = data.filename || `video.${selectedOption.format}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      if (downloadTab) {
+        // Navigate the already-open tab to the download URL.
+        // Server returns Content-Disposition: attachment so the browser
+        // downloads the file and the tab closes automatically.
+        downloadTab.location.href = data.downloadUrl;
+      } else {
+        // Fallback if the tab was blocked
+        const a = document.createElement("a");
+        a.href = data.downloadUrl;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
 
       setDownloadProgress(100);
       setTimeout(() => {
@@ -233,6 +244,7 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
 
     } catch (err: unknown) {
       clearTimeout(timer);
+      if (downloadTab) downloadTab.close();
       const msg = err instanceof Error ? err.message : "Download failed. Please try again.";
       setDownloadError(
         msg.includes("aborted") || msg.includes("AbortError")
