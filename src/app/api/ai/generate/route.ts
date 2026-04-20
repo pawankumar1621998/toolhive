@@ -186,7 +186,7 @@ function langInstructionJSON(language?: string): string {
 // Tools that return JSON — language instruction must tell AI to keep keys in English
 const JSON_TOOLS = new Set([
   "resume-summary", "linkedin-headlines", "linkedin-bullets",
-  "interview-prep", "resume-analyzer", "ats-checker", "job-match", "keyword-optimizer",
+  "interview-prep", "resume-analyzer", "ats-checker", "job-match", "keyword-optimizer", "resume-from-jd", "resume-career-insights",
 ]);
 
 function buildPrompt(toolSlug: string, params: Record<string, unknown>): string {
@@ -424,6 +424,38 @@ Job Description: ${jobDescText || "(not provided)"}
 Return ONLY a valid JSON object (no markdown, no explanation):
 {"overallScore":<0-100>,"densityTable":[{"keyword":"word","inResume":<n>,"inJD":<n>,"status":"Good"},{"keyword":"word","inResume":<n>,"inJD":<n>,"status":"Low"},{"keyword":"word","inResume":0,"inJD":<n>,"status":"Missing"}],"missingKeywords":[{"keyword":"word","suggestion":"Where and how to add this keyword"}],"recommendations":["rec1","rec2","rec3","rec4"]}
 Include 4-8 keywords in densityTable, 2-4 missingKeywords.`;
+    }
+
+    case "resume-from-jd": {
+      const { jobTitle, company, jobDescription } = params as { jobTitle?: string; company?: string; jobDescription: string };
+      return `You are a professional resume writer. A candidate wants to apply for ${jobTitle ? `"${jobTitle}"` : "a job"}${company ? ` at ${company}` : ""}.
+
+Based on this job description, suggest the most relevant skills and write a professional resume summary.
+
+Job Description:
+${jobDescription}
+
+Return ONLY a valid JSON object (no markdown, no code blocks):
+{"skills":{"technical":["skill1","skill2","skill3","skill4","skill5"],"soft":["skill1","skill2","skill3"]},"summary":"2-3 sentence professional summary tailored to this role","suggestedSkills":["additional skill to learn 1","additional skill to learn 2","additional skill to learn 3"]}
+
+Include 5-8 technical skills and 3-4 soft skills. Make the summary ATS-optimized.`;
+    }
+
+    case "resume-career-insights": {
+      const { skills, jobTitle, experience } = params as { skills?: { technical?: string[]; soft?: string[] }; jobTitle?: string; experience?: string };
+      const techSkills = skills?.technical?.join(", ") || "";
+      const softSkills = skills?.soft?.join(", ") || "";
+      return `You are a career counselor. Based on this professional's profile, suggest career paths and skills to learn.
+
+Target Role: ${jobTitle || "Not specified"}
+Technical Skills: ${techSkills || "Not listed"}
+Soft Skills: ${softSkills || "Not listed"}
+Experience: ${experience || "Not specified"}
+
+Return ONLY a valid JSON object (no markdown, no code blocks):
+{"careerPaths":["Role Title - one-line description of fit","Role Title - one-line description of fit","Role Title - one-line description of fit"],"skillsToLearn":["Skill Name - why it will boost your career","Skill Name - why it will boost your career","Skill Name - why it will boost your career","Skill Name - why it will boost your career"],"industries":["Industry 1","Industry 2","Industry 3"]}
+
+Provide 3-4 career paths, 4-5 skills to learn, 3 industries. Be specific and actionable.`;
     }
 
     default: {
