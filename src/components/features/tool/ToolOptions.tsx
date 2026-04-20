@@ -901,6 +901,163 @@ function ImageToPdfOptions() {
   );
 }
 
+function ImageFlipOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  const dir = (opts.direction as string) || "horizontal";
+  return (
+    <OptionRow>
+      <Label>Flip Direction</Label>
+      <div className="flex gap-2">
+        {[{ value: "horizontal", label: "↔ Horizontal" }, { value: "vertical", label: "↕ Vertical" }].map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => set("direction", o.value)}
+            className={clsx(
+              "flex-1 rounded-lg border py-2 text-sm font-medium transition-colors",
+              dir === o.value
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border text-foreground-muted hover:bg-background-subtle"
+            )}
+          >{o.label}</button>
+        ))}
+      </div>
+    </OptionRow>
+  );
+}
+
+function ImageBlurOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  return (
+    <OptionRow>
+      <Label htmlFor="blur-sigma">Blur Intensity</Label>
+      <RangeSlider
+        id="blur-sigma"
+        value={Number(opts.sigma ?? 5)}
+        min={1}
+        max={30}
+        step={1}
+        onChange={(v) => set("sigma", v)}
+      />
+    </OptionRow>
+  );
+}
+
+function ImagePixelArtOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  return (
+    <OptionRow>
+      <Label htmlFor="pixel-size">Pixel Size</Label>
+      <RangeSlider
+        id="pixel-size"
+        value={Number(opts.pixelSize ?? 10)}
+        min={2}
+        max={40}
+        step={2}
+        onChange={(v) => set("pixelSize", v)}
+      />
+      <p className="text-xs text-foreground-subtle mt-1">Larger = bigger pixels / more retro look.</p>
+    </OptionRow>
+  );
+}
+
+function ImageSocialResizeOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+
+  const PRESETS: { label: string; w: number; h: number }[] = [
+    { label: "Instagram Post (1080×1080)",  w: 1080, h: 1080 },
+    { label: "Instagram Story (1080×1920)", w: 1080, h: 1920 },
+    { label: "Facebook Post (1200×628)",    w: 1200, h: 628  },
+    { label: "Twitter/X Post (1200×675)",   w: 1200, h: 675  },
+    { label: "YouTube Thumbnail (1280×720)",w: 1280, h: 720  },
+    { label: "LinkedIn Post (1200×627)",    w: 1200, h: 627  },
+    { label: "Pinterest Pin (1000×1500)",   w: 1000, h: 1500 },
+    { label: "WhatsApp DP (500×500)",       w: 500,  h: 500  },
+  ];
+
+  const currentW = Number(opts.width ?? 1080);
+  const currentH = Number(opts.height ?? 1080);
+  const active   = PRESETS.find((p) => p.w === currentW && p.h === currentH);
+
+  return (
+    <>
+      <OptionRow>
+        <Label>Platform Preset</Label>
+        <div className="flex flex-col gap-1.5">
+          {PRESETS.map((p) => (
+            <button
+              key={p.label}
+              type="button"
+              onClick={() => { set("width", p.w); set("height", p.h); }}
+              className={clsx(
+                "w-full text-left rounded-lg border px-3 py-2 text-xs font-medium transition-colors",
+                active?.label === p.label
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-foreground-muted hover:bg-background-subtle"
+              )}
+            >{p.label}</button>
+          ))}
+        </div>
+      </OptionRow>
+      <OptionRow>
+        <Label>Custom Size (px)</Label>
+        <div className="flex items-center gap-2">
+          <NumberInput value={currentW} min={10} max={8000} onChange={(v) => set("width", v)} suffix="W" />
+          <span className="text-foreground-muted text-sm">×</span>
+          <NumberInput value={currentH} min={10} max={8000} onChange={(v) => set("height", v)} suffix="H" />
+        </div>
+      </OptionRow>
+    </>
+  );
+}
+
+function ImageAddLogoOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  return (
+    <>
+      <OptionRow>
+        <Label htmlFor="logo-text">Logo / Text</Label>
+        <TextInput
+          id="logo-text"
+          value={(opts.text as string) || ""}
+          onChange={(v) => set("text", v)}
+          placeholder="Your brand name or text"
+        />
+      </OptionRow>
+      <OptionRow>
+        <Label>Position</Label>
+        <Select
+          value={(opts.position as string) || "bottom-right"}
+          onChange={(v) => set("position", v)}
+          options={[
+            { value: "bottom-right",  label: "Bottom Right" },
+            { value: "bottom-left",   label: "Bottom Left" },
+            { value: "top-right",     label: "Top Right" },
+            { value: "top-left",      label: "Top Left" },
+            { value: "center-middle", label: "Center" },
+          ]}
+        />
+      </OptionRow>
+      <OptionRow>
+        <Label htmlFor="logo-size">Font Size</Label>
+        <RangeSlider
+          id="logo-size"
+          value={Number(opts.fontSize ?? 48)}
+          min={16}
+          max={120}
+          step={4}
+          onChange={(v) => set("fontSize", v)}
+        />
+      </OptionRow>
+    </>
+  );
+}
+
 function VideoCompressOptions() {
   const opts = useToolStore(selectToolOptions);
   const set = useToolStore((s) => s.setToolOption);
@@ -1324,6 +1481,11 @@ export function ToolOptions({ tool }: { tool: Tool }) {
     if (slug === "upscale")           return <ImageUpscaleOptions />;
     if (slug === "watermark")         return <ImageWatermarkOptions />;
     if (slug === "image-to-pdf")      return <ImageToPdfOptions />;
+    if (slug === "flip")              return <ImageFlipOptions />;
+    if (slug === "blur-image")        return <ImageBlurOptions />;
+    if (slug === "pixel-art")         return <ImagePixelArtOptions />;
+    if (slug === "social-resize")     return <ImageSocialResizeOptions />;
+    if (slug === "add-logo")          return <ImageAddLogoOptions />;
   }
 
   // Video tools

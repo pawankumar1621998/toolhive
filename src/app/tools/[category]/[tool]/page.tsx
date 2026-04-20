@@ -11,7 +11,7 @@ import { MemeGeneratorUI } from "@/components/features/image/MemeGeneratorUI";
 import { VideoDownloader } from "@/components/features/video/VideoDownloader";
 import { ConverterTextWorkspace } from "@/components/features/converter/ConverterTextWorkspace";
 import { CalcWorkspace } from "@/components/features/calculator/CalcWorkspace";
-import { CanvasImageEditor } from "@/components/features/image/CanvasImageEditor";
+import { ImageToolWorkspace } from "@/components/features/image/ImageToolWorkspace";
 import { RelatedTools } from "@/components/features/tool/RelatedTools";
 import { ToolInfoPanel } from "@/components/features/tool/ToolInfoPanel";
 import { ToolPageSidebar } from "@/components/features/tool/ToolPageSidebar";
@@ -202,126 +202,9 @@ export default async function ToolPage({
                 <RelatedTools category={tool.category} currentToolId={tool.id} />
               </Suspense>
             </div>
-          ) : (tool.category === "image" && ["cleanup", "remove-watermark", "blemish-remove", "retouch"].includes(tool.slug)) ? (
-            <div className="py-6 max-w-5xl">
-              <CanvasImageEditor tool={tool} editorMode="brush-remove" />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
-          ) : (tool.category === "image" && ["blur-background", "pixelate", "blur-image", "blur-face", "pixelate-face", "censor"].includes(tool.slug)) ? (
-            <div className="py-6 max-w-5xl">
-              <CanvasImageEditor tool={tool} editorMode="brush-blur" />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
-          ) : (tool.category === "image" && tool.slug === "black-white") ? (
-            <div className="py-6 max-w-5xl">
-              <CanvasImageEditor tool={tool} editorMode="filter-bw" />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
-          ) : (tool.category === "image" && ["flip", "rotate"].includes(tool.slug)) ? (
-            <div className="py-6 max-w-5xl">
-              <CanvasImageEditor tool={tool} editorMode="flip-rotate" />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
-          ) : (tool.category === "image" && ["add-border", "add-white-border"].includes(tool.slug)) ? (
-            <div className="py-6 max-w-5xl">
-              <CanvasImageEditor tool={tool} editorMode="add-border" />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
-          ) : (tool.category === "image" && ["round-image", "circle-crop"].includes(tool.slug)) ? (
-            <div className="py-6 max-w-5xl">
-              <CanvasImageEditor tool={tool} editorMode="round-image" />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
-          ) : (tool.category === "image" && ["crop", "square-crop", "freehand-crop"].includes(tool.slug)) ? (
-            <div className="py-6 max-w-5xl">
-              <CanvasImageEditor tool={tool} editorMode="crop" />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
-          ) : (tool.category === "image" && tool.slug === "draw") ? (
-            <div className="py-6 max-w-5xl">
-              <CanvasImageEditor tool={tool} editorMode="draw" />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
-          ) : (tool.category === "image" && tool.slug === "adjust") ? (
-            <div className="py-6 max-w-5xl">
-              <CanvasImageEditor tool={tool} editorMode="adjust" />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
-          ) : (tool.category === "image" && tool.slug === "color-filter") ? (
-            <div className="py-6 max-w-5xl">
-              <CanvasImageEditor tool={tool} editorMode="color-filter" />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
-          ) : (tool.category === "image" && ["combine", "collage", "merge-signature"].includes(tool.slug)) ? (
-            <div className="py-6 max-w-5xl">
-              <CanvasImageEditor tool={tool} editorMode="combine" />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
-          ) : (tool.category === "image" && tool.slug === "profile-photo") ? (
-            <div className="py-6 max-w-5xl">
-              <CanvasImageEditor tool={tool} editorMode="profile-photo" />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
-          ) : (tool.category === "image" && ["beautify", "unblur", "unblur-face", "motion-blur", "pixel-art", "photo-enhancer", "ai-face-gen"].includes(tool.slug)) ? (
-            <div className="py-6 max-w-5xl">
-              <CanvasImageEditor tool={tool} editorMode="ai-process" />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
-          ) : (tool.category === "image" && ["add-text", "add-name-dob"].includes(tool.slug)) ? (
-            <div className="py-6 max-w-5xl">
-              <CanvasImageEditor tool={tool} editorMode="draw" />
+          ) : tool.category === "image" ? (
+            <div className="py-6 sm:py-8 max-w-2xl">
+              <ImageToolWorkspace tool={tool} />
               <ToolInfoPanel tool={tool} />
               <Suspense fallback={<SectionSkeleton rows={1} />}>
                 <RelatedTools category={tool.category} currentToolId={tool.id} />
