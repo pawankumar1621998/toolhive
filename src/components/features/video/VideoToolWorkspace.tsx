@@ -20,7 +20,7 @@ import type { Tool } from "@/types";
 // Constants
 // ─────────────────────────────────────────────
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "https://toolhive-backend.onrender.com/api/v1").replace(/\/$/, "");
 
 const ACCEPTED_TYPES = ["video/mp4", "video/quicktime", "video/avi", "video/x-msvideo", "video/webm", "video/x-matroska", "video/mpeg", "video/3gpp"];
 

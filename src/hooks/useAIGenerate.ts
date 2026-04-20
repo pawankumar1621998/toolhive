@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { useLanguageStore } from "@/stores/languageStore";
 
-const RENDER_URL = process.env.NEXT_PUBLIC_API_URL;
+const RENDER_URL = (process.env.NEXT_PUBLIC_API_URL || "https://toolhive-backend.onrender.com/api/v1").replace(/\/$/, "");
 
 export function useAIGenerate(toolSlug: string) {
   const [output,   setOutput]   = useState("");

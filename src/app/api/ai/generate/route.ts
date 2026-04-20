@@ -193,7 +193,7 @@ async function callAI(prompt: string, preferredProvider?: Provider): Promise<{ o
     if (!apiKey?.trim()) continue;
 
     try {
-      const output = await withTimeout(config.call(apiKey, prompt), 10_000);
+      const output = await withTimeout(config.call(apiKey, prompt), 25_000);
       if (output.trim()) return { output, provider: config.name };
     } catch (err) {
       errors.push(`${config.name}: ${(err as Error).message}`);

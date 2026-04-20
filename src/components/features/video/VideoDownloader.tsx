@@ -129,6 +129,8 @@ function FormatBadge({ format }: { format: "mp4" | "mp3" | "webm" }) {
 // Main component
 // ─────────────────────────────────────────────
 
+const BACKEND_URL = "/api";
+
 export function VideoDownloader({ tool }: { tool: Tool }) {
   const [url, setUrl]                     = useState("");
   const [isFetching, setIsFetching]       = useState(false);
@@ -154,10 +156,10 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
     setDownloadError(null);
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 90_000); // 90s for cold-start
+    const timer = setTimeout(() => controller.abort(), 30_000);
 
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/video/info`;
+      const apiUrl = `${BACKEND_URL}/video/info`;
 
       const res = await fetch(apiUrl, {
         method:  "POST",
@@ -196,7 +198,7 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
     const timer = setTimeout(() => controller.abort(), 10 * 60_000); // 10 min for large files
 
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/video/download`;
+      const apiUrl = `${BACKEND_URL}/video/download`;
 
       const res = await fetch(apiUrl, {
         method:  "POST",
