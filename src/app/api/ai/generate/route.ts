@@ -458,6 +458,31 @@ Return ONLY a valid JSON object (no markdown, no code blocks):
 Provide 3-4 career paths, 4-5 skills to learn, 3 industries. Be specific and actionable.`;
     }
 
+    case "poem-gen": {
+      const { topic, style, mood, language } = params as { topic: string; style?: string; mood?: string; language?: string };
+      return `Write a beautiful ${style ?? "free verse"} poem about: "${topic}"\nMood/Tone: ${mood ?? "Thoughtful"}\nLanguage: ${language ?? "English"}\n\nWrite ONLY the poem — no title unless it's a sonnet. Use vivid imagery, rhythm, and emotion. Make it memorable and meaningful.`;
+    }
+
+    case "song-lyrics": {
+      const { theme, genre, mood, hook } = params as { theme: string; genre?: string; mood?: string; hook?: string };
+      return `Write original song lyrics for a ${genre ?? "Pop"} song.\nTheme/Story: ${theme}\nMood: ${mood ?? "Uplifting"}${hook ? `\nHook/Key phrase to include: ${hook}` : ""}\n\nStructure: [Verse 1], [Pre-Chorus], [Chorus], [Verse 2], [Chorus], [Bridge], [Final Chorus]\nMake the chorus catchy and memorable. Use rhyme and rhythm appropriate for ${genre ?? "Pop"}.`;
+    }
+
+    case "tagline-gen": {
+      const { brand, industry, vibe, audience } = params as { brand: string; industry?: string; vibe?: string; audience?: string };
+      return `Generate 10 catchy taglines/slogans for: "${brand}"\nIndustry: ${industry ?? "General"}\nVibe/Tone: ${vibe ?? "Bold"}\n${audience ? `Target audience: ${audience}` : ""}\n\nCreate varied options: 2 bold, 2 witty, 2 inspirational, 2 minimal/clean, 2 question-based.\nEach tagline max 8 words. Number them 1-10. Add a brief note (1-3 words) after each in brackets like [bold], [witty], [inspirational].`;
+    }
+
+    case "speech-writer": {
+      const { occasion, speakerName, aboutPerson, tone, duration, personalDetails } = params as { occasion: string; speakerName?: string; aboutPerson?: string; tone?: string; duration?: string; personalDetails?: string };
+      return `Write a complete ${tone ?? "Heartfelt"} ${occasion} speech.\n${speakerName ? `Speaker: ${speakerName}` : ""}\n${aboutPerson ? `Speech is about/for: ${aboutPerson}` : ""}\nDuration: ${duration ?? "3 minutes"} (~${duration === "1 minute" ? "130" : duration === "2 minutes" ? "260" : duration === "5 minutes" ? "650" : "390"} words)\n${personalDetails ? `Personal details/stories to include: ${personalDetails}` : ""}\n\nStructure: Opening hook, personal story/memory, heartfelt message, advice or wishes, memorable closing line.\nMake it emotional, authentic, and memorable. Use natural spoken language.`;
+    }
+
+    case "cold-dm": {
+      const { platform, purpose, aboutMe, aboutThem, offer } = params as { platform: string; purpose?: string; aboutMe?: string; aboutThem?: string; offer?: string };
+      return `Write 3 cold ${platform ?? "Instagram"} DM/outreach message variations.\nPurpose: ${purpose ?? "Collaboration"}\n${aboutMe ? `About me/my brand: ${aboutMe}` : ""}\n${aboutThem ? `About the recipient: ${aboutThem}` : ""}\n${offer ? `What I'm offering/proposing: ${offer}` : ""}\n\nRules: Not spammy, personalized, under 100 words each, clear CTA. Start with a genuine observation, not "Hey" or "Hi I found you". Number each variation 1, 2, 3. Add a subject/opening strategy note after each.`;
+    }
+
     default: {
       const { text, topic } = params as { text?: string; topic?: string };
       return `${text ?? topic ?? "Generate helpful content for " + toolSlug}`;

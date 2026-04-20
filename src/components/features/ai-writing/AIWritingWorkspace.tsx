@@ -3263,6 +3263,309 @@ function ComplimentGenerator() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Tool title map
 // ─────────────────────────────────────────────────────────────────────────────
+// Poem Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+const POEM_STYLES = ["Free Verse", "Haiku", "Sonnet", "Limerick", "Acrostic", "Ode", "Ballad"] as const;
+const POEM_MOODS = ["Romantic", "Sad", "Joyful", "Thoughtful", "Humorous", "Inspirational", "Dark"] as const;
+
+function PoemGenerator() {
+  const [topic, setTopic] = useState("");
+  const [style, setStyle] = useState<typeof POEM_STYLES[number]>("Free Verse");
+  const [mood, setMood] = useState<typeof POEM_MOODS[number]>("Thoughtful");
+  const { output, loading, error, generate, clear } = useAIGenerate("poem-gen");
+
+  async function handleGenerate() {
+    if (!topic.trim()) return;
+    await generate({ topic, style, mood });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Topic / Theme <span className="text-rose-500">*</span></label>
+        <input className={inputClass} placeholder="e.g. the beauty of rain, a letter to my younger self, first love..." value={topic} onChange={(e) => setTopic(e.target.value)} />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Style</p>
+          <div className="flex flex-wrap gap-1.5">
+            {POEM_STYLES.map((s) => (
+              <button key={s} onClick={() => setStyle(s)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", style === s ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{s}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Mood</p>
+          <div className="flex flex-wrap gap-1.5">
+            {POEM_MOODS.map((m) => (
+              <button key={m} onClick={() => setMood(m)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", mood === m ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{m}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <button onClick={handleGenerate} disabled={!topic.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Writing poem…</> : "🖊️ Generate Poem"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label={`${style} · ${mood}`} />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Song Lyrics Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SONG_GENRES = ["Pop", "Rap / Hip-Hop", "R&B / Soul", "Ballad", "Country", "Rock", "EDM / Dance", "Bollywood"] as const;
+const SONG_MOODS = ["Uplifting", "Heartbreak", "Party", "Romantic", "Motivational", "Chill", "Sad", "Energetic"] as const;
+
+function SongLyricsGenerator() {
+  const [theme, setTheme] = useState("");
+  const [genre, setGenre] = useState<typeof SONG_GENRES[number]>("Pop");
+  const [mood, setMood] = useState<typeof SONG_MOODS[number]>("Uplifting");
+  const [hook, setHook] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("song-lyrics");
+
+  async function handleGenerate() {
+    if (!theme.trim()) return;
+    await generate({ theme, genre, mood, hook });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Song Theme / Story <span className="text-rose-500">*</span></label>
+        <textarea className={inputClass} rows={3} placeholder="e.g. missing someone who moved away, chasing your dreams despite everyone doubting you, late night drives and nostalgia..." value={theme} onChange={(e) => setTheme(e.target.value)} />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Genre</p>
+          <div className="flex flex-wrap gap-1.5">
+            {SONG_GENRES.map((g) => (
+              <button key={g} onClick={() => setGenre(g)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", genre === g ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{g}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Mood</p>
+          <div className="flex flex-wrap gap-1.5">
+            {SONG_MOODS.map((m) => (
+              <button key={m} onClick={() => setMood(m)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", mood === m ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{m}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Key Hook Phrase (optional)</label>
+        <input className={inputClass} placeholder="e.g. &quot;I'll find my way back home&quot; — a phrase you want in the chorus" value={hook} onChange={(e) => setHook(e.target.value)} />
+      </div>
+      <button onClick={handleGenerate} disabled={!theme.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Writing lyrics…</> : "🎵 Generate Song Lyrics"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label={`Lyrics — ${genre} · ${mood}`} />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tagline Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+const TAGLINE_VIBES = ["Bold", "Witty", "Inspirational", "Minimal", "Playful", "Professional", "Emotional"] as const;
+
+function TaglineGenerator() {
+  const [brand, setBrand] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [vibe, setVibe] = useState<typeof TAGLINE_VIBES[number]>("Bold");
+  const [audience, setAudience] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("tagline-gen");
+
+  async function handleGenerate() {
+    if (!brand.trim()) return;
+    await generate({ brand, industry, vibe, audience });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-1.5">Brand / Product Name <span className="text-rose-500">*</span></label>
+          <input className={inputClass} placeholder="e.g. Zest Coffee, SwiftFit App, NovaTech..." value={brand} onChange={(e) => setBrand(e.target.value)} />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-1.5">Industry / Category</label>
+          <input className={inputClass} placeholder="e.g. Coffee shop, Fitness app, Tech startup..." value={industry} onChange={(e) => setIndustry(e.target.value)} />
+        </div>
+      </div>
+      <div>
+        <p className="text-sm font-medium text-foreground mb-2">Tagline Vibe</p>
+        <div className="flex flex-wrap gap-1.5">
+          {TAGLINE_VIBES.map((v) => (
+            <button key={v} onClick={() => setVibe(v)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", vibe === v ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{v}</button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Target Audience (optional)</label>
+        <input className={inputClass} placeholder="e.g. young professionals, fitness lovers, students..." value={audience} onChange={(e) => setAudience(e.target.value)} />
+      </div>
+      <button onClick={handleGenerate} disabled={!brand.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Generating taglines…</> : "🏷️ Generate Taglines"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label={`Taglines — ${brand} · ${vibe}`} />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Speech Writer
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SPEECH_OCCASIONS = ["Wedding Toast", "Graduation Speech", "Farewell Speech", "Birthday Speech", "Award Acceptance", "Retirement Speech", "Eulogy", "Motivational Talk"] as const;
+const SPEECH_TONES = ["Heartfelt", "Funny & Light", "Formal", "Inspirational", "Emotional"] as const;
+const SPEECH_DURATIONS = ["1 minute", "2 minutes", "3 minutes", "5 minutes"] as const;
+
+function SpeechWriter() {
+  const [occasion, setOccasion] = useState<typeof SPEECH_OCCASIONS[number]>("Wedding Toast");
+  const [aboutPerson, setAboutPerson] = useState("");
+  const [speakerName, setSpeakerName] = useState("");
+  const [tone, setTone] = useState<typeof SPEECH_TONES[number]>("Heartfelt");
+  const [duration, setDuration] = useState<typeof SPEECH_DURATIONS[number]>("3 minutes");
+  const [personalDetails, setPersonalDetails] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("speech-writer");
+
+  async function handleGenerate() {
+    if (!aboutPerson.trim()) return;
+    await generate({ occasion, speakerName, aboutPerson, tone, duration, personalDetails });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <p className="text-sm font-medium text-foreground mb-2">Occasion</p>
+        <div className="flex flex-wrap gap-1.5">
+          {SPEECH_OCCASIONS.map((o) => (
+            <button key={o} onClick={() => setOccasion(o)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", occasion === o ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{o}</button>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-1.5">Speech Is About / For <span className="text-rose-500">*</span></label>
+          <input className={inputClass} placeholder="e.g. my best friend Sarah, graduating class of 2024..." value={aboutPerson} onChange={(e) => setAboutPerson(e.target.value)} />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-1.5">Your Name (Speaker)</label>
+          <input className={inputClass} placeholder="e.g. John — the best man" value={speakerName} onChange={(e) => setSpeakerName(e.target.value)} />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Tone</p>
+          <div className="flex flex-wrap gap-1.5">
+            {SPEECH_TONES.map((t) => (
+              <button key={t} onClick={() => setTone(t)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", tone === t ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{t}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Speech Duration</p>
+          <div className="flex flex-wrap gap-1.5">
+            {SPEECH_DURATIONS.map((d) => (
+              <button key={d} onClick={() => setDuration(d)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", duration === d ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{d}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Personal Details / Stories (optional)</label>
+        <textarea className={inputClass} rows={3} placeholder="e.g. We met in college, she always brought coffee when I was stressed, she once drove 3 hours to help me move..." value={personalDetails} onChange={(e) => setPersonalDetails(e.target.value)} />
+      </div>
+      <button onClick={handleGenerate} disabled={!aboutPerson.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Writing your speech…</> : "🎤 Write Speech"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label={`${occasion} · ${tone} · ${duration}`} />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cold DM Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DM_PLATFORMS = ["Instagram", "LinkedIn", "Twitter / X", "Email", "WhatsApp Business"] as const;
+const DM_PURPOSES = ["Collaboration", "Business Proposal", "Job Opportunity", "Freelance Pitch", "Partnership", "Influencer Outreach", "Networking"] as const;
+
+function ColdDMGenerator() {
+  const [platform, setPlatform] = useState<typeof DM_PLATFORMS[number]>("Instagram");
+  const [purpose, setPurpose] = useState<typeof DM_PURPOSES[number]>("Collaboration");
+  const [aboutMe, setAboutMe] = useState("");
+  const [aboutThem, setAboutThem] = useState("");
+  const [offer, setOffer] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("cold-dm");
+
+  async function handleGenerate() {
+    if (!aboutMe.trim()) return;
+    await generate({ platform, purpose, aboutMe, aboutThem, offer });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 flex items-start gap-2">
+        <span className="text-lg">💡</span>
+        <p className="text-xs text-blue-700 dark:text-blue-400">Generates personalized, non-spammy messages that feel genuine. Always personalize before sending!</p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Platform</p>
+          <div className="flex flex-wrap gap-1.5">
+            {DM_PLATFORMS.map((p) => (
+              <button key={p} onClick={() => setPlatform(p)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", platform === p ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{p}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground mb-2">Purpose</p>
+          <div className="flex flex-wrap gap-1.5">
+            {DM_PURPOSES.map((p) => (
+              <button key={p} onClick={() => setPurpose(p)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", purpose === p ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/50")}>{p}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-1.5">About You / Your Brand <span className="text-rose-500">*</span></label>
+          <textarea className={inputClass} rows={3} placeholder="e.g. I run a fitness brand with 50k followers, I'm a freelance graphic designer..." value={aboutMe} onChange={(e) => setAboutMe(e.target.value)} />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-1.5">About the Recipient</label>
+          <textarea className={inputClass} rows={3} placeholder="e.g. They post about sustainable fashion, they're a startup founder in fintech..." value={aboutThem} onChange={(e) => setAboutThem(e.target.value)} />
+        </div>
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">What You're Proposing / Offering</label>
+        <input className={inputClass} placeholder="e.g. a paid collab post, a free logo design in exchange for a testimonial, a 30-min call..." value={offer} onChange={(e) => setOffer(e.target.value)} />
+      </div>
+      <button onClick={handleGenerate} disabled={!aboutMe.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Writing your DMs…</> : "✉️ Generate Cold DMs"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label={`Cold DM — ${platform} · ${purpose}`} />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const TOOL_TITLES: Record<string, string> = {
   summarize: "AI Summarizer",
@@ -3273,7 +3576,6 @@ const TOOL_TITLES: Record<string, string> = {
   "email-writer": "AI Email Writer",
   "social-caption": "Social Media Caption",
   headline: "Headline Generator",
-  "text-to-speech": "Text to Speech",
   "instagram-bio": "Instagram Bio Generator",
   description: "Description Writer",
   paraphrase: "AI Paraphraser",
@@ -3292,6 +3594,11 @@ const TOOL_TITLES: Record<string, string> = {
   "fortune-cookie": "Fortune Cookie",
   "excuse-gen": "Excuse Generator",
   "compliment-gen": "Compliment Generator",
+  "poem-gen": "Poem Generator",
+  "song-lyrics": "Song Lyrics Generator",
+  "tagline-gen": "Tagline Generator",
+  "speech-writer": "Speech Writer",
+  "cold-dm": "Cold DM Generator",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3328,8 +3635,6 @@ export function AIWritingWorkspace({ tool }: { tool: Tool }) {
         return <SocialCaption />;
       case "headline":
         return <HeadlineGenerator />;
-      case "text-to-speech":
-        return <TextToSpeech />;
       case "instagram-bio":
         return <InstagramBioGen />;
       case "description":
@@ -3366,6 +3671,16 @@ export function AIWritingWorkspace({ tool }: { tool: Tool }) {
         return <ExcuseGenerator />;
       case "compliment-gen":
         return <ComplimentGenerator />;
+      case "poem-gen":
+        return <PoemGenerator />;
+      case "song-lyrics":
+        return <SongLyricsGenerator />;
+      case "tagline-gen":
+        return <TaglineGenerator />;
+      case "speech-writer":
+        return <SpeechWriter />;
+      case "cold-dm":
+        return <ColdDMGenerator />;
       default:
         return <DefaultTool tool={tool} />;
     }
