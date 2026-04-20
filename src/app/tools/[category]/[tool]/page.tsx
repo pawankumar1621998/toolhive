@@ -12,6 +12,7 @@ import { VideoDownloader } from "@/components/features/video/VideoDownloader";
 import { ConverterTextWorkspace } from "@/components/features/converter/ConverterTextWorkspace";
 import { CalcWorkspace } from "@/components/features/calculator/CalcWorkspace";
 import { ImageToolWorkspace } from "@/components/features/image/ImageToolWorkspace";
+import { TranslatePdfWorkspace } from "@/components/features/tool/TranslatePdfWorkspace";
 import { RelatedTools } from "@/components/features/tool/RelatedTools";
 import { ToolInfoPanel } from "@/components/features/tool/ToolInfoPanel";
 import { ToolPageSidebar } from "@/components/features/tool/ToolPageSidebar";
@@ -202,6 +203,15 @@ export default async function ToolPage({
                 <RelatedTools category={tool.category} currentToolId={tool.id} />
               </Suspense>
             </div>
+          ) : tool.slug === "translate-pdf" ? (
+            <div className="py-6 sm:py-8 max-w-3xl">
+              <TranslatePdfWorkspace />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
           ) : tool.category === "image" ? (
             <div className="py-6 sm:py-8 max-w-2xl">
               <ImageToolWorkspace tool={tool} />

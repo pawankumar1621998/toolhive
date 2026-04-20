@@ -770,25 +770,17 @@ async function processPDF(
     case "translate-pdf": {
       const pdfData = await pdfParse(bufs[0]);
       const targetLang = opts.targetLanguage ?? "Hindi";
-      const fullText = pdfData.text.trim();
-      const CHUNK = 3500;
-      const chunks = [];
-      for (let i = 0; i < Math.min(fullText.length, CHUNK * 3); i += CHUNK) {
-        chunks.push(fullText.slice(i, i + CHUNK));
-      }
-      const header = `=== TRANSLATED DOCUMENT ===\nOriginal: ${filenames[0]}\nTarget Language: ${targetLang}\nPages: ${pdfData.numpages}\nTranslated: ${new Date().toLocaleDateString()}\n${"=".repeat(50)}\n\n`;
-      const parts = [header];
-      for (let i = 0; i < chunks.length; i++) {
-        const translated = await callLocalAI(
-          `You are a professional translator. Translate the following text accurately to ${targetLang}.\nPreserve paragraph structure, headings, and formatting.\nDo NOT add any explanations, notes, or translator comments.\nReturn ONLY the translated text.\n\nText to translate:\n${chunks[i]}`
-        );
-        parts.push(translated.trim());
-        if (chunks.length > 1) parts.push(`\n\n--- [Part ${i + 1} of ${chunks.length}] ---\n\n`);
-      }
-      if (fullText.length > CHUNK * 3) {
-        parts.push(`\n\n[Note: Original document had ${pdfData.numpages} pages. Only the first portion was translated due to length limits.]`);
-      }
-      const result = parts.join("");
+      const sourceLang = opts.sourceLanguage && opts.sourceLanguage !== "Auto Detect" ? opts.sourceLanguage : null;
+      const fullText   = pdfData.text.trim();
+      // Single 4000-char chunk for fast response (avoids Vercel 10s timeout)
+      const chunk = fullText.slice(0, 4000);
+      const sourceHint = sourceLang ? ` from ${sourceLang}` : "";
+      const translated = await callLocalAI(
+        `You are a professional document translator. Translate the following text${sourceHint} to ${targetLang}.\n\nRules:\n- Preserve paragraph structure, headings, bullet points, and line breaks\n- Keep numbers, dates, and proper nouns as-is unless they have a common translated form\n- Do NOT add any translator notes, explanations, or comments\n- Return ONLY the translated text, nothing else\n\nText to translate:\n${chunk}`
+      );
+      const header = `TRANSLATED DOCUMENT\n${"─".repeat(40)}\nOriginal file : ${filenames[0]}\nTarget language: ${targetLang}${sourceLang ? `\nSource language: ${sourceLang}` : ""}\nPages          : ${pdfData.numpages}\nTranslated on  : ${new Date().toLocaleDateString("en-GB")}\n${"─".repeat(40)}\n\n`;
+      const footer  = fullText.length > 4000 ? `\n\n${"─".repeat(40)}\nNote: This document is ${pdfData.numpages} pages long. Due to processing limits, only the first portion has been translated. Upload shorter sections for full translation.` : "";
+      const result  = header + translated.trim() + footer;
       return [{ name: `${baseName(filenames[0])}_${targetLang.replace(/\s/g, "_")}.txt`, data: Buffer.from(result).toString("base64"), type: "text/plain" }];
     }
 
