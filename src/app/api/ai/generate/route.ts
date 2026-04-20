@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 // Provider definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Provider = "gemini" | "groq" | "deepseek" | "anthropic";
+type Provider = "gemini" | "groq" | "deepseek" | "anthropic" | "mistral" | "openrouter";
 
 interface ProviderConfig {
   name: string;
@@ -114,10 +114,62 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
       return data.content?.[0]?.text ?? "";
     },
   },
+
+  mistral: {
+    name: "Mistral AI",
+    envKey: "MISTRAL_API_KEY",
+    call: async (apiKey, prompt) => {
+      const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "mistral-small-latest",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 2048,
+          temperature: 0.7,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json() as { message?: string };
+        throw new Error(err.message ?? `Mistral error ${res.status}`);
+      }
+      const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+      return data.choices?.[0]?.message?.content ?? "";
+    },
+  },
+
+  openrouter: {
+    name: "OpenRouter",
+    envKey: "OPENROUTER_API_KEY",
+    call: async (apiKey, prompt) => {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://toolhive.app",
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-3.1-8b-instruct:free",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 2048,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json() as { error?: { message?: string } };
+        throw new Error(err.error?.message ?? `OpenRouter error ${res.status}`);
+      }
+      const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+      return data.choices?.[0]?.message?.content ?? "";
+    },
+  },
 };
 
 // Priority order — first provider with a key wins
-const PROVIDER_ORDER: Provider[] = ["gemini", "groq", "deepseek", "anthropic"];
+const PROVIDER_ORDER: Provider[] = ["gemini", "groq", "mistral", "openrouter", "deepseek", "anthropic"];
 
 async function callAI(prompt: string, preferredProvider?: Provider): Promise<{ output: string; provider: string }> {
   const order = preferredProvider
