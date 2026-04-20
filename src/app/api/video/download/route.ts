@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import ytdl from "@distube/ytdl-core";
 
 // ─────────────────────────────────────────────
-// Cobalt API — returns a direct download URL (no proxying through Vercel)
+// Cobalt API — tries to get a direct CDN URL (fast, no proxying)
+// Falls back to Render backend (yt-dlp streaming) if Cobalt fails.
 // ─────────────────────────────────────────────
+
+const RENDER_URL = (process.env.NEXT_PUBLIC_API_URL || "https://toolhive-backend.onrender.com/api/v1").replace(/\/$/, "");
 
 const COBALT_INSTANCES = [
+  "https://api.cobalt.tools",
   "https://cobalt.api.timelessnesses.me",
   "https://cobalt.otomir23.me",
-  "https://api.cobalt.tools",
 ];
 
 type CobaltQuality = "144" | "240" | "360" | "480" | "720" | "1080" | "1440" | "2160";
@@ -48,13 +50,8 @@ async function callCobalt(instance: string, body: CobaltRequest): Promise<Cobalt
   return res.json() as Promise<CobaltResponse>;
 }
 
-function isYouTube(url: string) {
-  return url.includes("youtube.com") || url.includes("youtu.be");
-}
-
 // ─────────────────────────────────────────────
-// Route — returns { downloadUrl, filename } so the browser downloads directly.
-// No video bytes flow through Vercel (avoids 4.5 MB limit / 10 s timeout).
+// Route
 // ─────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -64,81 +61,54 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "URL is required" }, { status: 400 });
     }
 
-    const isAudio = quality === "mp3";
+    const cleanUrl = url.trim();
+    const isAudio  = quality === "mp3";
     const cobaltQuality = isAudio ? undefined : (QUALITY_TO_COBALT[quality] ?? "720") as CobaltQuality;
 
     const cobaltBody: CobaltRequest = {
-      url: url.trim(),
+      url: cleanUrl,
       filenameStyle: "basic",
       ...(isAudio
         ? { downloadMode: "audio", audioFormat: "mp3" }
         : { videoQuality: cobaltQuality, downloadMode: "auto" }),
     };
 
-    // 1. Try Cobalt instances
-    let cobaltData: CobaltResponse | null = null;
+    // ── 1. Try Cobalt instances (fast CDN URL) ──
     for (const instance of COBALT_INSTANCES) {
       try {
-        cobaltData = await callCobalt(instance, cobaltBody);
-        if (cobaltData.status !== "error") break;
-      } catch { /* try next */ }
-    }
+        const data = await callCobalt(instance, cobaltBody);
+        if (data.status === "error") continue;
 
-    if (cobaltData && cobaltData.status !== "error") {
-      // picker = carousel (e.g. Instagram) — take first video
-      if (cobaltData.status === "picker" && cobaltData.picker?.length) {
-        const item = cobaltData.picker.find((p) => p.type === "video") ?? cobaltData.picker[0];
-        cobaltData = { status: "redirect", url: item.url, filename: "video.mp4" };
-      }
+        // picker = carousel (e.g. Instagram) — take first video item
+        let finalData = data;
+        if (data.status === "picker" && data.picker?.length) {
+          const item = data.picker.find((p) => p.type === "video") ?? data.picker[0];
+          finalData = { status: "redirect", url: item.url, filename: "video.mp4" };
+        }
 
-      if (cobaltData.url) {
-        return NextResponse.json({
-          success:     true,
-          downloadUrl: cobaltData.url,
-          filename:    cobaltData.filename ?? (isAudio ? "audio.mp3" : "video.mp4"),
-        });
-      }
-    }
-
-    // 2. YouTube fallback via ytdl-core
-    if (isYouTube(url.trim())) {
-      const info = await ytdl.getInfo(url.trim());
-      const title = info.videoDetails.title.replace(/[^\w\s-]/g, "").trim().slice(0, 80) || "video";
-
-      let format: ytdl.videoFormat | undefined;
-      if (isAudio) {
-        format = ytdl.chooseFormat(info.formats, { quality: "highestaudio", filter: "audioonly" });
-      } else {
-        // prefer combined video+audio formats to avoid needing ffmpeg merge
-        const combined = info.formats.filter(
-          (f) => f.hasVideo && f.hasAudio
-        ).sort((a, b) => (parseInt(b.height?.toString() ?? "0") - parseInt(a.height?.toString() ?? "0")));
-        format = combined[0] ?? ytdl.chooseFormat(info.formats, { quality: "highestvideo&audio" });
-      }
-
-      if (format?.url) {
-        const ext = isAudio ? "mp3" : "mp4";
-        return NextResponse.json({
-          success:     true,
-          downloadUrl: format.url,
-          filename:    `${title}.${ext}`,
-        });
+        if (finalData.url) {
+          return NextResponse.json({
+            success:     true,
+            downloadUrl: finalData.url,
+            filename:    finalData.filename ?? (isAudio ? "audio.mp3" : "video.mp4"),
+          });
+        }
+      } catch {
+        // try next instance
       }
     }
 
-    // 3. Nothing worked
-    const errCode = cobaltData?.error?.code ?? "unknown";
-    const friendly: Record<string, string> = {
-      "content.too_long":          "Video is too long to download.",
-      "content.video.unavailable": "This video is unavailable.",
-      "fetch.fail":                "Could not reach the video. It may be private or expired.",
-      "link.unsupported":          "This platform is not supported for download.",
-      "link.invalid":              "Invalid URL.",
-    };
-    return NextResponse.json(
-      { success: false, message: friendly[errCode] ?? "Download failed. Please try another quality or platform." },
-      { status: 400 }
-    );
+    // ── 2. Fallback: Render backend GET URL (yt-dlp streams directly to browser) ──
+    const backendUrl =
+      `${RENDER_URL}/video/download` +
+      `?url=${encodeURIComponent(cleanUrl)}` +
+      `&quality=${encodeURIComponent(quality)}`;
+
+    return NextResponse.json({
+      success:     true,
+      downloadUrl: backendUrl,
+      filename:    isAudio ? "audio.mp3" : "video.mp4",
+    });
 
   } catch (err: unknown) {
     const msg = (err as Error)?.message ?? "Download failed";
