@@ -8,6 +8,7 @@ import React, {
   useLayoutEffect,
 } from "react";
 import { clsx } from "clsx";
+import { nanoid } from "nanoid";
 import {
   Upload,
   Undo2,

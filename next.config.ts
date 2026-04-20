@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   cacheComponents: true,
 
-  serverExternalPackages: ["sharp", "pdf-parse", "docx", "exceljs"],
+  serverExternalPackages: ["sharp", "pdf-parse", "docx", "exceljs", "@distube/ytdl-core"],
 
   experimental: {
     instantNavigationDevToolsToggle: true,
