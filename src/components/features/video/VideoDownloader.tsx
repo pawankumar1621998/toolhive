@@ -215,12 +215,12 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
 
       setDownloadProgress(80);
 
-      // Open the direct URL — browser handles the download natively
+      // Navigate to the URL without opening a new tab.
+      // Server sets Content-Disposition: attachment, so the browser downloads
+      // the file in the background and stays on the current page.
       const a = document.createElement("a");
       a.href = data.downloadUrl;
       a.download = data.filename || `video.${selectedOption.format}`;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
