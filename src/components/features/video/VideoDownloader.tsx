@@ -153,13 +153,17 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
     setDownloadProgress(0);
     setDownloadError(null);
 
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 90_000); // 90s for cold-start
+
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/video/info`;
 
       const res = await fetch(apiUrl, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim() }),
+        body:    JSON.stringify({ url: url.trim() }),
+        signal:  controller.signal,
       });
 
       const json = await res.json();
@@ -169,8 +173,14 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
 
       setVideoInfo(json.data);
     } catch (err: unknown) {
-      setFetchError(err instanceof Error ? err.message : "Failed to fetch video info.");
+      const msg = err instanceof Error ? err.message : "Failed to fetch video info.";
+      setFetchError(
+        msg.includes("aborted") || msg.includes("AbortError")
+          ? "Request timed out. The server may be starting up — please try again in a moment."
+          : msg
+      );
     } finally {
+      clearTimeout(timer);
       setIsFetching(false);
     }
   }
@@ -182,14 +192,20 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
     setDownloadProgress(0);
     setDownloadError(null);
 
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10 * 60_000); // 10 min for large files
+
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/video/download`;
 
       const res = await fetch(apiUrl, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim(), quality: selectedQuality }),
+        body:    JSON.stringify({ url: url.trim(), quality: selectedQuality }),
+        signal:  controller.signal,
       });
+
+      clearTimeout(timer);
 
       if (!res.ok) {
         const json = await res.json().catch(() => ({}));
@@ -239,7 +255,13 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
       }, 300);
 
     } catch (err: unknown) {
-      setDownloadError(err instanceof Error ? err.message : "Download failed. Please try again.");
+      clearTimeout(timer);
+      const msg = err instanceof Error ? err.message : "Download failed. Please try again.";
+      setDownloadError(
+        msg.includes("aborted") || msg.includes("AbortError")
+          ? "Download timed out. Please try a lower quality or try again."
+          : msg
+      );
       setIsDownloading(false);
       setDownloadProgress(0);
     }

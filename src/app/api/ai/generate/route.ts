@@ -168,8 +168,17 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
   },
 };
 
-// Priority order — first provider with a key wins
-const PROVIDER_ORDER: Provider[] = ["gemini", "groq", "mistral", "openrouter", "deepseek", "anthropic"];
+// Priority order — Groq first (fastest + reliable), broken providers last
+const PROVIDER_ORDER: Provider[] = ["groq", "mistral", "openrouter", "gemini", "deepseek", "anthropic"];
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Provider timeout after ${ms}ms`)), ms)
+    ),
+  ]);
+}
 
 async function callAI(prompt: string, preferredProvider?: Provider): Promise<{ output: string; provider: string }> {
   const order = preferredProvider
@@ -184,7 +193,7 @@ async function callAI(prompt: string, preferredProvider?: Provider): Promise<{ o
     if (!apiKey?.trim()) continue;
 
     try {
-      const output = await config.call(apiKey, prompt);
+      const output = await withTimeout(config.call(apiKey, prompt), 10_000);
       if (output.trim()) return { output, provider: config.name };
     } catch (err) {
       errors.push(`${config.name}: ${(err as Error).message}`);
