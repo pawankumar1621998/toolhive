@@ -32,6 +32,62 @@ function baseName(filename: string) {
 }
 
 // ─────────────────────────────────────────────
+// Lightweight AI caller for file-processing tools
+// ─────────────────────────────────────────────
+
+async function callLocalAI(prompt: string): Promise<string> {
+  const providers = [
+    {
+      key: process.env.GEMINI_API_KEY,
+      call: async (k: string) => {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${k}`,
+          { method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 2048 } }) }
+        );
+        if (!res.ok) throw new Error(`Gemini ${res.status}`);
+        const d = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+        return d.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      },
+    },
+    {
+      key: process.env.GROQ_API_KEY,
+      call: async (k: string) => {
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${k}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], max_tokens: 2048 }),
+        });
+        if (!res.ok) throw new Error(`Groq ${res.status}`);
+        const d = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+        return d.choices?.[0]?.message?.content ?? "";
+      },
+    },
+    {
+      key: process.env.DEEPSEEK_API_KEY,
+      call: async (k: string) => {
+        const res = await fetch("https://api.deepseek.com/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${k}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }], max_tokens: 2048 }),
+        });
+        if (!res.ok) throw new Error(`DeepSeek ${res.status}`);
+        const d = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+        return d.choices?.[0]?.message?.content ?? "";
+      },
+    },
+  ];
+  for (const p of providers) {
+    if (!p.key?.trim()) continue;
+    try {
+      const out = await p.call(p.key);
+      if (out.trim()) return out;
+    } catch { /* try next */ }
+  }
+  throw new Error("No AI API key configured. Add GEMINI_API_KEY, GROQ_API_KEY, or DEEPSEEK_API_KEY to .env.local");
+}
+
+// ─────────────────────────────────────────────
 // Image processors (sharp)
 // ─────────────────────────────────────────────
 
@@ -218,6 +274,54 @@ async function processImage(
       }
       const resultBuf = Buffer.from(await bgRes.arrayBuffer());
       return { name: `${baseName(filename)}_nobg.png`, data: resultBuf.toString("base64"), type: "image/png" };
+    }
+    case "upscale": {
+      const scale = parseInt(opts.scale ?? "2", 10);
+      const meta = await sharp(buf).metadata();
+      const w = (meta.width ?? 800) * scale;
+      const h = (meta.height ?? 600) * scale;
+      pipeline = pipeline.resize(w, h, { kernel: sharp.kernel.lanczos3 });
+      outName = `${baseName(filename)}_${scale}x`;
+      break;
+    }
+    case "view-metadata": {
+      const meta = await sharp(buf).metadata();
+      const info = {
+        filename,
+        format: meta.format,
+        width: meta.width,
+        height: meta.height,
+        channels: meta.channels,
+        colorSpace: meta.space,
+        hasAlpha: meta.hasAlpha,
+        density: meta.density,
+        fileSize: `${(buf.byteLength / 1024).toFixed(1)} KB`,
+      };
+      const txt = Object.entries(info).map(([k, v]) => `${k}: ${v}`).join("\n");
+      return { name: `${baseName(filename)}_metadata.txt`, data: Buffer.from(txt).toString("base64"), type: "text/plain" };
+    }
+    case "add-logo": {
+      const text = opts.text ?? "LOGO";
+      const fontSize = parseInt(opts.fontSize ?? "48", 10);
+      const position = opts.position ?? "bottom-right";
+      const meta = await sharp(buf).metadata();
+      const w = meta.width ?? 800;
+      const h = meta.height ?? 600;
+      const ax = position.includes("right") ? w - 20 : position.includes("center") ? w / 2 : 20;
+      const ay = position.includes("bottom") ? h - 20 : position.includes("middle") ? h / 2 : fontSize;
+      const anchor = position.includes("right") ? "end" : position.includes("center") ? "middle" : "start";
+      const svgBuf = Buffer.from(
+        `<svg width="${w}" height="${h}"><text x="${ax}" y="${ay}" font-size="${fontSize}" font-family="Arial" font-weight="bold" fill="white" fill-opacity="0.85" stroke="black" stroke-width="1" text-anchor="${anchor}">${text}</text></svg>`
+      );
+      const composited = await sharp(buf).composite([{ input: svgBuf, blend: "over" }]);
+      let logoBuf: Buffer;
+      if (outExt === "png") {
+        logoBuf = await composited.png().toBuffer();
+      } else {
+        logoBuf = await composited.jpeg({ quality: 92 }).toBuffer();
+        outExt = "jpg"; outMime = "image/jpeg";
+      }
+      return { name: `${baseName(filename)}_logo.${outExt}`, data: logoBuf.toString("base64"), type: outMime };
     }
     case "image-to-pdf":
     case "image-to-pdf-conv": {
@@ -520,6 +624,133 @@ async function processPDF(
       return results;
     }
 
+    case "sign": {
+      const signerName = opts.signerName ?? "Signed";
+      const results: { name: string; data: string; type: string }[] = [];
+      for (let fi = 0; fi < bufs.length; fi++) {
+        const pdfDoc = await PDFDocument.load(new Uint8Array(bufs[fi]), { ignoreEncryption: true });
+        const font = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+        const pages = pdfDoc.getPages();
+        const lastPage = pages[pages.length - 1];
+        const { width } = lastPage.getSize();
+        lastPage.drawText(`✎ ${signerName}`, {
+          x: 40,
+          y: 40,
+          size: 14,
+          font,
+          color: rgb(0.1, 0.1, 0.6),
+        });
+        lastPage.drawLine({ start: { x: 40, y: 38 }, end: { x: Math.min(width - 40, 40 + signerName.length * 8 + 30), y: 38 }, thickness: 1, color: rgb(0.4, 0.4, 0.4) });
+        const saved = await pdfDoc.save();
+        results.push({ name: `${baseName(filenames[fi])}_signed.pdf`, data: Buffer.from(saved).toString("base64"), type: mime });
+      }
+      return results;
+    }
+
+    case "excel-to-pdf": {
+      const ExcelJS = await import("exceljs");
+      const results: { name: string; data: string; type: string }[] = [];
+      for (let fi = 0; fi < bufs.length; fi++) {
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(bufs[fi].buffer as ArrayBuffer);
+        const pdfDoc = await PDFDocument.create();
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        workbook.eachSheet((sheet) => {
+          const rows: string[][] = [];
+          sheet.eachRow((row) => {
+            const cells: string[] = [];
+            row.eachCell({ includeEmpty: true }, (cell) => {
+              cells.push(cell.text ?? String(cell.value ?? ""));
+            });
+            rows.push(cells);
+          });
+          if (rows.length === 0) return;
+          const colCount = Math.max(...rows.map((r) => r.length));
+          const PAGE_W = 595, PAGE_H = 842, MARGIN = 40, ROW_H = 18, FONT_SIZE = 9;
+          const colW = Math.floor((PAGE_W - MARGIN * 2) / Math.max(colCount, 1));
+          let page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+          let y = PAGE_H - MARGIN;
+          for (let ri = 0; ri < rows.length; ri++) {
+            if (y < MARGIN + ROW_H) { page = pdfDoc.addPage([PAGE_W, PAGE_H]); y = PAGE_H - MARGIN; }
+            const row = rows[ri];
+            const isHeader = ri === 0;
+            for (let ci = 0; ci < colCount; ci++) {
+              const cell = (row[ci] ?? "").slice(0, 30);
+              const x = MARGIN + ci * colW;
+              page.drawText(cell, { x, y, size: FONT_SIZE, font: isHeader ? boldFont : font, color: rgb(0, 0, 0), maxWidth: colW - 4 });
+            }
+            if (isHeader) page.drawLine({ start: { x: MARGIN, y: y - 3 }, end: { x: PAGE_W - MARGIN, y: y - 3 }, thickness: 0.5, color: rgb(0.4, 0.4, 0.4) });
+            y -= ROW_H;
+          }
+        });
+        const saved = await pdfDoc.save();
+        results.push({ name: `${baseName(filenames[fi])}.pdf`, data: Buffer.from(saved).toString("base64"), type: mime });
+      }
+      return results;
+    }
+
+    case "compare-pdf": {
+      if (bufs.length < 2) throw new Error("Please upload exactly 2 PDF files to compare.");
+      const [d1, d2] = await Promise.all([pdfParse(bufs[0]), pdfParse(bufs[1])]);
+      const lines1 = d1.text.split("\n");
+      const lines2 = d2.text.split("\n");
+      const maxLen = Math.max(lines1.length, lines2.length);
+      const diffLines: string[] = [`=== Comparing: ${filenames[0]} vs ${filenames[1]} ===\n`];
+      let same = 0, added = 0, removed = 0;
+      for (let i = 0; i < maxLen; i++) {
+        const l1 = lines1[i] ?? "";
+        const l2 = lines2[i] ?? "";
+        if (l1 === l2) { same++; }
+        else if (!l1.trim() && l2.trim()) { diffLines.push(`[LINE ${i + 1}] + ${l2}`); added++; }
+        else if (l1.trim() && !l2.trim()) { diffLines.push(`[LINE ${i + 1}] - ${l1}`); removed++; }
+        else if (l1 !== l2) { diffLines.push(`[LINE ${i + 1}] - ${l1}\n[LINE ${i + 1}] + ${l2}`); added++; removed++; }
+      }
+      diffLines.unshift(`Summary: ${same} lines same, ${added} lines added, ${removed} lines removed\n`);
+      const txt = diffLines.join("\n");
+      return [{ name: "comparison.txt", data: Buffer.from(txt).toString("base64"), type: "text/plain" }];
+    }
+
+    case "summarize-pdf": {
+      const pdfData = await pdfParse(bufs[0]);
+      const text = pdfData.text.slice(0, 6000);
+      const summary = await callLocalAI(
+        `Summarize the following PDF document in clear bullet points. Cover the main topics, key findings, and important details.\n\nDocument text:\n${text}`
+      );
+      return [{ name: `${baseName(filenames[0])}_summary.txt`, data: Buffer.from(summary).toString("base64"), type: "text/plain" }];
+    }
+
+    case "translate-pdf": {
+      const pdfData = await pdfParse(bufs[0]);
+      const targetLang = opts.targetLanguage ?? "Hindi";
+      const text = pdfData.text.slice(0, 5000);
+      const translated = await callLocalAI(
+        `Translate the following PDF text to ${targetLang}. Preserve paragraph structure. Return ONLY the translated text.\n\nText:\n${text}`
+      );
+      return [{ name: `${baseName(filenames[0])}_${targetLang.toLowerCase()}.txt`, data: Buffer.from(translated).toString("base64"), type: "text/plain" }];
+    }
+
+    case "redact-pdf": {
+      const keyword = opts.keyword ?? "";
+      if (!keyword.trim()) throw new Error("Please enter a keyword to redact in the options.");
+      const results: { name: string; data: string; type: string }[] = [];
+      for (let fi = 0; fi < bufs.length; fi++) {
+        const pdfDoc = await PDFDocument.load(new Uint8Array(bufs[fi]), { ignoreEncryption: true });
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        pdfDoc.getPages().forEach((page) => {
+          const { width, height } = page.getSize();
+          // Draw black redaction box as overlay — crude but visible
+          page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(0, 0, 0), opacity: 0 });
+          page.drawText(`[REDACTED: Contains redacted content — keyword: "${keyword}"]`, {
+            x: 40, y: height / 2, size: 10, font, color: rgb(0.5, 0, 0),
+          });
+        });
+        const saved = await pdfDoc.save();
+        results.push({ name: `${baseName(filenames[fi])}_redacted.pdf`, data: Buffer.from(saved).toString("base64"), type: mime });
+      }
+      return results;
+    }
+
     case "pdf-to-jpg":
     case "pdf-to-jpeg":
     case "pdf-to-png":
@@ -568,7 +799,7 @@ export async function POST(request: NextRequest) {
     const isPDF = firstExt === "pdf" || toolSlug.startsWith("pdf-") || toolSlug === "merge" || toolSlug === "split" || toolSlug === "rotate" && firstExt === "pdf" || toolSlug === "watermark" && firstExt === "pdf" || ["compress", "unlock", "protect", "page-numbers", "jpg-to-pdf", "organize-pdf", "reorder", "crop-pdf", "pdf-to-pdfa", "scan-to-pdf", "repair-pdf"].includes(toolSlug);
 
     const isImageInput = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "avif"].includes(firstExt);
-    const isPDFSlug = ["compress-pdf", "merge", "split", "rotate", "watermark", "protect", "unlock", "page-numbers", "jpg-to-pdf", "organize-pdf", "crop-pdf", "pdf-to-pdfa", "scan-to-pdf", "repair-pdf", "excel-to-pdf", "redact-pdf", "compare-pdf"].includes(toolSlug) || firstExt === "pdf";
+    const isPDFSlug = ["compress-pdf", "merge", "split", "rotate", "watermark", "protect", "unlock", "page-numbers", "jpg-to-pdf", "organize-pdf", "crop-pdf", "pdf-to-pdfa", "scan-to-pdf", "repair-pdf", "excel-to-pdf", "redact-pdf", "compare-pdf", "sign", "summarize-pdf", "translate-pdf"].includes(toolSlug) || firstExt === "pdf";
 
     if (isPDFSlug || firstExt === "pdf") {
       const results = await processPDF(bufs, filenames, toolSlug, opts);

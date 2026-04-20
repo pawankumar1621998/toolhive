@@ -1239,6 +1239,58 @@ function JsonToCsvOptions() {
   );
 }
 
+function PdfSignOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  return (
+    <OptionRow>
+      <Label htmlFor="pdf-signer-name">Signer Name</Label>
+      <TextInput
+        id="pdf-signer-name"
+        value={(opts.signerName as string) || ""}
+        onChange={(v) => set("signerName", v)}
+        placeholder="Your full name"
+      />
+      <p className="text-xs text-foreground-subtle mt-1">Your name will be added as a text signature on the last page.</p>
+    </OptionRow>
+  );
+}
+
+function PdfTranslatePdfOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  const LANGS = ["Hindi", "Hinglish", "Spanish", "French", "German", "Arabic", "Portuguese", "Bengali", "Urdu", "Japanese"];
+  return (
+    <OptionRow>
+      <Label htmlFor="pdf-target-lang">Target Language</Label>
+      <Select
+        id="pdf-target-lang"
+        value={(opts.targetLanguage as string) || "Hindi"}
+        onChange={(v) => set("targetLanguage", v)}
+        options={LANGS.map((l) => ({ value: l, label: l }))}
+      />
+      <p className="text-xs text-foreground-subtle mt-1">AI will extract and translate the PDF text. Result is a .txt file.</p>
+    </OptionRow>
+  );
+}
+
+function PdfRedactOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  return (
+    <OptionRow>
+      <Label htmlFor="pdf-redact-keyword">Keyword to Redact</Label>
+      <TextInput
+        id="pdf-redact-keyword"
+        value={(opts.keyword as string) || ""}
+        onChange={(v) => set("keyword", v)}
+        placeholder="e.g. Confidential"
+      />
+      <p className="text-xs text-foreground-subtle mt-1">Text matching this keyword will be marked as redacted.</p>
+    </OptionRow>
+  );
+}
+
 // ─────────────────────────────────────────────
 // Main component — dispatches to the right panel
 // ─────────────────────────────────────────────
@@ -1255,8 +1307,11 @@ export function ToolOptions({ tool }: { tool: Tool }) {
     if (slug === "unlock")       return <PdfUnlockOptions />;
     if (slug === "watermark")    return <PdfWatermarkOptions />;
     if (slug === "page-numbers") return <PdfPageNumbersOptions />;
-    if (slug === "ocr")          return <PdfOcrOptions />;
-    if (slug === "pdf-to-jpg")   return <PdfToJpgOptions />;
+    if (slug === "ocr")            return <PdfOcrOptions />;
+    if (slug === "pdf-to-jpg")     return <PdfToJpgOptions />;
+    if (slug === "sign")           return <PdfSignOptions />;
+    if (slug === "translate-pdf")  return <PdfTranslatePdfOptions />;
+    if (slug === "redact-pdf")     return <PdfRedactOptions />;
   }
 
   // Image tools

@@ -218,7 +218,6 @@ function buildBasePrompt(toolSlug: string, params: Record<string, unknown>): str
       const { text, mode } = params as { text: string; mode: string };
       return `Paraphrase the following text using ${mode ?? "Standard"} mode. Make it sound different while keeping the same meaning. Respond ONLY with the paraphrased text.\n\nText:\n${text}`;
     }
-    case "summarize-pdf":
     case "blog-writer": {
       const { topic, keywords, length, tone } = params as { topic: string; keywords?: string; length?: string; tone?: string };
       return `Write a complete ${length ?? "medium-length"} blog post about: "${topic}"\n${keywords ? `Keywords to include: ${keywords}` : ""}\nTone: ${tone ?? "Professional"}\n\nInclude: engaging title, introduction, 3-5 main sections with headings, conclusion. Format with clear headings using markdown ##.`;
