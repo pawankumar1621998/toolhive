@@ -317,7 +317,7 @@ async function processPDF(
     }
 
     case "protect": {
-      throw new Error("PDF password protection requires an encryption library (e.g. qpdf) that is not available in this environment. Please use Adobe Acrobat or a PDF encryption service to add password protection.");
+      throw new Error("PDF_PROTECT_UNAVAILABLE: PDF password protection is not available in this environment (requires a native encryption engine). Free alternatives: ilovepdf.com/protect-pdf · sejda.com/encrypt-pdf · smallpdf.com/protect-pdf");
     }
 
     case "unlock": {

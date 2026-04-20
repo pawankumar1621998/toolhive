@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import type { Tool } from "@/types";
 import { useAIGenerate } from "@/hooks/useAIGenerate";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
 
 // Provider color mapping
 const PROVIDER_STYLES: Record<string, { label: string; color: string }> = {
@@ -3415,6 +3416,14 @@ export function AIWritingWorkspace({ tool }: { tool: Tool }) {
             {tool.isPopular && !tool.isNew && <Badge variant="popular" size="sm">Popular</Badge>}
           </div>
         </div>
+
+        {/* Language selector — hidden for translate tool (it has its own) */}
+        {tool.slug !== "translate" && (
+          <div className="flex items-center gap-2 mb-4 pb-4 border-b border-border">
+            <span className="text-xs text-foreground-muted">Output language:</span>
+            <LanguageSelector />
+          </div>
+        )}
 
         {/* Tool content */}
         {renderTool()}

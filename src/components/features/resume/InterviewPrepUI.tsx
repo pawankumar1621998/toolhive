@@ -5,6 +5,8 @@ import { clsx } from "clsx";
 import { Upload, FileText, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
+import { useLanguageStore } from "@/stores/languageStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -138,6 +140,7 @@ export function InterviewPrepUI() {
   const [questions, setQuestions] = useState<QuestionSet | null>(null);
   const [activeTab, setActiveTab] = useState<QuestionCategory>("behavioral");
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguageStore();
 
   async function handleGenerate() {
     const isValid = inputMode === "upload" ? (resumeFile !== null || jobTitle.trim() !== "") : jobTitle.trim() !== "";
@@ -149,7 +152,7 @@ export function InterviewPrepUI() {
       const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ toolSlug: "interview-prep", jobTitle, experienceLevel }),
+        body: JSON.stringify({ toolSlug: "interview-prep", jobTitle, experienceLevel, language }),
       });
       const data = await res.json() as { output?: string; error?: string };
       if (!res.ok || data.error) throw new Error(data.error ?? "Generation failed");
@@ -261,6 +264,10 @@ export function InterviewPrepUI() {
           )}
         </div>
 
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-foreground-muted">Output language:</span>
+          <LanguageSelector />
+        </div>
         <Button
           variant="primary"
           fullWidth

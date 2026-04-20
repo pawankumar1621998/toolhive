@@ -5,6 +5,8 @@ import { clsx } from "clsx";
 import { Upload, FileText, PlusCircle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
+import { useLanguageStore } from "@/stores/languageStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -143,6 +145,7 @@ export function JobMatchUI() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("skills");
   const [addedSkills, setAddedSkills] = useState<Set<string>>(new Set());
+  const { language } = useLanguageStore();
 
   async function handleAnalyze() {
     if (!resumeFile && !resumeText.trim() && !jobDesc.trim()) return;
@@ -153,7 +156,7 @@ export function JobMatchUI() {
       const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ toolSlug: "job-match", resumeText, jobDesc }),
+        body: JSON.stringify({ toolSlug: "job-match", resumeText, jobDesc, language }),
       });
       const data = await res.json() as { output?: string; error?: string };
       if (!res.ok || data.error) throw new Error(data.error ?? "Analysis failed");
@@ -202,6 +205,10 @@ export function JobMatchUI() {
         </div>
       </div>
 
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-foreground-muted">Output language:</span>
+        <LanguageSelector />
+      </div>
       <Button
         variant="primary"
         fullWidth

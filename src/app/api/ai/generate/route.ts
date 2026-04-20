@@ -152,10 +152,51 @@ async function callAI(prompt: string, preferredProvider?: Provider): Promise<{ o
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Language instruction helper
+// ─────────────────────────────────────────────────────────────────────────────
+
+function langInstruction(language?: string): string {
+  if (!language || language === "English") return "";
+  const map: Record<string, string> = {
+    Hindi:      "IMPORTANT: Respond entirely in Hindi (Devanagari script). Write all content in हिंदी.",
+    Hinglish:   "IMPORTANT: Respond in Hinglish — Hindi words written in Roman/English script, casual conversational style (like: 'Yeh bahut helpful hai, aap iska use kar sakte hain'). Sound natural like WhatsApp messages in India.",
+    Spanish:    "IMPORTANT: Respond entirely in Spanish.",
+    French:     "IMPORTANT: Respond entirely in French.",
+    German:     "IMPORTANT: Respond entirely in German.",
+    Arabic:     "IMPORTANT: Respond entirely in Arabic.",
+    Portuguese: "IMPORTANT: Respond entirely in Portuguese.",
+    Bengali:    "IMPORTANT: Respond entirely in Bengali.",
+    Urdu:       "IMPORTANT: Respond entirely in Urdu (Nastaliq script).",
+  };
+  return map[language] ? `\n\n${map[language]}` : "";
+}
+
+// For JSON-returning tools: translate values but keep keys in English
+function langInstructionJSON(language?: string): string {
+  if (!language || language === "English") return "";
+  const base = langInstruction(language);
+  if (!base) return "";
+  return base + " Keep all JSON property keys in English; translate only the string values.";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Prompt builder
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Tools that return JSON — language instruction must tell AI to keep keys in English
+const JSON_TOOLS = new Set([
+  "resume-summary", "linkedin-headlines", "linkedin-bullets",
+  "interview-prep", "resume-analyzer", "ats-checker", "job-match", "keyword-optimizer",
+]);
+
 function buildPrompt(toolSlug: string, params: Record<string, unknown>): string {
+  const lang = params.language as string | undefined;
+  const base = buildBasePrompt(toolSlug, params);
+  if (!lang || lang === "English") return base;
+  return base + (JSON_TOOLS.has(toolSlug) ? langInstructionJSON(lang) : langInstruction(lang));
+}
+
+function buildBasePrompt(toolSlug: string, params: Record<string, unknown>): string {
   switch (toolSlug) {
     case "summarize": {
       const { text, options } = params as { text: string; options: { format: string; length: string } };

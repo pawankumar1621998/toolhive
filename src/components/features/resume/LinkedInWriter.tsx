@@ -5,6 +5,8 @@ import { clsx } from "clsx";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Check, Copy, Loader2 } from "lucide-react";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
+import { useLanguageStore } from "@/stores/languageStore";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -55,6 +57,7 @@ function HeadlineTab({ inputClass, labelClass }: { inputClass: string; labelClas
   const [loading, setLoading] = useState(false);
   const [headlines, setHeadlines] = useState<string[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguageStore();
 
   const isValid = jobTitle.trim();
 
@@ -67,7 +70,7 @@ function HeadlineTab({ inputClass, labelClass }: { inputClass: string; labelClas
       const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ toolSlug: "linkedin-headlines", jobTitle, specialization, industry, value }),
+        body: JSON.stringify({ toolSlug: "linkedin-headlines", jobTitle, specialization, industry, value, language }),
       });
       const data = await res.json() as { output?: string; error?: string };
       if (!res.ok || data.error) throw new Error(data.error ?? "Generation failed");
@@ -154,6 +157,7 @@ function AboutTab({ inputClass, labelClass }: { inputClass: string; labelClass: 
   const [loading, setLoading] = useState(false);
   const [about, setAbout] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguageStore();
 
   const setAch = (i: 0 | 1 | 2) => (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const next = [...achievements] as [string, string, string];
@@ -176,7 +180,7 @@ function AboutTab({ inputClass, labelClass }: { inputClass: string; labelClass: 
           toolSlug: "linkedin-about",
           jobTitle, experience,
           achievements: achievements.filter(Boolean).join("; "),
-          cta,
+          cta, language,
         }),
       });
       const data = await res.json() as { output?: string; error?: string };
@@ -270,6 +274,7 @@ function ExperienceTab({ inputClass, labelClass }: { inputClass: string; labelCl
   const [loading, setLoading] = useState(false);
   const [bullets, setBullets] = useState<string[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguageStore();
 
   const isValid = jobTitle.trim() && whatDid.trim();
 
@@ -282,7 +287,7 @@ function ExperienceTab({ inputClass, labelClass }: { inputClass: string; labelCl
       const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ toolSlug: "linkedin-bullets", jobTitle, company, whatDid, results }),
+        body: JSON.stringify({ toolSlug: "linkedin-bullets", jobTitle, company, whatDid, results, language }),
       });
       const data = await res.json() as { output?: string; error?: string };
       if (!res.ok || data.error) throw new Error(data.error ?? "Generation failed");

@@ -279,6 +279,21 @@ function PdfProtectOptions() {
   const set = useToolStore((s) => s.setToolOption);
   return (
     <>
+      {/* Notice: PDF encryption requires a native engine not available in browser environments */}
+      <div className="rounded-lg border border-amber-400/40 bg-amber-50/60 dark:bg-amber-900/20 px-3 py-2.5 mb-2">
+        <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1">⚠️ Feature Limitation</p>
+        <p className="text-xs text-amber-700/80 dark:text-amber-400/80 leading-relaxed mb-1.5">
+          PDF password protection requires a native encryption engine not available in this environment.
+        </p>
+        <p className="text-xs text-amber-700/80 dark:text-amber-400/80">
+          Free alternatives:{" "}
+          <a href="https://www.ilovepdf.com/protect-pdf" target="_blank" rel="noreferrer" className="underline font-medium">ilovepdf.com</a>
+          {" · "}
+          <a href="https://www.sejda.com/encrypt-pdf" target="_blank" rel="noreferrer" className="underline font-medium">sejda.com</a>
+          {" · "}
+          <a href="https://smallpdf.com/protect-pdf" target="_blank" rel="noreferrer" className="underline font-medium">smallpdf.com</a>
+        </p>
+      </div>
       <OptionRow>
         <Label htmlFor="pdf-password">Password</Label>
         <TextInput

@@ -5,6 +5,8 @@ import { clsx } from "clsx";
 import { Upload, FileText, Plus, Check, AlertCircle, AlertTriangle, Info, Copy } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
+import { useLanguageStore } from "@/stores/languageStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -140,6 +142,7 @@ export function ATSCheckerUI() {
   const [error, setError] = useState<string | null>(null);
   const [addedKeywords, setAddedKeywords] = useState<Set<string>>(new Set());
   const [checkedFixes, setCheckedFixes] = useState<Set<number>>(new Set());
+  const { language } = useLanguageStore();
 
   async function handleCheck() {
     if (!resumeFile && !resumeText.trim() && !jobDesc.trim()) return;
@@ -150,7 +153,7 @@ export function ATSCheckerUI() {
       const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ toolSlug: "ats-checker", resumeText, jobDesc }),
+        body: JSON.stringify({ toolSlug: "ats-checker", resumeText, jobDesc, language }),
       });
       const data = await res.json() as { output?: string; error?: string };
       if (!res.ok || data.error) throw new Error(data.error ?? "Analysis failed");
@@ -214,6 +217,10 @@ export function ATSCheckerUI() {
           />
         </div>
 
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-foreground-muted">Output language:</span>
+          <LanguageSelector />
+        </div>
         <Button
           variant="primary"
           fullWidth

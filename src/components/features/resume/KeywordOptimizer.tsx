@@ -5,6 +5,8 @@ import { clsx } from "clsx";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
+import { useLanguageStore } from "@/stores/languageStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,6 +88,7 @@ export function KeywordOptimizer() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<OptimizationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguageStore();
 
   async function handleOptimize() {
     if (!resumeText.trim() && !jobDescText.trim()) return;
@@ -96,7 +99,7 @@ export function KeywordOptimizer() {
       const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ toolSlug: "keyword-optimizer", resumeText, jobDescText }),
+        body: JSON.stringify({ toolSlug: "keyword-optimizer", resumeText, jobDescText, language }),
       });
       const data = await res.json() as { output?: string; error?: string };
       if (!res.ok || data.error) throw new Error(data.error ?? "Optimization failed");
@@ -138,6 +141,10 @@ export function KeywordOptimizer() {
         </div>
       </div>
 
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-foreground-muted">Output language:</span>
+        <LanguageSelector />
+      </div>
       <Button
         variant="primary"
         fullWidth

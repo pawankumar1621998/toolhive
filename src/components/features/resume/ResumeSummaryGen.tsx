@@ -5,6 +5,8 @@ import { clsx } from "clsx";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Check, Copy, Loader2 } from "lucide-react";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
+import { useLanguageStore } from "@/stores/languageStore";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -70,6 +72,7 @@ export function ResumeSummaryGen() {
   const [loading, setLoading] = useState(false);
   const [summaries, setSummaries] = useState<SummaryVariation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguageStore();
 
   const setSkill = (i: 0 | 1 | 2) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const next = [...skills] as [string, string, string];
@@ -92,7 +95,7 @@ export function ResumeSummaryGen() {
           toolSlug: "resume-summary",
           name, jobTitle, experience,
           skills: skills.filter(Boolean).join(", "),
-          achievement, tone,
+          achievement, tone, language,
         }),
       });
       const data = await res.json() as { output?: string; error?: string };
@@ -209,6 +212,10 @@ export function ResumeSummaryGen() {
             </div>
           </div>
 
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-xs text-foreground-muted">Output language:</span>
+            <LanguageSelector />
+          </div>
           <Button
             variant="gradient"
             fullWidth

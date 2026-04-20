@@ -5,6 +5,8 @@ import { clsx } from "clsx";
 import { Upload, FileText, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
+import { useLanguageStore } from "@/stores/languageStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -112,6 +114,7 @@ export function ResumeAnalyzerUI() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguageStore();
 
   function handleFile(file: File) {
     setSelectedFile(file);
@@ -154,7 +157,7 @@ export function ResumeAnalyzerUI() {
       const res = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ toolSlug: "resume-analyzer", resumeText }),
+        body: JSON.stringify({ toolSlug: "resume-analyzer", resumeText, language }),
       });
       const data = await res.json() as { output?: string; error?: string };
       if (!res.ok || data.error) throw new Error(data.error ?? "Analysis failed");
@@ -230,6 +233,10 @@ export function ResumeAnalyzerUI() {
           />
         </div>
 
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-foreground-muted">Output language:</span>
+          <LanguageSelector />
+        </div>
         <Button
           variant="primary"
           fullWidth
