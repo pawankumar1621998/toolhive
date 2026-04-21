@@ -3770,7 +3770,7 @@ export function AIWritingWorkspace({ tool }: { tool: Tool }) {
 
 // ── New NVIDIA-powered AI Writing Tools ─────────────────────────────────────
 
-function NvBtn({ loading, disabled, onClick, label }) {
+function NvBtn({ loading, disabled, onClick, label }: { loading: boolean; disabled: boolean; onClick: () => void; label: string }) {
   return (
     <button
       type="button"
