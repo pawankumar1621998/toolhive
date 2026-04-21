@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 // Provider definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Provider = "gemini" | "groq" | "deepseek" | "anthropic" | "mistral" | "openrouter";
+type Provider = "gemini" | "groq" | "deepseek" | "anthropic" | "mistral" | "openrouter" | "nvidia-gpt" | "nvidia-glm" | "nvidia-deepseek";
 
 interface ProviderConfig {
   name: string;
@@ -141,6 +141,69 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
     },
   },
 
+  "nvidia-gpt": {
+    name: "GPT-OSS 120B",
+    envKey: "NVIDIA_API_KEY",
+    call: async (apiKey, prompt) => {
+      const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "openai/gpt-oss-120b",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 4096,
+          temperature: 0.7,
+          stream: false,
+        }),
+      });
+      if (!res.ok) throw new Error(`NVIDIA GPT ${res.status}`);
+      const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+      return data.choices?.[0]?.message?.content ?? "";
+    },
+  },
+
+  "nvidia-glm": {
+    name: "GLM-5.1",
+    envKey: "NVIDIA_API_KEY",
+    call: async (apiKey, prompt) => {
+      const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "z-ai/glm-5.1",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 4096,
+          temperature: 0.7,
+          stream: false,
+        }),
+      });
+      if (!res.ok) throw new Error(`NVIDIA GLM ${res.status}`);
+      const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+      return data.choices?.[0]?.message?.content ?? "";
+    },
+  },
+
+  "nvidia-deepseek": {
+    name: "DeepSeek V3.1",
+    envKey: "NVIDIA_API_KEY",
+    call: async (apiKey, prompt) => {
+      const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "deepseek-ai/deepseek-v3.1-terminus",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 4096,
+          temperature: 0.3,
+          stream: false,
+        }),
+      });
+      if (!res.ok) throw new Error(`NVIDIA DeepSeek ${res.status}`);
+      const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+      return data.choices?.[0]?.message?.content ?? "";
+    },
+  },
+
   openrouter: {
     name: "OpenRouter",
     envKey: "OPENROUTER_API_KEY",
@@ -168,8 +231,8 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
   },
 };
 
-// Priority order — Groq first (fastest + reliable), broken providers last
-const PROVIDER_ORDER: Provider[] = ["groq", "mistral", "openrouter", "gemini", "deepseek", "anthropic"];
+// Priority order — Groq fastest, NVIDIA GPT-120B best quality, then fallbacks
+const PROVIDER_ORDER: Provider[] = ["groq", "nvidia-gpt", "nvidia-glm", "nvidia-deepseek", "mistral", "openrouter", "gemini", "deepseek", "anthropic"];
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
@@ -542,6 +605,51 @@ Provide 3-4 career paths, 4-5 skills to learn, 3 industries. Be specific and act
     case "cold-dm": {
       const { platform, purpose, aboutMe, aboutThem, offer } = params as { platform: string; purpose?: string; aboutMe?: string; aboutThem?: string; offer?: string };
       return `Write 3 cold ${platform ?? "Instagram"} DM/outreach message variations.\nPurpose: ${purpose ?? "Collaboration"}\n${aboutMe ? `About me/my brand: ${aboutMe}` : ""}\n${aboutThem ? `About the recipient: ${aboutThem}` : ""}\n${offer ? `What I'm offering/proposing: ${offer}` : ""}\n\nRules: Not spammy, personalized, under 100 words each, clear CTA. Start with a genuine observation, not "Hey" or "Hi I found you". Number each variation 1, 2, 3. Add a subject/opening strategy note after each.`;
+    }
+
+    case "code-generator": {
+      const { language, task, details } = params as { language: string; task: string; details?: string };
+      return `Write clean, well-commented ${language ?? "Python"} code for: "${task}"\n${details ? `Additional details: ${details}` : ""}\n\nProvide: working code with comments explaining key parts, plus a brief usage example. Use best practices.`;
+    }
+    case "code-debugger": {
+      const { code, language, error } = params as { code: string; language?: string; error?: string };
+      return `Debug and fix this ${language ?? ""} code.\n${error ? `Error message: ${error}` : ""}\n\nCode:\n\`\`\`\n${code}\n\`\`\`\n\nProvide: 1) What was wrong (brief), 2) Fixed code, 3) Explanation of the fix.`;
+    }
+    case "essay-writer": {
+      const { topic, type, wordCount, tone } = params as { topic: string; type?: string; wordCount?: string; tone?: string };
+      return `Write a ${wordCount ?? "500"}-word ${type ?? "argumentative"} essay on: "${topic}"\nTone: ${tone ?? "Academic"}\n\nStructure: Introduction with thesis, 3 body paragraphs with evidence, Conclusion. Use proper essay format with clear transitions.`;
+    }
+    case "business-plan": {
+      const { businessName, industry, description, target } = params as { businessName: string; industry: string; description: string; target?: string };
+      return `Write a detailed business plan for: "${businessName}"\nIndustry: ${industry}\nBusiness: ${description}\n${target ? `Target market: ${target}` : ""}\n\nInclude: Executive Summary, Problem & Solution, Market Analysis, Revenue Model, Marketing Strategy, Financial Projections overview, Team Requirements. Use clear headings.`;
+    }
+    case "news-article": {
+      const { headline, details, tone } = params as { headline: string; details: string; tone?: string };
+      return `Write a professional ${tone ?? "neutral"} news article with headline: "${headline}"\nFacts/Details: ${details}\n\nFollow inverted pyramid structure: most important info first, then context, then background. Include: Headline, dateline, 5W1H in first paragraph, quotes (if relevant), background context. Keep it factual and objective.`;
+    }
+    case "legal-summarizer": {
+      const { text, focus } = params as { text: string; focus?: string };
+      return `Summarize this legal document in plain English. ${focus ? `Focus on: ${focus}` : ""}\n\nDocument:\n${text}\n\nProvide: 1) Plain English summary (3-5 sentences), 2) Key obligations/rights, 3) Important dates/deadlines, 4) Red flags or unusual clauses. Use simple language anyone can understand.`;
+    }
+    case "paragraph-expander": {
+      const { text, length, tone } = params as { text: string; length?: string; tone?: string };
+      return `Expand this short text into a ${length ?? "full"} paragraph with ${tone ?? "professional"} tone:\n"${text}"\n\nAdd: supporting details, examples, context, and smooth transitions. Make it engaging and informative while keeping the original meaning.`;
+    }
+    case "product-review": {
+      const { product, pros, cons, rating } = params as { product: string; pros?: string; cons?: string; rating?: number };
+      return `Write a genuine, balanced product review for: "${product}"\n${pros ? `Pros: ${pros}` : ""}\n${cons ? `Cons: ${cons}` : ""}\n${rating ? `Rating: ${rating}/5` : ""}\n\nInclude: overview, pros, cons, who it's for, verdict. Sound authentic and helpful. 200-300 words.`;
+    }
+    case "faq-generator": {
+      const { topic, count, audience } = params as { topic: string; count?: number; audience?: string };
+      return `Generate ${count ?? 10} FAQs about: "${topic}"\n${audience ? `Target audience: ${audience}` : ""}\n\nFormat each as:\nQ: [question]\nA: [clear, helpful answer]\n\nCover different aspects: basics, how-to, troubleshooting, pricing, comparisons. Make answers concise but complete.`;
+    }
+    case "cover-letter-gen": {
+      const { name, role, company, experience, skills } = params as { name?: string; role: string; company: string; experience?: string; skills?: string };
+      return `Write a compelling cover letter for ${name ?? "a candidate"} applying for ${role} at ${company}.\n${experience ? `Experience: ${experience}` : ""}\n${skills ? `Key skills: ${skills}` : ""}\n\nInclude: strong opening hook, relevant experience, why this company, call to action. Keep it to 3-4 paragraphs. Sound enthusiastic but professional.`;
+    }
+    case "resignation-letter": {
+      const { name, position, company, lastDay, reason, tone } = params as { name?: string; position?: string; company?: string; lastDay?: string; reason?: string; tone?: string };
+      return `Write a ${tone ?? "professional"} resignation letter.\nName: ${name ?? "Employee"}\nPosition: ${position ?? "current position"}\nCompany: ${company ?? "the company"}\nLast working day: ${lastDay ?? "two weeks from now"}\n${reason ? `Reason (brief): ${reason}` : ""}\n\nKeep it gracious, professional, and brief. Express gratitude, state last day clearly, offer transition help.`;
     }
 
     default: {

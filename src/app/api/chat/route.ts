@@ -84,6 +84,46 @@ interface ChatMessage {
 
 // ─── AI Provider calls (with message history) ────────────────────────────────
 
+async function callNvidiaGpt(messages: ChatMessage[]): Promise<string> {
+  const key = process.env.NVIDIA_API_KEY;
+  if (!key) throw new Error("no key");
+  const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "openai/gpt-oss-120b",
+      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+      max_tokens: 1024,
+      temperature: 0.7,
+      stream: false,
+    }),
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!res.ok) throw new Error(`NVIDIA GPT ${res.status}`);
+  const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+  return data.choices?.[0]?.message?.content ?? "";
+}
+
+async function callNvidiaGlm(messages: ChatMessage[]): Promise<string> {
+  const key = process.env.NVIDIA_API_KEY;
+  if (!key) throw new Error("no key");
+  const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "z-ai/glm-5.1",
+      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+      max_tokens: 1024,
+      temperature: 0.7,
+      stream: false,
+    }),
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!res.ok) throw new Error(`NVIDIA GLM ${res.status}`);
+  const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+  return data.choices?.[0]?.message?.content ?? "";
+}
+
 async function callGroq(messages: ChatMessage[]): Promise<string> {
   const key = process.env.GROQ_API_KEY;
   if (!key) throw new Error("no key");
@@ -213,7 +253,7 @@ export async function POST(req: NextRequest) {
     // Limit history to last 20 messages to keep tokens low
     const recent = messages.slice(-20);
 
-    const providers = [callGroq, callGemini, callMistral, callAnthropic, callDeepSeek];
+    const providers = [callGroq, callNvidiaGpt, callNvidiaGlm, callGemini, callMistral, callAnthropic, callDeepSeek];
     let lastError = "";
 
     for (const fn of providers) {

@@ -1116,6 +1116,51 @@ export async function POST(request: NextRequest) {
     }
 
     if (isImageInput) {
+      // ── Vision AI tools (NVIDIA Llama Vision) ──────────────────────────────
+      if (["describe-image", "image-ocr", "alt-text-gen"].includes(toolSlug)) {
+        const visionKey = process.env.NVIDIA_VISION_API_KEY;
+        if (!visionKey) throw new Error("Vision API key not configured.");
+        const b64 = bufs[0].toString("base64");
+        const imgMime = `image/${firstExt === "jpg" ? "jpeg" : firstExt}`;
+        const prompts: Record<string, string> = {
+          "describe-image": "Describe this image in detail. Include: what objects/people are present, colors, setting, mood, and any text visible. Be thorough and specific.",
+          "image-ocr":      "Extract ALL text visible in this image. Output ONLY the text, preserving line breaks and structure. If no text is found, say 'No text found in image.'",
+          "alt-text-gen":   "Write a concise, descriptive alt text for this image suitable for web accessibility (screen readers). Keep it under 125 characters. Start with the most important element. Do not start with 'Image of' or 'Photo of'.",
+        };
+        const prompt = prompts[toolSlug];
+        const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${visionKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "meta/llama-3.2-11b-vision-instruct",
+            messages: [{
+              role: "user",
+              content: [
+                { type: "image_url", image_url: { url: `data:${imgMime};base64,${b64}` } },
+                { type: "text", text: prompt },
+              ],
+            }],
+            max_tokens: 512,
+            temperature: 0.3,
+            stream: false,
+          }),
+          signal: AbortSignal.timeout(25000),
+        });
+        if (!res.ok) {
+          const err = await res.json() as { detail?: string };
+          throw new Error(err.detail ?? `Vision API error ${res.status}`);
+        }
+        const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+        const text = data.choices?.[0]?.message?.content?.trim() ?? "No result from vision AI.";
+        const txtBuf = Buffer.from(text, "utf-8");
+        const outNames: Record<string, string> = {
+          "describe-image": `${baseName(filenames[0])}_description.txt`,
+          "image-ocr":      `${baseName(filenames[0])}_text.txt`,
+          "alt-text-gen":   `${baseName(filenames[0])}_alt_text.txt`,
+        };
+        return respondFiles([{ name: outNames[toolSlug], data: txtBuf.toString("base64"), type: "text/plain" }]);
+      }
+
       // Handle split-image specially (multi-output)
       if (toolSlug === "split-image") {
         const sharp = await getSharp();

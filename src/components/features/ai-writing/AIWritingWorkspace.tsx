@@ -3681,6 +3681,26 @@ export function AIWritingWorkspace({ tool }: { tool: Tool }) {
         return <SpeechWriter />;
       case "cold-dm":
         return <ColdDMGenerator />;
+      case "code-generator":
+        return <CodeGeneratorTool />;
+      case "code-debugger":
+        return <CodeDebuggerTool />;
+      case "essay-writer":
+        return <EssayWriterTool />;
+      case "business-plan":
+        return <BusinessPlanTool />;
+      case "news-article":
+        return <NewsArticleTool />;
+      case "legal-summarizer":
+        return <LegalSummarizerTool />;
+      case "paragraph-expander":
+        return <ParagraphExpanderTool />;
+      case "product-review":
+        return <ProductReviewTool />;
+      case "faq-generator":
+        return <FaqGeneratorTool />;
+      case "cover-letter-gen":
+        return <CoverLetterGenTool />;
       default:
         return <DefaultTool tool={tool} />;
     }
@@ -3743,6 +3763,286 @@ export function AIWritingWorkspace({ tool }: { tool: Tool }) {
         {/* Tool content */}
         {renderTool()}
       </div>
+    </div>
+  );
+}
+
+
+// ── New NVIDIA-powered AI Writing Tools ─────────────────────────────────────
+
+function CodeGeneratorTool() {
+  const [task, setTask] = React.useState("");
+  const [language, setLanguage] = React.useState("Python");
+  const [details, setDetails] = React.useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("code-generator");
+  const langs = ["Python","JavaScript","TypeScript","Java","C++","C#","Go","Rust","PHP","Ruby","SQL","Bash"];
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Language</label>
+        <select value={language} onChange={(e) => setLanguage(e.target.value)} className={inputClass}>
+          {langs.map((l) => <option key={l}>{l}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">What should the code do? *</label>
+        <textarea className={inputClass} rows={3} placeholder="e.g. Read CSV and calculate average" value={task} onChange={(e) => setTask(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Additional details (optional)</label>
+        <textarea className={inputClass} rows={2} placeholder="e.g. Use pandas, handle missing values" value={details} onChange={(e) => setDetails(e.target.value)} />
+      </div>
+      <GenerateButton loading={loading} disabled={!task.trim()} onClick={() => generate({ language, task, details })} />
+      {error && <ErrorBox message={error} />}
+      {output && <OutputCard output={output} onClear={clear} label="Generated Code" />}
+    </div>
+  );
+}
+
+function CodeDebuggerTool() {
+  const [code, setCode] = React.useState("");
+  const [language, setLanguage] = React.useState("Python");
+  const [errorMsg, setErrorMsg] = React.useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("code-debugger");
+  const langs = ["Python","JavaScript","TypeScript","Java","C++","C#","Go","PHP","SQL","Bash"];
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Language</label>
+        <select value={language} onChange={(e) => setLanguage(e.target.value)} className={inputClass}>
+          {langs.map((l) => <option key={l}>{l}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Paste your code *</label>
+        <textarea className={inputClass} rows={8} placeholder="Paste the broken code here..." value={code} onChange={(e) => setCode(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Error message (optional)</label>
+        <textarea className={inputClass} rows={2} placeholder="Paste the error message here..." value={errorMsg} onChange={(e) => setErrorMsg(e.target.value)} />
+      </div>
+      <GenerateButton loading={loading} disabled={!code.trim()} onClick={() => generate({ code, language, error: errorMsg })} label="Debug Code" />
+      {error && <ErrorBox message={error} />}
+      {output && <OutputCard output={output} onClear={clear} label="Debugged Code" />}
+    </div>
+  );
+}
+
+function EssayWriterTool() {
+  const [topic, setTopic] = React.useState("");
+  const [type, setType] = React.useState("Argumentative");
+  const [wordCount, setWordCount] = React.useState("500");
+  const [tone, setTone] = React.useState("Academic");
+  const { output, loading, error, generate, clear } = useAIGenerate("essay-writer");
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Essay Topic *</label>
+        <textarea className={inputClass} rows={2} placeholder="e.g. Impact of social media on mental health" value={topic} onChange={(e) => setTopic(e.target.value)} />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Essay Type</label>
+          <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass}>
+            {["Argumentative","Descriptive","Analytical","Expository","Persuasive","Narrative"].map((t) => <option key={t}>{t}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Word Count</label>
+          <select value={wordCount} onChange={(e) => setWordCount(e.target.value)} className={inputClass}>
+            {["250","500","750","1000","1500"].map((w) => <option key={w}>{w} words</option>)}
+          </select>
+        </div>
+      </div>
+      <GenerateButton loading={loading} disabled={!topic.trim()} onClick={() => generate({ topic, type, wordCount, tone })} label="Write Essay" />
+      {error && <ErrorBox message={error} />}
+      {output && <OutputCard output={output} onClear={clear} label="Essay" />}
+    </div>
+  );
+}
+
+function BusinessPlanTool() {
+  const [businessName, setBusinessName] = React.useState("");
+  const [industry, setIndustry] = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [target, setTarget] = React.useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("business-plan");
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Business Name *</label>
+          <input className={inputClass} placeholder="e.g. FreshBite" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Industry *</label>
+          <input className={inputClass} placeholder="e.g. Food and Beverage" value={industry} onChange={(e) => setIndustry(e.target.value)} />
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Business Description *</label>
+        <textarea className={inputClass} rows={3} placeholder="What does your business do? What problem does it solve?" value={description} onChange={(e) => setDescription(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Target Market</label>
+        <input className={inputClass} placeholder="e.g. Working professionals aged 25-40" value={target} onChange={(e) => setTarget(e.target.value)} />
+      </div>
+      <GenerateButton loading={loading} disabled={!businessName.trim() || !description.trim()} onClick={() => generate({ businessName, industry, description, target })} label="Generate Business Plan" />
+      {error && <ErrorBox message={error} />}
+      {output && <OutputCard output={output} onClear={clear} label="Business Plan" />}
+    </div>
+  );
+}
+
+function NewsArticleTool() {
+  const [headline, setHeadline] = React.useState("");
+  const [details, setDetails] = React.useState("");
+  const [tone, setTone] = React.useState("Neutral");
+  const { output, loading, error, generate, clear } = useAIGenerate("news-article");
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Headline *</label>
+        <input className={inputClass} placeholder="e.g. City Approves New Green Energy Initiative" value={headline} onChange={(e) => setHeadline(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Facts and Details *</label>
+        <textarea className={inputClass} rows={4} placeholder="Who, What, When, Where, Why, How..." value={details} onChange={(e) => setDetails(e.target.value)} />
+      </div>
+      <GenerateButton loading={loading} disabled={!headline.trim() || !details.trim()} onClick={() => generate({ headline, details, tone })} label="Write Article" />
+      {error && <ErrorBox message={error} />}
+      {output && <OutputCard output={output} onClear={clear} label="News Article" />}
+    </div>
+  );
+}
+
+function LegalSummarizerTool() {
+  const [text, setText] = React.useState("");
+  const [focus, setFocus] = React.useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("legal-summarizer");
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Paste Legal Document *</label>
+        <textarea className={inputClass} rows={8} placeholder="Paste contract, terms of service, agreement..." value={text} onChange={(e) => setText(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Focus on (optional)</label>
+        <input className={inputClass} placeholder="e.g. cancellation terms, payment obligations" value={focus} onChange={(e) => setFocus(e.target.value)} />
+      </div>
+      <GenerateButton loading={loading} disabled={!text.trim()} onClick={() => generate({ text, focus })} label="Summarize Document" />
+      {error && <ErrorBox message={error} />}
+      {output && <OutputCard output={output} onClear={clear} label="Plain English Summary" />}
+    </div>
+  );
+}
+
+function ParagraphExpanderTool() {
+  const [text, setText] = React.useState("");
+  const [tone, setTone] = React.useState("Professional");
+  const { output, loading, error, generate, clear } = useAIGenerate("paragraph-expander");
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Short text to expand *</label>
+        <textarea className={inputClass} rows={3} placeholder="e.g. AI is changing healthcare." value={text} onChange={(e) => setText(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Tone</label>
+        <select value={tone} onChange={(e) => setTone(e.target.value)} className={inputClass}>
+          {["Professional","Casual","Academic","Persuasive","Creative"].map((t) => <option key={t}>{t}</option>)}
+        </select>
+      </div>
+      <GenerateButton loading={loading} disabled={!text.trim()} onClick={() => generate({ text, tone })} label="Expand Text" />
+      {error && <ErrorBox message={error} />}
+      {output && <OutputCard output={output} onClear={clear} label="Expanded Text" />}
+    </div>
+  );
+}
+
+function ProductReviewTool() {
+  const [product, setProduct] = React.useState("");
+  const [pros, setPros] = React.useState("");
+  const [cons, setCons] = React.useState("");
+  const [rating, setRating] = React.useState(4);
+  const { output, loading, error, generate, clear } = useAIGenerate("product-review");
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Product Name *</label>
+        <input className={inputClass} placeholder="e.g. Sony WH-1000XM5 Headphones" value={product} onChange={(e) => setProduct(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Pros</label>
+        <input className={inputClass} placeholder="e.g. great battery life, noise cancellation" value={pros} onChange={(e) => setPros(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Cons</label>
+        <input className={inputClass} placeholder="e.g. expensive, plastic build" value={cons} onChange={(e) => setCons(e.target.value)} />
+      </div>
+      <GenerateButton loading={loading} disabled={!product.trim()} onClick={() => generate({ product, pros, cons, rating })} label="Write Review" />
+      {error && <ErrorBox message={error} />}
+      {output && <OutputCard output={output} onClear={clear} label="Product Review" />}
+    </div>
+  );
+}
+
+function FaqGeneratorTool() {
+  const [topic, setTopic] = React.useState("");
+  const [audience, setAudience] = React.useState("");
+  const [count] = React.useState(10);
+  const { output, loading, error, generate, clear } = useAIGenerate("faq-generator");
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Topic / Product / Service *</label>
+        <input className={inputClass} placeholder="e.g. Online payment gateway for small businesses" value={topic} onChange={(e) => setTopic(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Target Audience</label>
+        <input className={inputClass} placeholder="e.g. Small business owners, first-time users" value={audience} onChange={(e) => setAudience(e.target.value)} />
+      </div>
+      <GenerateButton loading={loading} disabled={!topic.trim()} onClick={() => generate({ topic, audience, count })} label="Generate FAQs" />
+      {error && <ErrorBox message={error} />}
+      {output && <OutputCard output={output} onClear={clear} label="FAQ Section" />}
+    </div>
+  );
+}
+
+function CoverLetterGenTool() {
+  const [role, setRole] = React.useState("");
+  const [company, setCompany] = React.useState("");
+  const [name, setName] = React.useState("");
+  const [experience, setExperience] = React.useState("");
+  const [skills, setSkills] = React.useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("cover-letter-gen");
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Job Role *</label>
+          <input className={inputClass} placeholder="e.g. Frontend Developer" value={role} onChange={(e) => setRole(e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Company *</label>
+          <input className={inputClass} placeholder="e.g. Google" value={company} onChange={(e) => setCompany(e.target.value)} />
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Your Name</label>
+        <input className={inputClass} placeholder="e.g. Rahul Sharma" value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Relevant Experience</label>
+        <textarea className={inputClass} rows={2} placeholder="e.g. 3 years React development at startup" value={experience} onChange={(e) => setExperience(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Key Skills</label>
+        <input className={inputClass} placeholder="e.g. React, TypeScript, Node.js" value={skills} onChange={(e) => setSkills(e.target.value)} />
+      </div>
+      <GenerateButton loading={loading} disabled={!role.trim() || !company.trim()} onClick={() => generate({ name, role, company, experience, skills })} label="Write Cover Letter" />
+      {error && <ErrorBox message={error} />}
+      {output && <OutputCard output={output} onClear={clear} label="Cover Letter" />}
     </div>
   );
 }
