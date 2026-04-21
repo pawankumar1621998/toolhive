@@ -300,6 +300,36 @@ async function processImage(
       const txt = Object.entries(info).map(([k, v]) => `${k}: ${v}`).join("\n");
       return { name: `${baseName(filename)}_metadata.txt`, data: Buffer.from(txt).toString("base64"), type: "text/plain" };
     }
+    case "watermark": {
+      const text     = opts.text ?? "CONFIDENTIAL";
+      const opacity  = Math.max(0.05, Math.min(1, parseFloat(opts.opacity ?? "0.3")));
+      const fontSize = Math.max(12, parseInt(opts.fontSize ?? "48", 10));
+      const position = opts.position ?? "center";
+      const meta     = await sharp(buf).metadata();
+      const w        = meta.width  ?? 800;
+      const h        = meta.height ?? 600;
+
+      let ax: number, ay: number, anchor: string;
+      if (position === "center")       { ax = w / 2;    ay = h / 2;    anchor = "middle"; }
+      else if (position === "top-left")    { ax = 20;       ay = fontSize; anchor = "start";  }
+      else if (position === "top-right")   { ax = w - 20;   ay = fontSize; anchor = "end";    }
+      else if (position === "bottom-left") { ax = 20;       ay = h - 20;   anchor = "start";  }
+      else                                 { ax = w - 20;   ay = h - 20;   anchor = "end";    }
+
+      const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const svgBuf  = Buffer.from(
+        `<svg width="${w}" height="${h}"><text x="${ax}" y="${ay}" font-size="${fontSize}" font-family="Arial" font-weight="bold" fill="gray" fill-opacity="${opacity}" text-anchor="${anchor}" transform="rotate(-30,${ax},${ay})">${escaped}</text></svg>`
+      );
+      const composited = sharp(buf).composite([{ input: svgBuf, blend: "over" }]);
+      let wmBuf: Buffer;
+      if (outExt === "png") {
+        wmBuf = await composited.png().toBuffer();
+      } else {
+        wmBuf = await composited.jpeg({ quality: 92 }).toBuffer();
+        outExt = "jpg"; outMime = "image/jpeg";
+      }
+      return { name: `${baseName(filename)}_watermarked.${outExt}`, data: wmBuf.toString("base64"), type: outMime };
+    }
     case "add-logo": {
       const text = opts.text ?? "LOGO";
       const fontSize = parseInt(opts.fontSize ?? "48", 10);
@@ -906,7 +936,7 @@ export async function POST(request: NextRequest) {
     const isPDF = firstExt === "pdf" || toolSlug.startsWith("pdf-") || toolSlug === "merge" || toolSlug === "split" || toolSlug === "rotate" && firstExt === "pdf" || toolSlug === "watermark" && firstExt === "pdf" || ["compress", "unlock", "protect", "page-numbers", "jpg-to-pdf", "organize-pdf", "reorder", "crop-pdf", "pdf-to-pdfa", "scan-to-pdf", "repair-pdf"].includes(toolSlug);
 
     const isImageInput = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "avif"].includes(firstExt);
-    const isPDFSlug = ["compress-pdf", "merge", "split", "rotate", "watermark", "page-numbers", "jpg-to-pdf", "organize-pdf", "crop-pdf", "pdf-to-pdfa", "scan-to-pdf", "repair-pdf", "excel-to-pdf", "redact-pdf", "compare-pdf", "sign", "summarize-pdf", "translate-pdf", "pdf-to-text", "header-footer", "edit-pdf", "html-to-pdf"].includes(toolSlug) || firstExt === "pdf";
+    const isPDFSlug = ["compress-pdf", "merge", "split", "rotate", "page-numbers", "jpg-to-pdf", "organize-pdf", "crop-pdf", "pdf-to-pdfa", "scan-to-pdf", "repair-pdf", "excel-to-pdf", "redact-pdf", "compare-pdf", "sign", "summarize-pdf", "translate-pdf", "pdf-to-text", "header-footer", "edit-pdf", "html-to-pdf"].includes(toolSlug) || firstExt === "pdf";
 
     if (isPDFSlug || firstExt === "pdf") {
       const results = await processPDF(bufs, filenames, toolSlug, opts);
