@@ -253,7 +253,7 @@ export async function POST(req: NextRequest) {
     // Limit history to last 20 messages to keep tokens low
     const recent = messages.slice(-20);
 
-    const providers = [callGroq, callNvidiaGpt, callNvidiaGlm, callGemini, callMistral, callAnthropic, callDeepSeek];
+    const providers = [callNvidiaGpt, callNvidiaGlm, callGroq, callGemini, callMistral, callDeepSeek, callAnthropic];
     let lastError = "";
 
     for (const fn of providers) {

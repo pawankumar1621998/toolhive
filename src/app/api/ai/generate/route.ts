@@ -232,7 +232,7 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
 };
 
 // Priority order — Groq fastest, NVIDIA GPT-120B best quality, then fallbacks
-const PROVIDER_ORDER: Provider[] = ["groq", "nvidia-gpt", "nvidia-glm", "nvidia-deepseek", "mistral", "openrouter", "gemini", "deepseek", "anthropic"];
+const PROVIDER_ORDER: Provider[] = ["nvidia-gpt", "nvidia-glm", "nvidia-deepseek", "groq", "mistral", "openrouter", "gemini", "deepseek", "anthropic"];
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
