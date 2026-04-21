@@ -1136,6 +1136,7 @@ export async function POST(request: NextRequest) {
 
       // Handle collage/combine — stitch multiple images side by side
       if ((toolSlug === "collage" || toolSlug === "combine") && bufs.length > 1) {
+        const sharp = await getSharp();
         const metas = await Promise.all(bufs.map((b) => sharp(b).metadata()));
         const maxH = Math.max(...metas.map((m) => m.height ?? 300));
         const resizedBufs: { buf: Buffer; w: number }[] = await Promise.all(
