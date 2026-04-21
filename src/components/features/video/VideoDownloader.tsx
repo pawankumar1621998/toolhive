@@ -225,15 +225,17 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
       clearTimeout(timeout);
       setDownloadProgress(60);
 
-      const validateData = await validateResp.json() as { success: boolean; message?: string };
+      const validateData = await validateResp.json() as { success: boolean; message?: string; directUrl?: string; filename?: string };
       if (!validateData.success) {
         throw new Error(validateData.message || "This video cannot be downloaded. Please check the URL or try a different quality.");
       }
 
-      // Phase 2 — Navigate: browser's native download manager handles any
-      // file size without buffering in JS memory.
       setDownloadProgress(85);
-      window.location.href = buildDownloadUrl();
+
+      // Phase 2 — Navigate: browser's native download manager handles any file size.
+      // directUrl = Cobalt returned a CDN/tunnel URL (Instagram, TikTok, etc.)
+      // No directUrl = yt-dlp stream endpoint handles the download (YouTube, etc.)
+      window.location.href = validateData.directUrl ?? buildDownloadUrl();
 
       setTimeout(() => {
         setDownloadProgress(100);
