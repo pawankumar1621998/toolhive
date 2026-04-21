@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
 import { ArrowRight, Users, type LucideIcon, Wrench } from "lucide-react";
 import * as LucideIcons from "lucide-react";
@@ -221,8 +221,7 @@ const MobileToolCard = React.memo(function MobileToolCard({ tool }: { tool: Tool
     <Link
       href={href}
       className={clsx(
-        "snap-start shrink-0 w-44",
-        "group relative flex flex-col gap-2.5 rounded-2xl",
+        "group relative flex flex-col gap-3 rounded-2xl w-full",
         "border border-card-border bg-card p-4",
         "transition-all duration-200 active:scale-[0.97]",
         "hover:border-primary/20 hover:shadow-lg overflow-hidden",
@@ -230,38 +229,43 @@ const MobileToolCard = React.memo(function MobileToolCard({ tool }: { tool: Tool
       )}
       aria-label={`${tool.name}: ${tool.shortDescription}`}
     >
-      {/* Icon */}
-      <div
-        className={clsx(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
-          `bg-gradient-to-br ${gradient}`,
-          "shadow-md"
+      {/* Top row: icon + free badge */}
+      <div className="flex items-start justify-between gap-1">
+        <div
+          className={clsx(
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+            `bg-gradient-to-br ${gradient}`,
+            "shadow-md"
+          )}
+          aria-hidden="true"
+        >
+          {/* eslint-disable-next-line react-hooks/static-components */}
+          <Icon className="h-5 w-5 text-white" />
+        </div>
+        {!tool.isPremium && (
+          <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded-full">
+            Free
+          </span>
         )}
-        aria-hidden="true"
-      >
-        {/* eslint-disable-next-line react-hooks/static-components */}
-        <Icon className="h-5 w-5 text-white" />
       </div>
 
       {/* Name + description */}
       <div className="flex-1 min-h-0">
-        <h3 className="text-sm font-semibold text-foreground leading-snug group-hover:text-primary transition-colors duration-200 line-clamp-1">
+        <h3 className="text-sm font-bold text-foreground leading-snug group-hover:text-primary transition-colors duration-200 line-clamp-1">
           {tool.name}
         </h3>
-        <p className="mt-0.5 text-xs text-foreground-muted line-clamp-2 leading-relaxed">
+        <p className="mt-1 text-xs text-foreground-muted line-clamp-2 leading-relaxed">
           {tool.shortDescription}
         </p>
       </div>
 
-      {/* "Use" button — always visible on mobile for touch UX, min-height 44px */}
+      {/* "Use Now" button */}
       <div
         className={clsx(
           "flex w-full items-center justify-center gap-1.5",
-          "rounded-xl",
-          "min-h-[44px]", // touch target
+          "rounded-xl py-2.5",
           `bg-gradient-to-r ${gradient}`,
-          "text-xs font-semibold text-white shadow-sm",
-          "transition-opacity duration-200"
+          "text-xs font-semibold text-white shadow-sm"
         )}
       >
         Use Now
@@ -286,18 +290,6 @@ const MobileToolCard = React.memo(function MobileToolCard({ tool }: { tool: Tool
 export function FeaturedTools() {
   const shouldReduce = useReducedMotion() ?? false;
   const tools = useMemo(() => getFeaturedTools(12), []);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [showScrollHint, setShowScrollHint] = useState(true);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    function onScroll() {
-      if (el && el.scrollLeft > 32) setShowScrollHint(false);
-    }
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, []);
 
   return (
     <section
@@ -332,43 +324,19 @@ export function FeaturedTools() {
         </Link>
       </div>
 
-      {/* ── Mobile: horizontal scroll row ── */}
-      <div className="relative sm:hidden">
+      {/* ── Mobile: 2-column grid ── */}
+      <div className="sm:hidden">
         <div
-          ref={scrollRef}
-          className={clsx(
-            "flex overflow-x-auto gap-3 pb-3 -mx-4 px-4",
-            "snap-x snap-mandatory",
-            "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-          )}
+          className="grid grid-cols-2 gap-3"
           role="list"
           aria-label="Featured tools"
         >
           {tools.map((tool) => (
-            <div key={tool.id} role="listitem" className="contents">
+            <div key={tool.id} role="listitem">
               <MobileToolCard tool={tool} />
             </div>
           ))}
-          {/* Trailing spacer */}
-          <div className="shrink-0 w-4" aria-hidden="true" />
         </div>
-
-        {/* Fade-out edge + scroll hint */}
-        {showScrollHint && (
-          <div
-            className={clsx(
-              "pointer-events-none absolute right-0 top-0 bottom-3 w-16",
-              "bg-gradient-to-l from-background via-background/80 to-transparent",
-              "flex items-center justify-end pr-2"
-            )}
-            aria-hidden="true"
-          >
-            <div className="flex items-center gap-0.5 text-foreground-subtle">
-              <span className="text-xs font-medium">scroll</span>
-              <ArrowRight className="h-3 w-3" />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── Desktop: 4-column grid (unchanged) ── */}

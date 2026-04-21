@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useRef, useState, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
 import { clsx } from "clsx";
 import * as LucideIcons from "lucide-react";
-import { type LucideIcon, ArrowRight, ChevronRight, Wrench } from "lucide-react";
+import { type LucideIcon, ArrowRight, Wrench } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { TOOL_CATEGORIES } from "@/config/navigation";
 
@@ -165,10 +165,9 @@ function MobileCategoryCard({
     <Link
       href={href}
       className={clsx(
-        "snap-start shrink-0 w-36",
-        "group relative flex flex-col items-center gap-2.5 rounded-2xl",
-        "border border-card-border bg-card p-4",
-        "transition-all duration-200 active:scale-95",
+        "group relative flex flex-col items-center gap-3 rounded-2xl",
+        "border border-card-border bg-card p-4 w-full",
+        "transition-all duration-200 active:scale-[0.97]",
         "hover:border-primary/25 hover:shadow-lg",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       )}
@@ -177,7 +176,7 @@ function MobileCategoryCard({
       {/* Icon */}
       <div
         className={clsx(
-          "flex h-12 w-12 items-center justify-center rounded-xl",
+          "flex h-14 w-14 items-center justify-center rounded-2xl",
           `bg-gradient-to-br ${gradient}`,
           "shadow-md transition-all duration-200",
           "group-hover:shadow-lg group-hover:scale-105"
@@ -185,18 +184,18 @@ function MobileCategoryCard({
         aria-hidden="true"
       >
         {/* eslint-disable-next-line react-hooks/static-components */}
-        <Icon className="h-6 w-6 text-white" />
+        <Icon className="h-7 w-7 text-white" />
       </div>
 
       {/* Name */}
-      <p className="text-sm font-semibold text-foreground text-center leading-snug group-hover:text-primary transition-colors duration-200 line-clamp-1">
+      <p className="text-sm font-bold text-foreground text-center leading-snug group-hover:text-primary transition-colors duration-200">
         {label}
       </p>
 
       {/* Tool count */}
       <span
         className={clsx(
-          "inline-flex items-center rounded-full px-2 py-0.5",
+          "inline-flex items-center rounded-full px-2.5 py-0.5",
           "text-xs font-medium",
           "bg-background-muted text-foreground-muted border border-border"
         )}
@@ -208,30 +207,6 @@ function MobileCategoryCard({
 }
 
 // ─────────────────────────────────────────────
-// Scroll hint — shows fade + chevron on right edge
-// ─────────────────────────────────────────────
-
-function ScrollHint({ visible }: { visible: boolean }) {
-  if (!visible) return null;
-  return (
-    <div
-      className={clsx(
-        "pointer-events-none absolute right-0 top-0 bottom-3 w-16",
-        "bg-gradient-to-l from-background via-background/80 to-transparent",
-        "flex items-center justify-end pr-2",
-        "transition-opacity duration-300",
-        visible ? "opacity-100" : "opacity-0"
-      )}
-      aria-hidden="true"
-    >
-      <div className="flex items-center gap-0.5 text-foreground-subtle">
-        <span className="text-xs font-medium">scroll</span>
-        <ChevronRight className="h-3.5 w-3.5" />
-      </div>
-    </div>
-  );
-}
-
 // ─────────────────────────────────────────────
 // CategoryGrid
 // ─────────────────────────────────────────────
@@ -244,19 +219,6 @@ function ScrollHint({ visible }: { visible: boolean }) {
  */
 export function CategoryGrid() {
   const shouldReduce = useReducedMotion() ?? false;
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [showScrollHint, setShowScrollHint] = useState(true);
-
-  // Hide the scroll hint once the user has scrolled a bit
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    function onScroll() {
-      if (el && el.scrollLeft > 32) setShowScrollHint(false);
-    }
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, []);
 
   return (
     <section
@@ -291,26 +253,15 @@ export function CategoryGrid() {
         </Link>
       </div>
 
-      {/* ── Mobile: horizontal scroll row ── */}
-      {/*
-       * hide scrollbar cross-browser:
-       *   [&::-webkit-scrollbar]:hidden  → Chrome/Safari
-       *   [-ms-overflow-style:none]       → IE/Edge
-       *   [scrollbar-width:none]          → Firefox
-       */}
-      <div className="relative sm:hidden">
+      {/* ── Mobile: 2-column grid ── */}
+      <div className="sm:hidden">
         <div
-          ref={scrollRef}
-          className={clsx(
-            "flex overflow-x-auto gap-3 pb-3 -mx-4 px-4",
-            "snap-x snap-mandatory",
-            "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-          )}
+          className="grid grid-cols-2 gap-3"
           role="list"
           aria-label="Tool categories"
         >
           {TOOL_CATEGORIES.map((cat) => (
-            <div key={cat.id} role="listitem" className="contents">
+            <div key={cat.id} role="listitem">
               <MobileCategoryCard
                 id={cat.id}
                 label={cat.label}
@@ -321,12 +272,7 @@ export function CategoryGrid() {
               />
             </div>
           ))}
-          {/* Trailing spacer so last card doesn't abut the edge */}
-          <div className="shrink-0 w-4" aria-hidden="true" />
         </div>
-
-        {/* Fade + "scroll →" hint */}
-        <ScrollHint visible={showScrollHint} />
       </div>
 
       {/* ── Desktop: 6-column grid (unchanged) ── */}
