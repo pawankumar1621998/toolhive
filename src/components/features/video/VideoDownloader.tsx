@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
@@ -101,6 +101,12 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
   const selectedOpt = QUALITY_OPTIONS.find((q) => q.id === selectedQuality) ?? QUALITY_OPTIONS[1];
 
   const RENDER_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://toolhive-backend.onrender.com/api/v1").replace(/\/$/, "");
+
+  // Wake up Render backend on mount to avoid cold-start delay when user clicks Get Info
+  useEffect(() => {
+    fetch(`${RENDER_BASE}/health`, { method: "GET" }).catch(() => {/* ignore */});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function buildStreamUrl(extra = "") {
     return (

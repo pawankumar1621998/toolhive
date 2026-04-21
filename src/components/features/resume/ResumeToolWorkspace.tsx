@@ -16,6 +16,7 @@ import { ResumeSummaryGen } from "./ResumeSummaryGen";
 import { LinkedInWriter } from "./LinkedInWriter";
 import { InterviewPrepUI } from "./InterviewPrepUI";
 import { KeywordOptimizer } from "./KeywordOptimizer";
+import { ResignationLetterWriter } from "./ResignationLetterWriter";
 
 // ─── Inline Formatter Component ───────────────────────────────────────────────
 
@@ -240,6 +241,8 @@ export function ResumeToolWorkspace({ tool }: { tool: Tool }) {
       return <InterviewPrepUI />;
     case "keyword-optimizer":
       return <KeywordOptimizer />;
+    case "resignation-letter":
+      return <ResignationLetterWriter />;
     default:
       return <ComingSoon slug={tool.slug} />;
   }

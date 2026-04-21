@@ -153,7 +153,14 @@ export function TranslatePdfWorkspace() {
             <div className="flex gap-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-3.5 py-3">
               <Info className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
               <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-                The accuracy of translation is increased by correctly selecting the document language.
+                Selecting the correct source language improves translation accuracy.
+              </p>
+            </div>
+            {/* 4000 char limit warning */}
+            <div className="flex gap-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-3.5 py-3">
+              <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                <strong>Limit:</strong> Only the first ~4,000 characters of your PDF will be translated. For longer documents, split into smaller sections and translate each separately.
               </p>
             </div>
 

@@ -374,6 +374,106 @@ async function processImage(
       const pdfBytes = await pdfDoc.save();
       return { name: `${baseName(filename)}.pdf`, data: Buffer.from(pdfBytes).toString("base64"), type: "application/pdf" };
     }
+    case "crop": {
+      const cropX = Math.max(0, parseInt(opts.x ?? "0", 10));
+      const cropY = Math.max(0, parseInt(opts.y ?? "0", 10));
+      const cropW = parseInt(opts.width ?? "0", 10);
+      const cropH = parseInt(opts.height ?? "0", 10);
+      const meta = await sharp(buf).metadata();
+      const imgW = meta.width ?? 800;
+      const imgH = meta.height ?? 600;
+      const extractW = cropW > 0 ? Math.min(cropW, imgW - cropX) : imgW - cropX;
+      const extractH = cropH > 0 ? Math.min(cropH, imgH - cropY) : imgH - cropY;
+      pipeline = pipeline.extract({ left: cropX, top: cropY, width: Math.max(1, extractW), height: Math.max(1, extractH) });
+      outName = `${baseName(filename)}_cropped`;
+      break;
+    }
+    case "color-filter": {
+      const filter = opts.filter ?? "sepia";
+      if (filter === "sepia") {
+        pipeline = pipeline.recomb([[0.393, 0.769, 0.189], [0.349, 0.686, 0.168], [0.272, 0.534, 0.131]]);
+      } else if (filter === "cool") {
+        pipeline = pipeline.tint({ r: 180, g: 210, b: 255 });
+      } else if (filter === "warm") {
+        pipeline = pipeline.tint({ r: 255, g: 220, b: 180 });
+      } else if (filter === "grayscale") {
+        pipeline = pipeline.grayscale();
+      }
+      outName = `${baseName(filename)}_${filter}`;
+      break;
+    }
+    case "adjust": {
+      const brightness = Math.max(0.1, Math.min(3, parseFloat(opts.brightness ?? "1")));
+      const saturation = Math.max(0, Math.min(3, parseFloat(opts.saturation ?? "1")));
+      const hue = parseInt(opts.hue ?? "0", 10);
+      pipeline = pipeline.modulate({ brightness, saturation, hue });
+      outName = `${baseName(filename)}_adjusted`;
+      break;
+    }
+    case "add-border": {
+      const borderSize = Math.max(1, Math.min(200, parseInt(opts.borderSize ?? "20", 10)));
+      const hex = (opts.borderColor ?? "#ffffff").replace("#", "");
+      const r = parseInt(hex.substring(0, 2), 16) || 255;
+      const g = parseInt(hex.substring(2, 4), 16) || 255;
+      const b = parseInt(hex.substring(4, 6), 16) || 255;
+      pipeline = pipeline.extend({ top: borderSize, bottom: borderSize, left: borderSize, right: borderSize, background: { r, g, b, alpha: 1 } });
+      outName = `${baseName(filename)}_bordered`;
+      break;
+    }
+    case "round-image": {
+      const meta = await sharp(buf).metadata();
+      const size = Math.min(meta.width ?? 400, meta.height ?? 400);
+      const mask = Buffer.from(`<svg width="${size}" height="${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="white"/></svg>`);
+      const squareBuf = await sharp(buf).resize(size, size, { fit: "cover" }).toBuffer();
+      const roundBuf = await sharp(squareBuf).composite([{ input: mask, blend: "dest-in" }]).png().toBuffer();
+      return { name: `${baseName(filename)}_rounded.png`, data: roundBuf.toString("base64"), type: "image/png" };
+    }
+    case "profile-photo": {
+      const size = Math.max(100, Math.min(800, parseInt(opts.size ?? "400", 10)));
+      const mask = Buffer.from(`<svg width="${size}" height="${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="white"/></svg>`);
+      const squareBuf = await sharp(buf).resize(size, size, { fit: "cover" }).toBuffer();
+      const profileBuf = await sharp(squareBuf).composite([{ input: mask, blend: "dest-in" }]).png().toBuffer();
+      return { name: `${baseName(filename)}_profile.png`, data: profileBuf.toString("base64"), type: "image/png" };
+    }
+    case "blur-background": {
+      const meta = await sharp(buf).metadata();
+      const w = meta.width ?? 800;
+      const h = meta.height ?? 600;
+      const blurredBuf = await sharp(buf).blur(15).toBuffer();
+      const centerW = Math.floor(w * 0.5);
+      const centerH = Math.floor(h * 0.5);
+      const centerX = Math.floor((w - centerW) / 2);
+      const centerY = Math.floor((h - centerH) / 2);
+      const centerBuf = await sharp(buf).extract({ left: centerX, top: centerY, width: centerW, height: centerH }).toBuffer();
+      const blurBgBuf = await sharp(blurredBuf).composite([{ input: centerBuf, top: centerY, left: centerX }]).jpeg({ quality: 92 }).toBuffer();
+      return { name: `${baseName(filename)}_blur_bg.jpg`, data: blurBgBuf.toString("base64"), type: "image/jpeg" };
+    }
+    case "pixelate": {
+      const pixelSize = Math.max(2, parseInt(opts.pixelSize ?? "10", 10));
+      const meta = await sharp(buf).metadata();
+      const w = meta.width ?? 800;
+      const h = meta.height ?? 600;
+      const smallW = Math.max(1, Math.round(w / pixelSize));
+      const smallH = Math.max(1, Math.round(h / pixelSize));
+      pipeline = sharp(buf)
+        .resize(smallW, smallH, { kernel: sharp.kernel.nearest })
+        .resize(w, h, { kernel: sharp.kernel.nearest });
+      outName = `${baseName(filename)}_pixelated`;
+      break;
+    }
+    case "remove-watermark": {
+      throw new Error("Watermark removal requires AI-powered inpainting which is not available in this environment. Try Cleanup.pictures or Adobe Firefly for watermark removal.");
+    }
+    case "draw":
+    case "cleanup": {
+      throw new Error(`This feature requires an interactive canvas editor. Try Canva or Adobe Photoshop for drawing and AI cleanup.`);
+    }
+    case "collage":
+    case "combine":
+    case "thumbnail-creator": {
+      outName = `${baseName(filename)}_${slug}`;
+      break;
+    }
     default: {
       // Fallthrough: re-encode the image
       if (outExt === "png") pipeline = pipeline.png();
@@ -845,12 +945,20 @@ async function processPDF(
       for (let fi = 0; fi < bufs.length; fi++) {
         const pdfDoc = await PDFDocument.load(new Uint8Array(bufs[fi]), { ignoreEncryption: true });
         const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
         pdfDoc.getPages().forEach((page) => {
           const { width, height } = page.getSize();
-          // Draw black redaction box as overlay — crude but visible
-          page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(0, 0, 0), opacity: 0 });
-          page.drawText(`[REDACTED: Contains redacted content — keyword: "${keyword}"]`, {
-            x: 40, y: height / 2, size: 10, font, color: rgb(0.5, 0, 0),
+          // Visible black banner at top marking redaction
+          page.drawRectangle({ x: 0, y: height - 26, width, height: 26, color: rgb(0, 0, 0), opacity: 1 });
+          const label = `REDACTED: "${keyword}"`;
+          const labelW = boldFont.widthOfTextAtSize(label, 10);
+          page.drawText(label, {
+            x: Math.max(8, (width - labelW) / 2), y: height - 17, size: 10, font: boldFont, color: rgb(1, 1, 0),
+          });
+          // Disclaimer bar at bottom
+          page.drawRectangle({ x: 0, y: 0, width, height: 16, color: rgb(1, 0.9, 0.65), opacity: 1 });
+          page.drawText("Note: This tool adds visual markers only. Original text is not permanently removed. Use Adobe Acrobat for true redaction.", {
+            x: 8, y: 4, size: 6.5, font, color: rgb(0.5, 0.2, 0), maxWidth: width - 16,
           });
         });
         const saved = await pdfDoc.save();
@@ -1024,6 +1132,32 @@ export async function POST(request: NextRequest) {
           outputs.push({ name: `${baseName(filenames[0])}_part${i + 1}.jpg`, data: tile.toString("base64"), type: "image/jpeg" });
         }
         return respondFiles(outputs);
+      }
+
+      // Handle collage/combine — stitch multiple images side by side
+      if ((toolSlug === "collage" || toolSlug === "combine") && bufs.length > 1) {
+        const metas = await Promise.all(bufs.map((b) => sharp(b).metadata()));
+        const maxH = Math.max(...metas.map((m) => m.height ?? 300));
+        const resizedBufs: { buf: Buffer; w: number }[] = await Promise.all(
+          bufs.map(async (b, i) => {
+            const m = metas[i];
+            const aspect = (m.width ?? 300) / (m.height ?? 300);
+            const newW = Math.round(maxH * aspect);
+            return { buf: await sharp(b).resize(newW, maxH).jpeg({ quality: 90 }).toBuffer(), w: newW };
+          })
+        );
+        const totalW = resizedBufs.reduce((sum, r) => sum + r.w, 0);
+        let xOffset = 0;
+        const composites = resizedBufs.map(({ buf, w }) => {
+          const c = { input: buf, top: 0, left: xOffset };
+          xOffset += w;
+          return c;
+        });
+        const base = await sharp({
+          create: { width: totalW, height: maxH, channels: 3 as const, background: { r: 255, g: 255, b: 255 } },
+        }).jpeg({ quality: 90 }).toBuffer();
+        const collageBuf = await sharp(base).composite(composites).jpeg({ quality: 90 }).toBuffer();
+        return respondFiles([{ name: `${toolSlug}.jpg`, data: collageBuf.toString("base64"), type: "image/jpeg" }]);
       }
 
       // Handle multiple image files (batch)

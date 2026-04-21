@@ -1408,6 +1408,11 @@ export function ToolOptions({ tool }: { tool: Tool }) {
     if (slug === "pixel-art")         return <ImagePixelArtOptions />;
     if (slug === "social-resize")     return <ImageSocialResizeOptions />;
     if (slug === "add-logo")          return <ImageAddLogoOptions />;
+    if (slug === "color-filter")      return <ImageColorFilterOptions />;
+    if (slug === "adjust")            return <ImageAdjustOptions />;
+    if (slug === "add-border")        return <ImageAddBorderOptions />;
+    if (slug === "pixelate")          return <ImagePixelateOptions />;
+    if (slug === "profile-photo")     return <ImageProfilePhotoOptions />;
   }
 
   // Converter tools
@@ -1422,6 +1427,160 @@ export function ToolOptions({ tool }: { tool: Tool }) {
 
   // No options for this tool
   return null;
+}
+
+// ─── New image tool option panels ─────────────────────────────────────────────
+
+function ImageColorFilterOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  const filter = (opts.filter as string) || "sepia";
+  const filters = [
+    { value: "sepia",     label: "Sepia" },
+    { value: "warm",      label: "Warm" },
+    { value: "cool",      label: "Cool" },
+    { value: "grayscale", label: "Grayscale" },
+  ];
+  return (
+    <OptionRow>
+      <Label>Filter</Label>
+      <div className="grid grid-cols-2 gap-2">
+        {filters.map((f) => (
+          <button
+            key={f.value}
+            type="button"
+            onClick={() => set("filter", f.value)}
+            className={clsx(
+              "rounded-lg border py-2 text-sm font-medium transition-colors",
+              filter === f.value
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border text-foreground-muted hover:bg-background-subtle"
+            )}
+          >{f.label}</button>
+        ))}
+      </div>
+    </OptionRow>
+  );
+}
+
+function ImageAdjustOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  return (
+    <>
+      <OptionRow>
+        <Label>Brightness — {opts.brightness ?? 1}</Label>
+        <RangeSlider
+          value={Number(opts.brightness ?? 1) * 100}
+          min={10} max={300} step={5}
+          onChange={(v) => set("brightness", v / 100)}
+        />
+        <div className="flex justify-between text-[10px] text-foreground-subtle">
+          <span>Darker</span><span>Brighter</span>
+        </div>
+      </OptionRow>
+      <Divider />
+      <OptionRow>
+        <Label>Saturation — {opts.saturation ?? 1}</Label>
+        <RangeSlider
+          value={Number(opts.saturation ?? 1) * 100}
+          min={0} max={300} step={5}
+          onChange={(v) => set("saturation", v / 100)}
+        />
+        <div className="flex justify-between text-[10px] text-foreground-subtle">
+          <span>Desaturate</span><span>Vivid</span>
+        </div>
+      </OptionRow>
+      <Divider />
+      <OptionRow>
+        <Label htmlFor="hue-rotate">Hue Shift — {opts.hue ?? 0}°</Label>
+        <RangeSlider
+          id="hue-rotate"
+          value={Number(opts.hue ?? 0)}
+          min={-180} max={180} step={5}
+          onChange={(v) => set("hue", v)}
+        />
+      </OptionRow>
+    </>
+  );
+}
+
+function ImageAddBorderOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  return (
+    <>
+      <OptionRow>
+        <Label>Border Size — {opts.borderSize ?? 20}px</Label>
+        <RangeSlider
+          value={Number(opts.borderSize ?? 20)}
+          min={2} max={100} step={2}
+          onChange={(v) => set("borderSize", v)}
+        />
+      </OptionRow>
+      <Divider />
+      <OptionRow>
+        <Label htmlFor="border-color">Border Color</Label>
+        <div className="flex items-center gap-3">
+          <input
+            id="border-color"
+            type="color"
+            value={(opts.borderColor as string) || "#ffffff"}
+            onChange={(e) => set("borderColor", e.target.value)}
+            className="h-9 w-16 cursor-pointer rounded-lg border border-border bg-background p-0.5"
+          />
+          <TextInput
+            value={(opts.borderColor as string) || "#ffffff"}
+            onChange={(v) => set("borderColor", v)}
+            placeholder="#ffffff"
+          />
+        </div>
+      </OptionRow>
+    </>
+  );
+}
+
+function ImagePixelateOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  return (
+    <OptionRow>
+      <Label>Pixel Size — {opts.pixelSize ?? 10}px</Label>
+      <RangeSlider
+        value={Number(opts.pixelSize ?? 10)}
+        min={2} max={50} step={2}
+        onChange={(v) => set("pixelSize", v)}
+      />
+      <p className="text-xs text-foreground-subtle mt-1">Larger = coarser pixelation.</p>
+    </OptionRow>
+  );
+}
+
+function ImageProfilePhotoOptions() {
+  const opts = useToolStore(selectToolOptions);
+  const set = useToolStore((s) => s.setToolOption);
+  const sizes = [200, 400, 600, 800];
+  return (
+    <OptionRow>
+      <Label>Output Size</Label>
+      <div className="grid grid-cols-2 gap-2">
+        {sizes.map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => set("size", s)}
+            className={clsx(
+              "rounded-lg border py-2 text-sm font-medium transition-colors",
+              Number(opts.size ?? 400) === s
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border text-foreground-muted hover:bg-background-subtle"
+            )}
+          >{s}×{s}px</button>
+        ))}
+      </div>
+      <p className="text-xs text-foreground-subtle mt-1">Outputs a transparent circular PNG.</p>
+    </OptionRow>
+  );
 }
 
 export default ToolOptions;
