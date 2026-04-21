@@ -3771,9 +3771,9 @@ export function AIWritingWorkspace({ tool }: { tool: Tool }) {
 // ── New NVIDIA-powered AI Writing Tools ─────────────────────────────────────
 
 function CodeGeneratorTool() {
-  const [task, setTask] = React.useState("");
-  const [language, setLanguage] = React.useState("Python");
-  const [details, setDetails] = React.useState("");
+  const [task, setTask] = useState("");
+  const [language, setLanguage] = useState("Python");
+  const [details, setDetails] = useState("");
   const { output, loading, error, generate, clear } = useAIGenerate("code-generator");
   const langs = ["Python","JavaScript","TypeScript","Java","C++","C#","Go","Rust","PHP","Ruby","SQL","Bash"];
   return (
@@ -3800,9 +3800,9 @@ function CodeGeneratorTool() {
 }
 
 function CodeDebuggerTool() {
-  const [code, setCode] = React.useState("");
-  const [language, setLanguage] = React.useState("Python");
-  const [errorMsg, setErrorMsg] = React.useState("");
+  const [code, setCode] = useState("");
+  const [language, setLanguage] = useState("Python");
+  const [errorMsg, setErrorMsg] = useState("");
   const { output, loading, error, generate, clear } = useAIGenerate("code-debugger");
   const langs = ["Python","JavaScript","TypeScript","Java","C++","C#","Go","PHP","SQL","Bash"];
   return (
@@ -3829,10 +3829,10 @@ function CodeDebuggerTool() {
 }
 
 function EssayWriterTool() {
-  const [topic, setTopic] = React.useState("");
-  const [type, setType] = React.useState("Argumentative");
-  const [wordCount, setWordCount] = React.useState("500");
-  const [tone, setTone] = React.useState("Academic");
+  const [topic, setTopic] = useState("");
+  const [type, setType] = useState("Argumentative");
+  const [wordCount, setWordCount] = useState("500");
+  const [tone, setTone] = useState("Academic");
   const { output, loading, error, generate, clear } = useAIGenerate("essay-writer");
   return (
     <div className="space-y-4">
@@ -3862,10 +3862,10 @@ function EssayWriterTool() {
 }
 
 function BusinessPlanTool() {
-  const [businessName, setBusinessName] = React.useState("");
-  const [industry, setIndustry] = React.useState("");
-  const [description, setDescription] = React.useState("");
-  const [target, setTarget] = React.useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [description, setDescription] = useState("");
+  const [target, setTarget] = useState("");
   const { output, loading, error, generate, clear } = useAIGenerate("business-plan");
   return (
     <div className="space-y-4">
@@ -3895,9 +3895,9 @@ function BusinessPlanTool() {
 }
 
 function NewsArticleTool() {
-  const [headline, setHeadline] = React.useState("");
-  const [details, setDetails] = React.useState("");
-  const [tone, setTone] = React.useState("Neutral");
+  const [headline, setHeadline] = useState("");
+  const [details, setDetails] = useState("");
+  const [tone, setTone] = useState("Neutral");
   const { output, loading, error, generate, clear } = useAIGenerate("news-article");
   return (
     <div className="space-y-4">
@@ -3917,8 +3917,8 @@ function NewsArticleTool() {
 }
 
 function LegalSummarizerTool() {
-  const [text, setText] = React.useState("");
-  const [focus, setFocus] = React.useState("");
+  const [text, setText] = useState("");
+  const [focus, setFocus] = useState("");
   const { output, loading, error, generate, clear } = useAIGenerate("legal-summarizer");
   return (
     <div className="space-y-4">
@@ -3938,8 +3938,8 @@ function LegalSummarizerTool() {
 }
 
 function ParagraphExpanderTool() {
-  const [text, setText] = React.useState("");
-  const [tone, setTone] = React.useState("Professional");
+  const [text, setText] = useState("");
+  const [tone, setTone] = useState("Professional");
   const { output, loading, error, generate, clear } = useAIGenerate("paragraph-expander");
   return (
     <div className="space-y-4">
@@ -3961,10 +3961,10 @@ function ParagraphExpanderTool() {
 }
 
 function ProductReviewTool() {
-  const [product, setProduct] = React.useState("");
-  const [pros, setPros] = React.useState("");
-  const [cons, setCons] = React.useState("");
-  const [rating, setRating] = React.useState(4);
+  const [product, setProduct] = useState("");
+  const [pros, setPros] = useState("");
+  const [cons, setCons] = useState("");
+  const [rating, setRating] = useState(4);
   const { output, loading, error, generate, clear } = useAIGenerate("product-review");
   return (
     <div className="space-y-4">
@@ -3988,9 +3988,9 @@ function ProductReviewTool() {
 }
 
 function FaqGeneratorTool() {
-  const [topic, setTopic] = React.useState("");
-  const [audience, setAudience] = React.useState("");
-  const [count] = React.useState(10);
+  const [topic, setTopic] = useState("");
+  const [audience, setAudience] = useState("");
+  const [count] = useState(10);
   const { output, loading, error, generate, clear } = useAIGenerate("faq-generator");
   return (
     <div className="space-y-4">
@@ -4010,11 +4010,11 @@ function FaqGeneratorTool() {
 }
 
 function CoverLetterGenTool() {
-  const [role, setRole] = React.useState("");
-  const [company, setCompany] = React.useState("");
-  const [name, setName] = React.useState("");
-  const [experience, setExperience] = React.useState("");
-  const [skills, setSkills] = React.useState("");
+  const [role, setRole] = useState("");
+  const [company, setCompany] = useState("");
+  const [name, setName] = useState("");
+  const [experience, setExperience] = useState("");
+  const [skills, setSkills] = useState("");
   const { output, loading, error, generate, clear } = useAIGenerate("cover-letter-gen");
   return (
     <div className="space-y-4">
