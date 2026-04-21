@@ -76,6 +76,15 @@ const QUALITY_OPTIONS: QualityOption[] = [
 ];
 
 // ─────────────────────────────────────────────
+// YouTube ID extraction
+// ─────────────────────────────────────────────
+
+function getYouTubeId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m?.[1] ?? null;
+}
+
+// ─────────────────────────────────────────────
 // Platform detection
 // ─────────────────────────────────────────────
 
@@ -367,36 +376,58 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="space-y-5"
             >
-              {/* Video Info Card */}
+              {/* Video Preview Player */}
               <div className="rounded-2xl border border-card-border bg-background overflow-hidden">
-                {/* Thumbnail — real image or fallback gradient */}
-                <div className="relative w-full aspect-video bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
-                  {videoInfo.thumbnail ? (
-                    <Image
-                      src={videoInfo.thumbnail}
-                      alt={videoInfo.title}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="rounded-full bg-white/20 backdrop-blur-sm p-5 shadow-lg">
-                      <Play className="h-10 w-10 text-white fill-white" />
-                    </div>
-                  )}
-                  {/* Play icon overlay */}
-                  {videoInfo.thumbnail && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                      <div className="rounded-full bg-black/40 backdrop-blur-sm p-4">
-                        <Play className="h-8 w-8 text-white fill-white" />
+                {(() => {
+                  const ytId = getYouTubeId(url);
+                  if (ytId) {
+                    // YouTube — show the real embedded player so user can watch & verify
+                    return (
+                      <div className="relative w-full aspect-video bg-black">
+                        <iframe
+                          src={`https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1`}
+                          title={videoInfo.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="absolute inset-0 w-full h-full"
+                        />
+                      </div>
+                    );
+                  }
+                  // Other platforms — show thumbnail with link to original
+                  return (
+                    <div className="relative w-full aspect-video bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
+                      {videoInfo.thumbnail ? (
+                        <Image
+                          src={videoInfo.thumbnail}
+                          alt={videoInfo.title}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="rounded-full bg-white/20 backdrop-blur-sm p-5 shadow-lg">
+                          <Play className="h-10 w-10 text-white fill-white" />
+                        </div>
+                      )}
+                      {/* Open on platform overlay */}
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/50 transition-colors group"
+                      >
+                        <div className="rounded-full bg-black/50 backdrop-blur-sm p-4 group-hover:scale-110 transition-transform">
+                          <Play className="h-8 w-8 text-white fill-white" />
+                        </div>
+                      </a>
+                      {/* Duration badge */}
+                      <div className="absolute bottom-3 right-3 rounded-md bg-black/70 px-2 py-0.5 text-xs font-semibold text-white backdrop-blur-sm pointer-events-none">
+                        {videoInfo.duration}
                       </div>
                     </div>
-                  )}
-                  {/* Duration badge */}
-                  <div className="absolute bottom-3 right-3 rounded-md bg-black/70 px-2 py-0.5 text-xs font-semibold text-white backdrop-blur-sm">
-                    {videoInfo.duration}
-                  </div>
-                </div>
+                  );
+                })()}
 
                 {/* Metadata */}
                 <div className="p-4 space-y-2">
