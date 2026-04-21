@@ -6,13 +6,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "@/components/ui/Toaster";
-import dynamic from "next/dynamic";
+import { ChatBotWrapper } from "@/components/features/chat/ChatBotWrapper";
 import "./globals.css";
-
-const ChatBot = dynamic(
-  () => import("@/components/features/chat/ChatBot").then((m) => m.ChatBot),
-  { ssr: false }
-);
 
 // ─────────────────────────────────────────────
 // Metadata
@@ -157,7 +152,7 @@ export default function RootLayout({
             <Toaster />
 
             {/* Floating AI Chat Assistant — visible on all pages */}
-            <ChatBot />
+            <ChatBotWrapper />
           </AuthProvider>
         </ThemeProvider>
       </body>
