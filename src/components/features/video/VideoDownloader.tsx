@@ -200,62 +200,68 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
   async function handleDownload() {
     if (isDownloading || downloadDone) return;
     setIsDownloading(true);
-    setDownloadProgress(20);
+    setDownloadProgress(15);
     setDownloadError(null);
 
-    // Build the Render backend stream URL directly.
-    // The backend sends Content-Disposition: attachment headers within <1s,
-    // so window.location.href navigation is immediately intercepted by the browser
-    // as a file download — the React page stays visible, no blank tab.
-    const RENDER_BASE = "https://toolhive-backend.onrender.com/api/v1";
-    const streamUrl =
+    const RENDER_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://toolhive-backend.onrender.com/api/v1").replace(/\/$/, "");
+
+    // Unique timestamp prevents any browser/CDN caching of the download URL
+    const checkUrl =
       `${RENDER_BASE}/video/download` +
       `?url=${encodeURIComponent(url.trim())}` +
-      `&quality=${encodeURIComponent(selectedQuality)}`;
+      `&quality=${encodeURIComponent(selectedQuality)}` +
+      `&_t=${Date.now()}`;
 
     try {
-      // Quick ping to Vercel route first to try Cobalt CDN (instant, no proxy).
-      // If it returns a direct CDN URL we use that; otherwise fall through to streaming.
+      setDownloadProgress(30);
+
+      // Phase 1: Send a fetch request and wait for the response headers.
+      // The backend now holds headers until yt-dlp starts outputting data (or fails).
+      // — If yt-dlp fails → backend returns JSON { success:false, message:... }
+      //   We read that and show it in the React UI (no page navigation).
+      // — If yt-dlp succeeds → backend returns Content-Type: video/mp4 headers.
+      //   We cancel this response and navigate with window.location.href so the
+      //   browser's native download manager handles the (potentially large) file.
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 15_000);
+      const timeout = setTimeout(() => controller.abort(), 55_000); // 55 s max
 
-      let finalUrl = streamUrl;
-      let finalFilename = `video.${selectedOption.format}`;
+      const resp = await fetch(checkUrl, { signal: controller.signal });
+      clearTimeout(timeout);
 
-      try {
-        const res = await fetch(`${BACKEND_URL}/video/download`, {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({ url: url.trim(), quality: selectedQuality }),
-          signal:  controller.signal,
-        });
-        clearTimeout(timer);
-        const data = await res.json() as { success: boolean; downloadUrl?: string; filename?: string; message?: string };
-        if (data.success && data.downloadUrl) {
-          finalUrl = data.downloadUrl;
-          finalFilename = data.filename || finalFilename;
-        }
-      } catch {
-        clearTimeout(timer);
-        // Cobalt failed or timed out — fall through to Render stream URL
+      setDownloadProgress(60);
+
+      const ct = resp.headers.get("content-type") || "";
+
+      if (ct.includes("application/json") || resp.status >= 400) {
+        // yt-dlp returned an error — show it in the UI
+        const data = await resp.json().catch(() => ({ message: "Download failed. Please try again." })) as { success?: boolean; message?: string };
+        throw new Error(data.message || "Download failed. The video may not be available on this platform.");
       }
+
+      // yt-dlp is streaming — cancel this probe request and let the browser
+      // handle the real download via window.location.href (native download manager,
+      // handles large files without buffering in JS memory).
+      resp.body?.cancel().catch(() => {});
 
       setDownloadProgress(80);
 
-      // Navigate current window to the download URL.
-      // Backend sends Content-Disposition: attachment immediately →
-      // browser treats it as a file download, stays on current page.
-      window.location.href = finalUrl;
+      // Phase 2: Navigate — fresh request, browser intercepts Content-Disposition: attachment
+      window.location.href =
+        `${RENDER_BASE}/video/download` +
+        `?url=${encodeURIComponent(url.trim())}` +
+        `&quality=${encodeURIComponent(selectedQuality)}` +
+        `&_t=${Date.now()}`;
 
-      // Mark done after a short delay (download has been triggered)
       setTimeout(() => {
         setDownloadProgress(100);
         setIsDownloading(false);
         setDownloadDone(true);
-      }, 2500);
+      }, 3000);
 
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Download failed. Please try again.";
+      const msg = (err as Error).name === "AbortError"
+        ? "Request timed out. The server may be starting up — please try again in a moment."
+        : ((err as Error).message || "Download failed. Please try again.");
       setDownloadError(msg);
       setIsDownloading(false);
       setDownloadProgress(0);
