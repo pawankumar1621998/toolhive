@@ -175,6 +175,31 @@ export const TOOLS: Tool[] = [
     maxFileSizeMB: 25,
     maxFiles: 20,
   },
+  // ── Video ────────────────────────────────────
+  {
+    id: "video-downloader",
+    slug: "downloader",
+    name: "Video Downloader",
+    description: "Download videos from YouTube, Instagram, TikTok, Facebook, Twitter/X, Pinterest, Vimeo, Dailymotion, Twitch, Reddit and 100+ other platforms. Paste the URL and choose your quality.",
+    shortDescription: "Download videos from any platform by URL.",
+    category: "video",
+    icon: "Download",
+    tags: ["download", "youtube", "instagram", "tiktok", "facebook", "twitter", "social media", "video"],
+    isNew: true,
+    isFeatured: true,
+    isPopular: true,
+    usageCount: 1_200_000,
+    estimatedTime: "~5s",
+    acceptedFileTypes: [],
+    maxFileSizeMB: 0,
+    maxFiles: 0,
+    howItWorks: [
+      { title: "Paste the video URL", description: "Copy the video URL from YouTube, Instagram, TikTok, Facebook, Twitter/X or any supported platform and paste it." },
+      { title: "Select quality & format", description: "Choose your preferred resolution (4K/1080p/720p/480p/360p) and format (MP4 or MP3 audio)." },
+      { title: "Download instantly", description: "Click Download and your video will be saved. No account needed, completely free." },
+    ],
+  },
+
   // ── AI Writing ──────────────────────────────
   {
     id: "ai-summarize",
