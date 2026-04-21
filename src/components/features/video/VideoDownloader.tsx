@@ -212,30 +212,34 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
       `&_t=${Date.now()}` +
       extra;
 
+    const isYouTube = /youtube\.com|youtu\.be/.test(url.trim());
+
     try {
-      // Phase 1 — Validate: run yt-dlp --print url on the server (~5-15 s).
-      // Returns JSON {success:true} or {success:false, message:"..."}.
-      // This is fast (no data transferred) and lets us show React errors
-      // before the browser navigates away for the real download.
-      setDownloadProgress(20);
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30_000);
+      if (isYouTube) {
+        // YouTube: yt-dlp works reliably — skip validate, navigate directly to stream.
+        setDownloadProgress(80);
+        window.location.href = buildDownloadUrl();
+      } else {
+        // Non-YouTube: validate first (Cobalt parallel 10s + yt-dlp fallback 28s).
+        // Returns JSON {success:true, directUrl?} or {success:false, message}.
+        setDownloadProgress(20);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 50_000);
 
-      const validateResp = await fetch(buildDownloadUrl("&validate=1"), { signal: controller.signal });
-      clearTimeout(timeout);
-      setDownloadProgress(60);
+        const validateResp = await fetch(buildDownloadUrl("&validate=1"), { signal: controller.signal });
+        clearTimeout(timeout);
+        setDownloadProgress(60);
 
-      const validateData = await validateResp.json() as { success: boolean; message?: string; directUrl?: string; filename?: string };
-      if (!validateData.success) {
-        throw new Error(validateData.message || "This video cannot be downloaded. Please check the URL or try a different quality.");
+        const validateData = await validateResp.json() as { success: boolean; message?: string; directUrl?: string; filename?: string };
+        if (!validateData.success) {
+          throw new Error(validateData.message || "This video cannot be downloaded. Please check the URL or try a different quality.");
+        }
+
+        setDownloadProgress(85);
+
+        // directUrl = Cobalt CDN/tunnel URL; no directUrl = yt-dlp stream endpoint.
+        window.location.href = validateData.directUrl ?? buildDownloadUrl();
       }
-
-      setDownloadProgress(85);
-
-      // Phase 2 — Navigate: browser's native download manager handles any file size.
-      // directUrl = Cobalt returned a CDN/tunnel URL (Instagram, TikTok, etc.)
-      // No directUrl = yt-dlp stream endpoint handles the download (YouTube, etc.)
-      window.location.href = validateData.directUrl ?? buildDownloadUrl();
 
       setTimeout(() => {
         setDownloadProgress(100);
