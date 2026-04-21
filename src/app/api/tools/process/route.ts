@@ -461,21 +461,24 @@ async function processPDF(
     }
 
     case "watermark": {
+      const watermarkText = opts.text?.trim() || "CONFIDENTIAL";
+      // Slider sends 10-100 (percent); pdf-lib needs 0-1
+      const rawOpacity = parseFloat(opts.opacity ?? "30");
+      const opacity = Math.max(0.05, Math.min(1, rawOpacity > 1 ? rawOpacity / 100 : rawOpacity));
       const results: { name: string; data: string; type: string }[] = [];
-      const watermarkText = opts.text ?? "CONFIDENTIAL";
-      const opacity = parseFloat(opts.opacity ?? "0.3");
       for (let fi = 0; fi < bufs.length; fi++) {
         const pdfDoc = await PDFDocument.load(new Uint8Array(bufs[fi]), { ignoreEncryption: true });
         const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
         pdfDoc.getPages().forEach((page) => {
           const { width, height } = page.getSize();
-          const fontSize = Math.min(width, height) * 0.12;
+          const fontSize = Math.min(width, height) * 0.1;
+          const textWidth = font.widthOfTextAtSize(watermarkText, fontSize);
           page.drawText(watermarkText, {
-            x: width / 2 - (watermarkText.length * fontSize * 0.3),
-            y: height / 2,
+            x: width / 2 - textWidth / 2,
+            y: height / 2 - fontSize / 2,
             size: fontSize,
             font,
-            color: rgb(0.7, 0.7, 0.7),
+            color: rgb(0.6, 0.6, 0.6),
             opacity,
             rotate: degrees(45),
           });
@@ -572,16 +575,37 @@ async function processPDF(
 
     case "scan-to-pdf": {
       const sharp = await getSharp();
+      const imageExts = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "avif"];
+      if (!imageExts.includes(ext(filenames[0]))) {
+        throw new Error("Scan to PDF only works with image files (JPG, PNG, etc.). Please upload an image of your document.");
+      }
       const pdfDoc = await PDFDocument.create();
       for (let i = 0; i < bufs.length; i++) {
-        const jpgBuf = await sharp(bufs[i]).jpeg({ quality: 90 }).toBuffer();
-        const imgEmbed = await pdfDoc.embedJpg(new Uint8Array(jpgBuf));
+        // Apply scan effect: grayscale + slight contrast + sharpen → looks like a photocopy
+        const scannedBuf = await sharp(bufs[i])
+          .grayscale()
+          .linear(1.15, -15)   // boost contrast slightly
+          .sharpen({ sigma: 0.8 })
+          .jpeg({ quality: 88 })
+          .toBuffer();
+        const imgEmbed = await pdfDoc.embedJpg(new Uint8Array(scannedBuf));
         const { width, height } = imgEmbed.scale(1);
-        const page = pdfDoc.addPage([width, height]);
-        page.drawImage(imgEmbed, { x: 0, y: 0, width, height });
+        // Fit onto A4 page
+        const A4W = width > height ? 841.89 : 595.28;
+        const A4H = width > height ? 595.28 : 841.89;
+        const scale = Math.min(A4W / width, A4H / height);
+        const drawW = width * scale;
+        const drawH = height * scale;
+        const page = pdfDoc.addPage([A4W, A4H]);
+        page.drawImage(imgEmbed, {
+          x: (A4W - drawW) / 2,
+          y: (A4H - drawH) / 2,
+          width: drawW,
+          height: drawH,
+        });
       }
       const saved = await pdfDoc.save();
-      return [{ name: "scanned.pdf", data: Buffer.from(saved).toString("base64"), type: mime }];
+      return [{ name: "scanned_document.pdf", data: Buffer.from(saved).toString("base64"), type: mime }];
     }
 
     case "repair-pdf": {
@@ -896,7 +920,47 @@ async function processPDF(
     }
 
     case "ocr": {
-      throw new Error("PDF OCR requires a Tesseract or cloud OCR service. This feature needs a configured OCR_API_KEY environment variable. Please add OCR support to your server configuration.");
+      const results: { name: string; data: string; type: string }[] = [];
+      for (let fi = 0; fi < bufs.length; fi++) {
+        const pdfData = await pdfParse(bufs[fi]);
+        const text = pdfData.text.trim();
+        const outputFmt = opts.outputFormat ?? "txt";
+        const header =
+          `OCR / Text Extraction — ${filenames[fi]}\n` +
+          `Pages: ${pdfData.numpages}  |  Extracted: ${new Date().toLocaleDateString("en-GB")}\n` +
+          "─".repeat(60) + "\n\n";
+
+        let body: string;
+        if (text.length < 20) {
+          body =
+            "⚠️  No readable text found in this PDF.\n\n" +
+            "This appears to be a scanned/image-based PDF. Our tool extracts text from digital (searchable) PDFs only.\n\n" +
+            "For scanned PDFs, try one of these free options:\n" +
+            "• Google Drive → upload PDF → right-click → Open with Google Docs (free OCR)\n" +
+            "• Adobe Acrobat Online → acrobat.adobe.com\n" +
+            "• OCR.Space → ocr.space (free, no signup needed)";
+        } else if (outputFmt === "srt") {
+          // Rough SRT: one block per paragraph
+          const paras = text.split(/\n{2,}/).filter(Boolean);
+          body = paras.map((p, i) => {
+            const t = i * 5;
+            const h = String(Math.floor(t / 3600)).padStart(2, "0");
+            const m = String(Math.floor((t % 3600) / 60)).padStart(2, "0");
+            const s = String(t % 60).padStart(2, "0");
+            return `${i + 1}\n${h}:${m}:${s},000 --> ${h}:${m}:${String(t % 60 + 4).padStart(2, "0")},000\n${p.trim()}\n`;
+          }).join("\n");
+        } else {
+          body = text;
+        }
+
+        const outExt = outputFmt === "srt" ? "srt" : outputFmt === "vtt" ? "vtt" : "txt";
+        results.push({
+          name: `${baseName(filenames[fi])}_ocr.${outExt}`,
+          data: Buffer.from(header + body).toString("base64"),
+          type: "text/plain",
+        });
+      }
+      return results;
     }
 
     default: {
