@@ -84,6 +84,20 @@ async function testNvidiaText() {
   } catch (e) { return { status: "error", error: (e as Error).message }; }
 }
 
+async function testNvidiaKey2() {
+  const key = process.env.NVIDIA_API_KEY_2;
+  if (!key) return { status: "missing" };
+  try {
+    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "nvidia/llama-3.1-nemotron-70b-instruct", messages: [{ role: "user", content: "hi" }], max_tokens: 5 }),
+      signal: AbortSignal.timeout(8000),
+    });
+    return { status: res.ok ? "ok" : "error", code: res.status };
+  } catch (e) { return { status: "error", error: (e as Error).message }; }
+}
+
 async function testNvidiaVision() {
   const key = process.env.NVIDIA_VISION_API_KEY;
   if (!key) return { status: "missing" };
@@ -112,13 +126,14 @@ async function testRemoveBg() {
 }
 
 export async function GET() {
-  const [groq, gemini, mistral, deepseek, openrouter, nvidiaText, nvidiaVision, removeBg] = await Promise.all([
+  const [groq, gemini, mistral, deepseek, openrouter, nvidiaText, nvidiaKey2, nvidiaVision, removeBg] = await Promise.all([
     testGroq(),
     testGemini(),
     testMistral(),
     testDeepSeek(),
     testOpenRouter(),
     testNvidiaText(),
+    testNvidiaKey2(),
     testNvidiaVision(),
     testRemoveBg(),
   ]);
@@ -130,6 +145,7 @@ export async function GET() {
     deepseek,
     openrouter,
     nvidia_text: nvidiaText,
+    nvidia_key2_nemotron: nvidiaKey2,
     nvidia_vision: nvidiaVision,
     remove_bg: removeBg,
   };

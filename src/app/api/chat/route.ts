@@ -124,6 +124,46 @@ async function callNvidiaGlm(messages: ChatMessage[]): Promise<string> {
   return data.choices?.[0]?.message?.content ?? "";
 }
 
+async function callNvidia2Nemotron(messages: ChatMessage[]): Promise<string> {
+  const key = process.env.NVIDIA_API_KEY_2;
+  if (!key) throw new Error("no key");
+  const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "nvidia/llama-3.1-nemotron-70b-instruct",
+      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+      max_tokens: 1024,
+      temperature: 0.7,
+      stream: false,
+    }),
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!res.ok) throw new Error(`NVIDIA Nemotron ${res.status}`);
+  const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+  return data.choices?.[0]?.message?.content ?? "";
+}
+
+async function callNvidia2Llama(messages: ChatMessage[]): Promise<string> {
+  const key = process.env.NVIDIA_API_KEY_2;
+  if (!key) throw new Error("no key");
+  const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "meta/llama-3.3-70b-instruct",
+      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+      max_tokens: 1024,
+      temperature: 0.7,
+      stream: false,
+    }),
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!res.ok) throw new Error(`NVIDIA Llama ${res.status}`);
+  const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+  return data.choices?.[0]?.message?.content ?? "";
+}
+
 async function callGroq(messages: ChatMessage[]): Promise<string> {
   const key = process.env.GROQ_API_KEY;
   if (!key) throw new Error("no key");
@@ -253,7 +293,7 @@ export async function POST(req: NextRequest) {
     // Limit history to last 20 messages to keep tokens low
     const recent = messages.slice(-20);
 
-    const providers = [callNvidiaGpt, callNvidiaGlm, callGroq, callGemini, callMistral, callDeepSeek, callAnthropic];
+    const providers = [callNvidiaGpt, callNvidiaGlm, callNvidia2Nemotron, callNvidia2Llama, callGroq, callGemini, callMistral, callDeepSeek, callAnthropic];
     let lastError = "";
 
     for (const fn of providers) {

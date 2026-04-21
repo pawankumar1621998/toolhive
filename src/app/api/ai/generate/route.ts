@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 // Provider definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Provider = "gemini" | "groq" | "deepseek" | "anthropic" | "mistral" | "openrouter" | "nvidia-gpt" | "nvidia-glm" | "nvidia-deepseek";
+type Provider = "gemini" | "groq" | "deepseek" | "anthropic" | "mistral" | "openrouter" | "nvidia-gpt" | "nvidia-glm" | "nvidia-deepseek" | "nvidia2-nemotron" | "nvidia2-llama";
 
 interface ProviderConfig {
   name: string;
@@ -204,6 +204,48 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
     },
   },
 
+  "nvidia2-nemotron": {
+    name: "NVIDIA Nemotron",
+    envKey: "NVIDIA_API_KEY_2",
+    call: async (apiKey, prompt) => {
+      const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "nvidia/llama-3.1-nemotron-70b-instruct",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 4096,
+          temperature: 0.3,
+          stream: false,
+        }),
+      });
+      if (!res.ok) throw new Error(`NVIDIA Nemotron ${res.status}`);
+      const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+      return data.choices?.[0]?.message?.content ?? "";
+    },
+  },
+
+  "nvidia2-llama": {
+    name: "NVIDIA Llama",
+    envKey: "NVIDIA_API_KEY_2",
+    call: async (apiKey, prompt) => {
+      const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "meta/llama-3.3-70b-instruct",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 4096,
+          temperature: 0.3,
+          stream: false,
+        }),
+      });
+      if (!res.ok) throw new Error(`NVIDIA Llama ${res.status}`);
+      const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+      return data.choices?.[0]?.message?.content ?? "";
+    },
+  },
+
   openrouter: {
     name: "OpenRouter",
     envKey: "OPENROUTER_API_KEY",
@@ -232,7 +274,7 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
 };
 
 // Priority order — Groq fastest, NVIDIA GPT-120B best quality, then fallbacks
-const PROVIDER_ORDER: Provider[] = ["nvidia-gpt", "nvidia-glm", "nvidia-deepseek", "groq", "mistral", "openrouter", "gemini", "deepseek", "anthropic"];
+const PROVIDER_ORDER: Provider[] = ["nvidia-gpt", "nvidia-glm", "nvidia-deepseek", "nvidia2-nemotron", "nvidia2-llama", "groq", "mistral", "openrouter", "gemini", "deepseek", "anthropic"];
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
