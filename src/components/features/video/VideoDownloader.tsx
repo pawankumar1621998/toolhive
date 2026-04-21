@@ -191,66 +191,63 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
   async function handleDownload() {
     if (isDownloading || downloadDone) return;
     setIsDownloading(true);
-    setDownloadProgress(10);
+    setDownloadProgress(20);
     setDownloadError(null);
 
-    // Open a blank tab NOW (synchronous, inside click handler) so popup
-    // blockers don't kill it. We navigate it to the real URL after the fetch.
-    const downloadTab = window.open("about:blank", "_blank");
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 60_000);
+    // Build the Render backend stream URL directly.
+    // The backend sends Content-Disposition: attachment headers within <1s,
+    // so window.location.href navigation is immediately intercepted by the browser
+    // as a file download — the React page stays visible, no blank tab.
+    const RENDER_BASE = "https://toolhive-backend.onrender.com/api/v1";
+    const streamUrl =
+      `${RENDER_BASE}/video/download` +
+      `?url=${encodeURIComponent(url.trim())}` +
+      `&quality=${encodeURIComponent(selectedQuality)}`;
 
     try {
-      const res = await fetch(`${BACKEND_URL}/video/download`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ url: url.trim(), quality: selectedQuality }),
-        signal:  controller.signal,
-      });
+      // Quick ping to Vercel route first to try Cobalt CDN (instant, no proxy).
+      // If it returns a direct CDN URL we use that; otherwise fall through to streaming.
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15_000);
 
-      clearTimeout(timer);
+      let finalUrl = streamUrl;
+      let finalFilename = `video.${selectedOption.format}`;
 
-      const data = await res.json() as { success: boolean; downloadUrl?: string; filename?: string; message?: string };
-
-      if (!data.success || !data.downloadUrl) {
-        if (downloadTab) downloadTab.close();
-        throw new Error(data.message || `Download failed (${res.status})`);
+      try {
+        const res = await fetch(`${BACKEND_URL}/video/download`, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ url: url.trim(), quality: selectedQuality }),
+          signal:  controller.signal,
+        });
+        clearTimeout(timer);
+        const data = await res.json() as { success: boolean; downloadUrl?: string; filename?: string; message?: string };
+        if (data.success && data.downloadUrl) {
+          finalUrl = data.downloadUrl;
+          finalFilename = data.filename || finalFilename;
+        }
+      } catch {
+        clearTimeout(timer);
+        // Cobalt failed or timed out — fall through to Render stream URL
       }
 
       setDownloadProgress(80);
 
-      if (downloadTab) {
-        // Navigate the already-open tab to the download URL.
-        // Server returns Content-Disposition: attachment so the browser
-        // downloads the file and the tab closes automatically.
-        downloadTab.location.href = data.downloadUrl;
-      } else {
-        // Fallback if the tab was blocked
-        const a = document.createElement("a");
-        a.href = data.downloadUrl;
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
+      // Navigate current window to the download URL.
+      // Backend sends Content-Disposition: attachment immediately →
+      // browser treats it as a file download, stays on current page.
+      window.location.href = finalUrl;
 
-      setDownloadProgress(100);
+      // Mark done after a short delay (download has been triggered)
       setTimeout(() => {
+        setDownloadProgress(100);
         setIsDownloading(false);
         setDownloadDone(true);
-      }, 400);
+      }, 2500);
 
     } catch (err: unknown) {
-      clearTimeout(timer);
-      if (downloadTab) downloadTab.close();
       const msg = err instanceof Error ? err.message : "Download failed. Please try again.";
-      setDownloadError(
-        msg.includes("aborted") || msg.includes("AbortError")
-          ? "Request timed out. Please try again."
-          : msg
-      );
+      setDownloadError(msg);
       setIsDownloading(false);
       setDownloadProgress(0);
     }
