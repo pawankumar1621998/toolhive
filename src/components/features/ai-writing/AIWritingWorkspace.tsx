@@ -3770,6 +3770,21 @@ export function AIWritingWorkspace({ tool }: { tool: Tool }) {
 
 // ── New NVIDIA-powered AI Writing Tools ─────────────────────────────────────
 
+function NvBtn({ loading, disabled, onClick, label }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled || loading}
+      onClick={onClick}
+      className="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-teal-700 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+    >
+      {loading ? (
+        <><span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />Processing…</>
+      ) : (label || "Generate")}
+    </button>
+  );
+}
+
 function CodeGeneratorTool() {
   const [task, setTask] = useState("");
   const [language, setLanguage] = useState("Python");
@@ -3792,9 +3807,9 @@ function CodeGeneratorTool() {
         <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Additional details (optional)</label>
         <textarea className={inputClass} rows={2} placeholder="e.g. Use pandas, handle missing values" value={details} onChange={(e) => setDetails(e.target.value)} />
       </div>
-      <GenerateButton loading={loading} disabled={!task.trim()} onClick={() => generate({ language, task, details })} />
-      {error && <ErrorBox message={error} />}
-      {output && <OutputCard output={output} onClear={clear} label="Generated Code" />}
+      <NvBtn loading={loading} disabled={!task.trim()} onClick={() => generate({ language, task, details })} label="Generate Code" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Generated Code" />}</AnimatePresence>
     </div>
   );
 }
@@ -3821,9 +3836,9 @@ function CodeDebuggerTool() {
         <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Error message (optional)</label>
         <textarea className={inputClass} rows={2} placeholder="Paste the error message here..." value={errorMsg} onChange={(e) => setErrorMsg(e.target.value)} />
       </div>
-      <GenerateButton loading={loading} disabled={!code.trim()} onClick={() => generate({ code, language, error: errorMsg })} label="Debug Code" />
-      {error && <ErrorBox message={error} />}
-      {output && <OutputCard output={output} onClear={clear} label="Debugged Code" />}
+      <NvBtn loading={loading} disabled={!code.trim()} onClick={() => generate({ code, language, error: errorMsg })} label="Debug Code" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Debugged Code" />}</AnimatePresence>
     </div>
   );
 }
@@ -3854,9 +3869,9 @@ function EssayWriterTool() {
           </select>
         </div>
       </div>
-      <GenerateButton loading={loading} disabled={!topic.trim()} onClick={() => generate({ topic, type, wordCount, tone })} label="Write Essay" />
-      {error && <ErrorBox message={error} />}
-      {output && <OutputCard output={output} onClear={clear} label="Essay" />}
+      <NvBtn loading={loading} disabled={!topic.trim()} onClick={() => generate({ topic, type, wordCount, tone })} label="Write Essay" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Essay" />}</AnimatePresence>
     </div>
   );
 }
@@ -3887,9 +3902,9 @@ function BusinessPlanTool() {
         <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Target Market</label>
         <input className={inputClass} placeholder="e.g. Working professionals aged 25-40" value={target} onChange={(e) => setTarget(e.target.value)} />
       </div>
-      <GenerateButton loading={loading} disabled={!businessName.trim() || !description.trim()} onClick={() => generate({ businessName, industry, description, target })} label="Generate Business Plan" />
-      {error && <ErrorBox message={error} />}
-      {output && <OutputCard output={output} onClear={clear} label="Business Plan" />}
+      <NvBtn loading={loading} disabled={!businessName.trim() || !description.trim()} onClick={() => generate({ businessName, industry, description, target })} label="Generate Business Plan" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Business Plan" />}</AnimatePresence>
     </div>
   );
 }
@@ -3909,9 +3924,9 @@ function NewsArticleTool() {
         <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Facts and Details *</label>
         <textarea className={inputClass} rows={4} placeholder="Who, What, When, Where, Why, How..." value={details} onChange={(e) => setDetails(e.target.value)} />
       </div>
-      <GenerateButton loading={loading} disabled={!headline.trim() || !details.trim()} onClick={() => generate({ headline, details, tone })} label="Write Article" />
-      {error && <ErrorBox message={error} />}
-      {output && <OutputCard output={output} onClear={clear} label="News Article" />}
+      <NvBtn loading={loading} disabled={!headline.trim() || !details.trim()} onClick={() => generate({ headline, details, tone })} label="Write Article" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="News Article" />}</AnimatePresence>
     </div>
   );
 }
@@ -3930,9 +3945,9 @@ function LegalSummarizerTool() {
         <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Focus on (optional)</label>
         <input className={inputClass} placeholder="e.g. cancellation terms, payment obligations" value={focus} onChange={(e) => setFocus(e.target.value)} />
       </div>
-      <GenerateButton loading={loading} disabled={!text.trim()} onClick={() => generate({ text, focus })} label="Summarize Document" />
-      {error && <ErrorBox message={error} />}
-      {output && <OutputCard output={output} onClear={clear} label="Plain English Summary" />}
+      <NvBtn loading={loading} disabled={!text.trim()} onClick={() => generate({ text, focus })} label="Summarize Document" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Plain English Summary" />}</AnimatePresence>
     </div>
   );
 }
@@ -3953,9 +3968,9 @@ function ParagraphExpanderTool() {
           {["Professional","Casual","Academic","Persuasive","Creative"].map((t) => <option key={t}>{t}</option>)}
         </select>
       </div>
-      <GenerateButton loading={loading} disabled={!text.trim()} onClick={() => generate({ text, tone })} label="Expand Text" />
-      {error && <ErrorBox message={error} />}
-      {output && <OutputCard output={output} onClear={clear} label="Expanded Text" />}
+      <NvBtn loading={loading} disabled={!text.trim()} onClick={() => generate({ text, tone })} label="Expand Text" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Expanded Text" />}</AnimatePresence>
     </div>
   );
 }
@@ -3980,9 +3995,9 @@ function ProductReviewTool() {
         <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Cons</label>
         <input className={inputClass} placeholder="e.g. expensive, plastic build" value={cons} onChange={(e) => setCons(e.target.value)} />
       </div>
-      <GenerateButton loading={loading} disabled={!product.trim()} onClick={() => generate({ product, pros, cons, rating })} label="Write Review" />
-      {error && <ErrorBox message={error} />}
-      {output && <OutputCard output={output} onClear={clear} label="Product Review" />}
+      <NvBtn loading={loading} disabled={!product.trim()} onClick={() => generate({ product, pros, cons, rating })} label="Write Review" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Product Review" />}</AnimatePresence>
     </div>
   );
 }
@@ -4002,9 +4017,9 @@ function FaqGeneratorTool() {
         <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Target Audience</label>
         <input className={inputClass} placeholder="e.g. Small business owners, first-time users" value={audience} onChange={(e) => setAudience(e.target.value)} />
       </div>
-      <GenerateButton loading={loading} disabled={!topic.trim()} onClick={() => generate({ topic, audience, count })} label="Generate FAQs" />
-      {error && <ErrorBox message={error} />}
-      {output && <OutputCard output={output} onClear={clear} label="FAQ Section" />}
+      <NvBtn loading={loading} disabled={!topic.trim()} onClick={() => generate({ topic, audience, count })} label="Generate FAQs" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="FAQ Section" />}</AnimatePresence>
     </div>
   );
 }
@@ -4040,9 +4055,9 @@ function CoverLetterGenTool() {
         <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Key Skills</label>
         <input className={inputClass} placeholder="e.g. React, TypeScript, Node.js" value={skills} onChange={(e) => setSkills(e.target.value)} />
       </div>
-      <GenerateButton loading={loading} disabled={!role.trim() || !company.trim()} onClick={() => generate({ name, role, company, experience, skills })} label="Write Cover Letter" />
-      {error && <ErrorBox message={error} />}
-      {output && <OutputCard output={output} onClear={clear} label="Cover Letter" />}
+      <NvBtn loading={loading} disabled={!role.trim() || !company.trim()} onClick={() => generate({ name, role, company, experience, skills })} label="Write Cover Letter" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Cover Letter" />}</AnimatePresence>
     </div>
   );
 }
