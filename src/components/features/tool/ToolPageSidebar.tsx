@@ -127,16 +127,6 @@ const CATEGORY_NAV: CategoryNav = {
     },
   ],
 
-  video: [
-    {
-      id: "utility",
-      label: "Download",
-      Icon: Wrench,
-      tools: [
-        { slug: "downloader", label: "Video Downloader", href: "/tools/video/downloader" },
-      ],
-    },
-  ],
 
   "ai-writing": [
     {

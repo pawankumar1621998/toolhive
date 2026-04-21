@@ -41,17 +41,6 @@ export const TOOL_CATEGORIES = [
     href: "/tools/image",
   },
   {
-    id: "video",
-    label: "Video Tools",
-    description: "Trim, compress, convert, and extract audio from videos.",
-    icon: "🎬",
-    iconName: "Video",
-    color: "blue",
-    gradient: "from-blue-500 to-cyan-400",
-    toolCount: 9,
-    href: "/tools/video",
-  },
-  {
     id: "ai-writing",
     label: "AI Writing",
     description: "Rewrite, summarize, translate, and improve any text with AI.",

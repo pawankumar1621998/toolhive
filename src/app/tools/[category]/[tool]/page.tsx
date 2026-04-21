@@ -8,8 +8,6 @@ import { ResumeToolWorkspace } from "@/components/features/resume/ResumeToolWork
 import { AIWritingWorkspace } from "@/components/features/ai-writing/AIWritingWorkspace";
 import { QRCodeGenerator } from "@/components/features/image/QRCodeGenerator";
 import { MemeGeneratorUI } from "@/components/features/image/MemeGeneratorUI";
-import { VideoDownloader } from "@/components/features/video/VideoDownloader";
-import { VideoToolWorkspace } from "@/components/features/video/VideoToolWorkspace";
 import { ConverterTextWorkspace } from "@/components/features/converter/ConverterTextWorkspace";
 import { CalcWorkspace } from "@/components/features/calculator/CalcWorkspace";
 import { ImageToolWorkspace } from "@/components/features/image/ImageToolWorkspace";
@@ -175,22 +173,6 @@ export default async function ToolPage({
           ) : tool.slug === "meme" ? (
             <div className="py-8 sm:py-10 max-w-5xl">
               <MemeGeneratorUI tool={tool} />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-          ) : tool.slug === "downloader" ? (
-            <div className="py-8 sm:py-10 max-w-4xl">
-              <VideoDownloader tool={tool} />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-          ) : tool.category === "video" ? (
-            <div className="py-8 sm:py-10 max-w-4xl">
-              <VideoToolWorkspace tool={tool} />
               <ToolInfoPanel tool={tool} />
               <Suspense fallback={<SectionSkeleton rows={1} />}>
                 <RelatedTools category={tool.category} currentToolId={tool.id} />
