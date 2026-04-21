@@ -200,63 +200,46 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
   async function handleDownload() {
     if (isDownloading || downloadDone) return;
     setIsDownloading(true);
-    setDownloadProgress(15);
+    setDownloadProgress(10);
     setDownloadError(null);
 
     const RENDER_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://toolhive-backend.onrender.com/api/v1").replace(/\/$/, "");
 
-    // Unique timestamp prevents any browser/CDN caching of the download URL
-    const checkUrl =
+    const buildDownloadUrl = (extra = "") =>
       `${RENDER_BASE}/video/download` +
       `?url=${encodeURIComponent(url.trim())}` +
       `&quality=${encodeURIComponent(selectedQuality)}` +
-      `&_t=${Date.now()}`;
+      `&_t=${Date.now()}` +
+      extra;
 
     try {
-      setDownloadProgress(30);
-
-      // Phase 1: Send a fetch request and wait for the response headers.
-      // The backend now holds headers until yt-dlp starts outputting data (or fails).
-      // — If yt-dlp fails → backend returns JSON { success:false, message:... }
-      //   We read that and show it in the React UI (no page navigation).
-      // — If yt-dlp succeeds → backend returns Content-Type: video/mp4 headers.
-      //   We cancel this response and navigate with window.location.href so the
-      //   browser's native download manager handles the (potentially large) file.
+      // Phase 1 — Validate: run yt-dlp --print url on the server (~5-15 s).
+      // Returns JSON {success:true} or {success:false, message:"..."}.
+      // This is fast (no data transferred) and lets us show React errors
+      // before the browser navigates away for the real download.
+      setDownloadProgress(20);
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 55_000); // 55 s max
+      const timeout = setTimeout(() => controller.abort(), 30_000);
 
-      const resp = await fetch(checkUrl, { signal: controller.signal });
+      const validateResp = await fetch(buildDownloadUrl("&validate=1"), { signal: controller.signal });
       clearTimeout(timeout);
-
       setDownloadProgress(60);
 
-      const ct = resp.headers.get("content-type") || "";
-
-      if (ct.includes("application/json") || resp.status >= 400) {
-        // yt-dlp returned an error — show it in the UI
-        const data = await resp.json().catch(() => ({ message: "Download failed. Please try again." })) as { success?: boolean; message?: string };
-        throw new Error(data.message || "Download failed. The video may not be available on this platform.");
+      const validateData = await validateResp.json() as { success: boolean; message?: string };
+      if (!validateData.success) {
+        throw new Error(validateData.message || "This video cannot be downloaded. Please check the URL or try a different quality.");
       }
 
-      // yt-dlp is streaming — cancel this probe request and let the browser
-      // handle the real download via window.location.href (native download manager,
-      // handles large files without buffering in JS memory).
-      resp.body?.cancel().catch(() => {});
-
-      setDownloadProgress(80);
-
-      // Phase 2: Navigate — fresh request, browser intercepts Content-Disposition: attachment
-      window.location.href =
-        `${RENDER_BASE}/video/download` +
-        `?url=${encodeURIComponent(url.trim())}` +
-        `&quality=${encodeURIComponent(selectedQuality)}` +
-        `&_t=${Date.now()}`;
+      // Phase 2 — Navigate: browser's native download manager handles any
+      // file size without buffering in JS memory.
+      setDownloadProgress(85);
+      window.location.href = buildDownloadUrl();
 
       setTimeout(() => {
         setDownloadProgress(100);
         setIsDownloading(false);
         setDownloadDone(true);
-      }, 3000);
+      }, 3_000);
 
     } catch (err: unknown) {
       const msg = (err as Error).name === "AbortError"
