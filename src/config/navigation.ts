@@ -8,6 +8,7 @@ export const NAV_LINKS: NavItem[] = [
   { label: "PDF Tools", href: "/tools/pdf" },
   { label: "Image Tools", href: "/tools/image" },
   { label: "Resume Builder", href: "/resume-builder" },
+  { label: "Smart Resume", href: "/smart-resume" },
   { label: "AI Writing", href: "/tools/ai-writing" },
   { label: "Code AI", href: "/code-ai" },
   { label: "Deep Think", href: "/deep-think" },
