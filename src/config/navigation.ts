@@ -10,6 +10,7 @@ export const NAV_LINKS: NavItem[] = [
   { label: "Resume Tools", href: "/tools/resume" },
   { label: "AI Writing", href: "/tools/ai-writing" },
   { label: "Code AI", href: "/code-ai" },
+  { label: "Deep Think", href: "/deep-think" },
   { label: "All Tools", href: "/tools" },
 ];
 
