@@ -14,6 +14,7 @@ import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 interface Message {
   id: string;
   role: "user" | "assistant";
+  thinking: string;
   content: string;
 }
 
@@ -292,8 +293,8 @@ export function CodeAIWorkspace() {
     const langHint = language !== "Auto Detect" ? ` [Language: ${language}]` : "";
     const userContent = trimmed + langHint;
 
-    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: trimmed };
-    const assistantMsg: Message = { id: crypto.randomUUID(), role: "assistant", content: "" };
+    const userMsg: Message = { id: crypto.randomUUID(), role: "user", thinking: "", content: trimmed };
+    const assistantMsg: Message = { id: crypto.randomUUID(), role: "assistant", thinking: "", content: "" };
 
     setChats((prev) => prev.map((c) =>
       c.id === chatId
@@ -344,17 +345,19 @@ export function CodeAIWorkspace() {
           if (data === "[DONE]") break;
           try {
             const parsed = JSON.parse(data) as {
-              choices?: Array<{ delta?: { content?: string } }>;
+              choices?: Array<{ delta?: { content?: string; reasoning_content?: string } }>;
             };
-            const chunk = parsed.choices?.[0]?.delta?.content ?? "";
-            if (chunk) {
+            const delta = parsed.choices?.[0]?.delta;
+            const thinking = delta?.reasoning_content ?? "";
+            const chunk = delta?.content ?? "";
+            if (thinking || chunk) {
               setChats((prev) => prev.map((c) =>
                 c.id === chatId
                   ? {
                       ...c,
                       messages: c.messages.map((m) =>
                         m.id === assistantMsg.id
-                          ? { ...m, content: m.content + chunk }
+                          ? { ...m, thinking: m.thinking + thinking, content: m.content + chunk }
                           : m
                       ),
                     }
@@ -517,21 +520,35 @@ export function CodeAIWorkspace() {
                   </div>
 
                   {/* Bubble */}
-                  <div className={clsx(
-                    "flex-1 max-w-[85%] rounded-2xl px-4 py-3 shadow-sm",
-                    msg.role === "user"
-                      ? "bg-violet-600/20 border border-violet-500/30 text-slate-200 text-sm leading-relaxed"
-                      : "bg-slate-800/80 border border-slate-700/60"
-                  )}>
-                    {msg.role === "user"
-                      ? <p className="text-sm leading-relaxed">{msg.content}</p>
-                      : <MessageContent
-                          content={msg.content}
-                          streaming={streaming && i === messages.length - 1 && !msg.content}
-                        />
-                    }
-                    {streaming && i === messages.length - 1 && msg.role === "assistant" && msg.content && (
-                      <span className="inline-block w-2 h-4 bg-teal-400 animate-pulse rounded-sm ml-1 -mb-0.5" />
+                  <div className="flex-1 max-w-[85%]">
+                    {msg.role === "user" ? (
+                      <div className="rounded-2xl px-4 py-3 shadow-sm bg-violet-600/20 border border-violet-500/30 text-slate-200 text-sm leading-relaxed">
+                        {msg.content}
+                      </div>
+                    ) : (
+                      <div>
+                        {/* Thinking block */}
+                        {msg.thinking && (
+                          <div className="rounded-xl border border-amber-500/20 bg-amber-950/20 mb-2 overflow-hidden">
+                            <div className="flex items-center gap-2 px-3 py-2">
+                              <span className={clsx("h-1.5 w-1.5 rounded-full shrink-0", streaming && i === messages.length - 1 && !msg.content ? "bg-amber-400 animate-pulse" : "bg-amber-600")} />
+                              <span className="text-[11px] text-amber-400 font-medium">
+                                {streaming && i === messages.length - 1 && !msg.content ? "Planning…" : "Planned"}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {/* Content */}
+                        <div className="rounded-2xl px-4 py-3 shadow-sm bg-slate-800/80 border border-slate-700/60">
+                          <MessageContent
+                            content={msg.content}
+                            streaming={streaming && i === messages.length - 1 && !msg.content}
+                          />
+                          {streaming && i === messages.length - 1 && msg.content && (
+                            <span className="inline-block w-2 h-4 bg-teal-400 animate-pulse rounded-sm ml-1 -mb-0.5" />
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
