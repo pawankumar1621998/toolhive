@@ -148,7 +148,7 @@ export default async function ToolPage({
           {tool.slug === "thumbnail-creator" ? (
             <ThumbnailCreator />
           ) : tool.category === "resume" ? (
-            <div className="py-8 sm:py-10 max-w-5xl">
+            <div className={tool.slug === "builder" ? "py-6 sm:py-8 w-full" : "py-8 sm:py-10 max-w-5xl"}>
               <ResumeToolWorkspace tool={tool} />
               <ToolInfoPanel tool={tool} />
               <Suspense fallback={<SectionSkeleton rows={1} />}>

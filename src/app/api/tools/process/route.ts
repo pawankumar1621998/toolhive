@@ -36,7 +36,22 @@ function baseName(filename: string) {
 // ─────────────────────────────────────────────
 
 async function callLocalAI(prompt: string): Promise<string> {
-  const providers = [
+  type Provider = { key: string | undefined; call: (k: string) => Promise<string> };
+  const nvidiaCall = (model: string) => async (k: string) => {
+    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${k}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], max_tokens: 2048, temperature: 0.5, stream: false }),
+      signal: AbortSignal.timeout(25000),
+    });
+    if (!res.ok) throw new Error(`NVIDIA ${res.status}`);
+    const d = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+    return d.choices?.[0]?.message?.content ?? "";
+  };
+
+  const providers: Provider[] = [
+    { key: process.env.NVIDIA_API_KEY,   call: nvidiaCall("nvidia/llama-3.1-nemotron-nano-8b-instruct") },
+    { key: process.env.NVIDIA_API_KEY_2, call: nvidiaCall("meta/llama-3.3-70b-instruct") },
     {
       key: process.env.GEMINI_API_KEY,
       call: async (k: string) => {
@@ -84,7 +99,7 @@ async function callLocalAI(prompt: string): Promise<string> {
       if (out.trim()) return out;
     } catch { /* try next */ }
   }
-  throw new Error("No AI API key configured. Add GEMINI_API_KEY, GROQ_API_KEY, or DEEPSEEK_API_KEY to .env.local");
+  throw new Error("No AI API key configured. Add NVIDIA_API_KEY, GEMINI_API_KEY, or GROQ_API_KEY to .env.local");
 }
 
 // ─────────────────────────────────────────────
