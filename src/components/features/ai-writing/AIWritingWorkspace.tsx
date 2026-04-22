@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/Badge";
@@ -65,6 +65,19 @@ interface OutputCardProps {
 
 function OutputCard({ text, onClear, label }: OutputCardProps) {
   const [copied, setCopied] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const prevTextRef = useRef("");
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-detect streaming: if text is growing, show cursor
+  useEffect(() => {
+    if (text.length > prevTextRef.current.length) {
+      setIsTyping(true);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setIsTyping(false), 300);
+    }
+    prevTextRef.current = text;
+  }, [text]);
 
   function handleCopy() {
     navigator.clipboard.writeText(text).catch(() => {});
@@ -87,27 +100,32 @@ function OutputCard({ text, onClear, label }: OutputCardProps) {
       )}
       <pre className="whitespace-pre-wrap text-sm text-foreground leading-relaxed font-sans">
         {text}
+        {isTyping && (
+          <span className="inline-block w-0.5 h-[1.1em] bg-emerald-500 animate-pulse ml-0.5 align-middle rounded-sm" />
+        )}
       </pre>
-      <div className="flex items-center gap-3 mt-4 flex-wrap">
-        <Badge variant="default">{wordCount(text)} words</Badge>
-        <button
-          onClick={handleCopy}
-          className={clsx(
-            "text-xs px-3 py-1.5 rounded-lg border transition-colors font-medium",
-            copied
-              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600"
-              : "bg-background border-border text-foreground-muted hover:text-foreground hover:border-border-strong"
-          )}
-        >
-          {copied ? "Copied ✓" : "Copy to Clipboard"}
-        </button>
-        <button
-          onClick={onClear}
-          className="text-xs px-3 py-1.5 rounded-lg border border-border bg-background text-foreground-muted hover:text-foreground hover:border-border-strong transition-colors font-medium"
-        >
-          Try Again
-        </button>
-      </div>
+      {!isTyping && text && (
+        <div className="flex items-center gap-3 mt-4 flex-wrap">
+          <Badge variant="default">{wordCount(text)} words</Badge>
+          <button
+            onClick={handleCopy}
+            className={clsx(
+              "text-xs px-3 py-1.5 rounded-lg border transition-colors font-medium",
+              copied
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600"
+                : "bg-background border-border text-foreground-muted hover:text-foreground hover:border-border-strong"
+            )}
+          >
+            {copied ? "Copied ✓" : "Copy to Clipboard"}
+          </button>
+          <button
+            onClick={onClear}
+            className="text-xs px-3 py-1.5 rounded-lg border border-border bg-background text-foreground-muted hover:text-foreground hover:border-border-strong transition-colors font-medium"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
     </motion.div>
   );
 }
