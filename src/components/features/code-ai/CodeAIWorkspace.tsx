@@ -321,7 +321,10 @@ export function CodeAIWorkspace() {
         signal: abortRef.current.signal,
       });
 
-      if (!res.ok || !res.body) throw new Error("API error");
+      if (!res.ok || !res.body) {
+        const errData = await res.json().catch(() => ({ error: `HTTP ${res.status}` })) as { error?: string };
+        throw new Error(errData.error ?? `HTTP ${res.status}`);
+      }
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -369,7 +372,7 @@ export function CodeAIWorkspace() {
               ...c,
               messages: c.messages.map((m) =>
                 m.id === assistantMsg.id
-                  ? { ...m, content: "Error: Could not get response. Please try again." }
+                  ? { ...m, content: `❌ Error: ${(e as Error).message || "Could not get response. Please try again."}` }
                   : m
               ),
             }
