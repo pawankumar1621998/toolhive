@@ -1,7 +1,5 @@
 import { NextRequest } from "next/server";
 
-export const runtime = "edge";
-
 const SYSTEM_PROMPT = `You are an expert AI coding assistant — like a senior software engineer who writes clean, well-structured, production-ready code.
 
 Rules:
