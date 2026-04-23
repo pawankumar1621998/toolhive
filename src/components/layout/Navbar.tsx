@@ -24,6 +24,13 @@ const CAT_ICONS: Record<string, React.ReactNode> = {
   calculator: <Calculator className="h-4 w-4" />,
 };
 
+const AI_TOOLS = [
+  { label: "Smart Resume", href: "/smart-resume", icon: "📋" },
+  { label: "Cover Letter", href: "/cover-letter", icon: "✉️" },
+  { label: "Legal Analyzer", href: "/legal-analyzer", icon: "⚖️" },
+  { label: "LinkedIn Optimizer", href: "/linkedin-optimizer", icon: "💼" },
+];
+
 const QUICK_TOOLS = [
   { label: "QR & Barcode", href: "/qr-barcode" },
   { label: "Invoice", href: "/invoice-generator" },
@@ -104,24 +111,39 @@ function MoreDropdown({ pathname }: { pathname: string }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute left-0 top-full mt-2 w-72 z-modal glass rounded-2xl border border-border shadow-2xl p-4"
+            className="absolute left-0 top-full mt-2 w-80 z-modal glass rounded-2xl border border-border shadow-2xl p-4"
           >
-            {/* Resume + Video categories */}
-            <p className="text-[10px] font-bold uppercase tracking-widest text-foreground-subtle mb-2 px-1">More Categories</p>
-            <div className="space-y-1 mb-4">
-              {moreCats.map((cat) => (
-                <Link key={cat.id} href={cat.href} onClick={() => setOpen(false)}
-                  className={clsx("flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
-                    pathname.startsWith(cat.href) ? "bg-primary/10 text-primary" : "hover:bg-background-subtle text-foreground")}>
-                  <span className={clsx("flex h-7 w-7 items-center justify-center rounded-lg shrink-0", COLOR_MAP[cat.color] ?? "bg-primary/10 text-primary")}>
-                    {CAT_ICONS[cat.id]}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold leading-tight">{cat.label}</p>
-                    <p className="text-[11px] text-foreground-muted">{cat.toolCount} tools</p>
-                  </div>
+            {/* AI Assistants */}
+            <p className="text-[10px] font-bold uppercase tracking-widest text-foreground-subtle mb-2 px-1">AI Assistants</p>
+            <div className="grid grid-cols-2 gap-1 mb-3">
+              {AI_TOOLS.map((t) => (
+                <Link key={t.href} href={t.href} onClick={() => setOpen(false)}
+                  className={clsx("flex items-center gap-2 rounded-xl px-3 py-2 transition-colors text-sm font-medium",
+                    pathname === t.href ? "bg-primary/10 text-primary" : "hover:bg-background-subtle text-foreground")}>
+                  <span>{t.icon}</span>
+                  <span className="truncate">{t.label}</span>
                 </Link>
               ))}
+            </div>
+
+            {/* Resume + Video categories */}
+            <div className="border-t border-border pt-3 mb-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground-subtle mb-2 px-1">More Categories</p>
+              <div className="space-y-1">
+                {moreCats.map((cat) => (
+                  <Link key={cat.id} href={cat.href} onClick={() => setOpen(false)}
+                    className={clsx("flex items-center gap-3 rounded-xl px-3 py-2 transition-colors",
+                      pathname.startsWith(cat.href) ? "bg-primary/10 text-primary" : "hover:bg-background-subtle text-foreground")}>
+                    <span className={clsx("flex h-6 w-6 items-center justify-center rounded-lg shrink-0 text-xs", COLOR_MAP[cat.color] ?? "bg-primary/10 text-primary")}>
+                      {CAT_ICONS[cat.id]}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold leading-tight">{cat.label}</p>
+                      <p className="text-[10px] text-foreground-muted">{cat.toolCount} tools</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
 
             {/* Quick standalone tools */}
@@ -351,6 +373,22 @@ function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
                   );
                 })}
               </ul>
+
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-widest text-foreground-subtle">AI Assistants</p>
+                <ul className="space-y-0.5">
+                  {AI_TOOLS.map((t) => (
+                    <li key={t.href}>
+                      <Link href={t.href} onClick={onClose}
+                        className={clsx("flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                          pathname === t.href ? "bg-primary/10 text-primary" : "text-foreground hover:bg-background-subtle")}>
+                        <span>{t.icon}</span>
+                        <span>{t.label}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
               <div className="mt-4 pt-4 border-t border-border">
                 <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-widest text-foreground-subtle">Quick Tools</p>
