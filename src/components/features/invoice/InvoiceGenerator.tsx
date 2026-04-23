@@ -21,8 +21,8 @@ export function InvoiceGenerator() {
   const [toEmail, setToEmail] = useState("");
   const [toAddress, setToAddress] = useState("");
 
-  const [invoiceNo, setInvoiceNo] = useState(`INV-${new Date().getFullYear()}-001`);
-  const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().slice(0, 10));
+  const [invoiceNo, setInvoiceNo] = useState(() => `INV-${new Date().getFullYear()}-001`);
+  const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState("");
   const [currency, setCurrency] = useState("INR");
   const [taxRate, setTaxRate] = useState("18");

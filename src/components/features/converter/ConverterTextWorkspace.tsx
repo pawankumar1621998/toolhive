@@ -2095,12 +2095,14 @@ const TZ_LIST = [
 ];
 
 function TimezoneConverter() {
-  const [dateStr, setDateStr] = useState(() => new Date().toISOString().slice(0, 16));
+  const [dateStr, setDateStr] = useState("");
   const [fromTz, setFromTz] = useState("Asia/Kolkata");
   const [toTzList, setToTzList] = useState(["UTC", "America/New_York", "Europe/London", "Asia/Tokyo"]);
-  const [liveTime, setLiveTime] = useState(new Date());
+  const [liveTime, setLiveTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    setDateStr(new Date().toISOString().slice(0, 16));
+    setLiveTime(new Date());
     const t = setInterval(() => setLiveTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
@@ -2133,7 +2135,7 @@ function TimezoneConverter() {
               <p className="text-xs font-semibold text-foreground-muted">{label}</p>
               <p className="text-sm font-mono font-semibold text-foreground mt-0.5">{converted}</p>
             </div>
-            <div className="text-right text-xs text-sky-600 font-mono font-bold">{formatInTz(liveTime, tz).split(",")[1]?.trim()}</div>
+            <div className="text-right text-xs text-sky-600 font-mono font-bold">{liveTime ? formatInTz(liveTime, tz).split(",")[1]?.trim() : "—"}</div>
           </div>
         ))}
       </div>
