@@ -9,7 +9,7 @@ export const NAV_LINKS: NavItem[] = [
   { label: "Image Tools", href: "/tools/image" },
   { label: "Smart Resume", href: "/smart-resume" },
   { label: "Cover Letter", href: "/cover-letter" },
-  { label: "LinkedIn Optimizer", href: "/linkedin-optimizer" },
+  { label: "Legal Analyzer", href: "/legal-analyzer" },
   { label: "AI Writing", href: "/tools/ai-writing" },
   { label: "All Tools", href: "/tools" },
 ];
