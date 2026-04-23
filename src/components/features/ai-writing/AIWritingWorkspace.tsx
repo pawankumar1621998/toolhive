@@ -3047,6 +3047,111 @@ function CorporateJargon() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AI Detector
+// ─────────────────────────────────────────────────────────────────────────────
+
+function AIDetectorTool() {
+  const [text, setText] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("ai-detector");
+
+  async function handleDetect() {
+    if (!text.trim()) return;
+    await generate({ text, options: { task: "Analyze this text and determine if it was written by AI or a human. Provide a percentage likelihood of AI authorship, specific patterns that indicate AI writing (e.g. repetitive structure, generic phrasing, lack of personal voice), and an overall verdict. Format: Verdict: [AI-Generated / Human-Written / Mixed], AI Probability: [X%], Key Indicators: [bullet points]" } });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Text to Analyze <span className="text-rose-500">*</span></label>
+        <textarea className={inputClass} rows={8} placeholder="Paste the text you want to analyze for AI authorship (min 100 words recommended)..." value={text} onChange={e => setText(e.target.value)} />
+        <p className="text-xs text-foreground-muted mt-1">{text.split(/\s+/).filter(Boolean).length} words — longer text gives more accurate results</p>
+      </div>
+      <button onClick={handleDetect} disabled={!text.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Analyzing…</> : "🔍 Detect AI Content"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Analysis Result" />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI Humanizer
+// ─────────────────────────────────────────────────────────────────────────────
+
+function AIHumanizerTool() {
+  const [text, setText] = useState("");
+  const [tone, setTone] = useState("Natural & Conversational");
+  const { output, loading, error, generate, clear } = useAIGenerate("ai-humanizer");
+
+  const tones = ["Natural & Conversational", "Formal & Professional", "Casual & Friendly", "Academic"];
+
+  async function handleHumanize() {
+    if (!text.trim()) return;
+    await generate({ text, options: { tone, task: "Rewrite this AI-generated text to sound more human-written. Make it less robotic, add natural sentence variation, use contractions, include personal voice, vary sentence length, and remove overly structured patterns. Keep the original meaning." } });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">AI-Generated Text <span className="text-rose-500">*</span></label>
+        <textarea className={inputClass} rows={8} placeholder="Paste AI-generated text here to humanize it..." value={text} onChange={e => setText(e.target.value)} />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Target Tone</label>
+        <div className="grid grid-cols-2 gap-2">
+          {tones.map(t => (
+            <button key={t} onClick={() => setTone(t)} className={clsx("px-3 py-2 rounded-xl border text-sm transition-colors", tone === t ? "bg-emerald-500/10 border-emerald-500 text-emerald-600 font-semibold" : "border-border text-foreground-muted hover:border-emerald-400")}>
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+      <button onClick={handleHumanize} disabled={!text.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Humanizing…</> : "✍️ Humanize Text"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Humanized Version" />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Plagiarism Checker
+// ─────────────────────────────────────────────────────────────────────────────
+
+function PlagiarismCheckerTool() {
+  const [text, setText] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("plagiarism-checker");
+
+  async function handleCheck() {
+    if (!text.trim()) return;
+    await generate({ text, options: { task: "Analyze this text for potential plagiarism indicators. Look for: overly formal or stilted language that may be copied, generic phrases common in published works, unusual vocabulary shifts, inconsistent writing style, and any content that sounds like it may be copied verbatim. Provide: Overall Originality Score (0-100%), Suspicious Sections with explanations, Writing Style Analysis, and Recommendations for making the text more original. Note: This is an AI-based stylistic analysis, not a database comparison." } });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3">
+        <p className="text-xs text-amber-700 dark:text-amber-400">This tool uses AI to analyze writing style and originality patterns. It is not a database comparison tool like Turnitin — use it to improve your writing.</p>
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Text to Check <span className="text-rose-500">*</span></label>
+        <textarea className={inputClass} rows={8} placeholder="Paste your essay, article, or text to check for originality patterns..." value={text} onChange={e => setText(e.target.value)} />
+        <p className="text-xs text-foreground-muted mt-1">{text.split(/\s+/).filter(Boolean).length} words</p>
+      </div>
+      <button onClick={handleCheck} disabled={!text.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Checking…</> : "🔎 Check Originality"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Originality Report" />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Default / Fallback
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -3617,6 +3722,9 @@ const TOOL_TITLES: Record<string, string> = {
   "tagline-gen": "Tagline Generator",
   "speech-writer": "Speech Writer",
   "cold-dm": "Cold DM Generator",
+  "ai-detector": "AI Content Detector",
+  "ai-humanizer": "AI Text Humanizer",
+  "plagiarism-checker": "Plagiarism Checker",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3731,6 +3839,12 @@ export function AIWritingWorkspace({ tool }: { tool: Tool }) {
         return <TwitterThreadTool />;
       case "bio-writer":
         return <BioWriterTool />;
+      case "ai-detector":
+        return <AIDetectorTool />;
+      case "ai-humanizer":
+        return <AIHumanizerTool />;
+      case "plagiarism-checker":
+        return <PlagiarismCheckerTool />;
       default:
         return <DefaultTool tool={tool} />;
     }

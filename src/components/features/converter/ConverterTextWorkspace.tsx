@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/Badge";
@@ -2346,6 +2346,320 @@ function MorseCode() {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Roman Numeral Converter
+// ─────────────────────────────────────────────────────────────────────────────
+
+function RomanNumeral() {
+  const [input, setInput] = useState("");
+  const [mode, setMode] = useState<"to-roman" | "to-arabic">("to-roman");
+  const [result, setResult] = useState("");
+
+  function toRoman(num: number): string {
+    if (num < 1 || num > 3999) return "Out of range (1–3999)";
+    const vals = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
+    const syms = ["M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"];
+    let r = "";
+    for (let i = 0; i < vals.length; i++) { while (num >= vals[i]) { r += syms[i]; num -= vals[i]; } }
+    return r;
+  }
+
+  function fromRoman(s: string): number | string {
+    const map: Record<string, number> = {I:1,V:5,X:10,L:50,C:100,D:500,M:1000};
+    s = s.toUpperCase();
+    let res = 0;
+    for (let i = 0; i < s.length; i++) {
+      const cur = map[s[i]], next = map[s[i+1]];
+      if (!cur) return "Invalid Roman numeral";
+      res += next > cur ? -cur : cur;
+    }
+    return res;
+  }
+
+  function convert() {
+    if (mode === "to-roman") {
+      const n = parseInt(input);
+      setResult(isNaN(n) ? "Enter a valid integer" : toRoman(n));
+    } else {
+      const r = fromRoman(input);
+      setResult(String(r));
+    }
+  }
+
+  const inputClass2 = "w-full border border-border rounded-xl px-4 py-3 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-sky-500/30";
+
+  return (
+    <div className="space-y-4">
+      <div className="flex rounded-xl border border-border overflow-hidden">
+        {(["to-roman","to-arabic"] as const).map(m => (
+          <button key={m} onClick={() => { setMode(m); setResult(""); setInput(""); }}
+            className={clsx("flex-1 py-2.5 text-sm font-semibold transition-colors", mode === m ? "bg-sky-500 text-white" : "bg-background text-foreground-muted hover:bg-background-subtle")}>
+            {m === "to-roman" ? "Number → Roman" : "Roman → Number"}
+          </button>
+        ))}
+      </div>
+      <input className={inputClass2} value={input} onChange={e => setInput(e.target.value)}
+        placeholder={mode === "to-roman" ? "Enter number (1–3999)" : "Enter Roman numerals (e.g. XIV)"} />
+      <button onClick={convert} className="h-11 px-6 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-400 text-white font-semibold text-sm hover:opacity-90 transition-opacity">Convert</button>
+      {result && <div className="rounded-xl border border-card-border bg-background-subtle p-4 text-center text-2xl font-bold text-foreground">{result}</div>}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Text ↔ Binary Converter
+// ─────────────────────────────────────────────────────────────────────────────
+
+function TextBinaryTool() {
+  const [input, setInput] = useState("");
+  const [mode, setMode] = useState<"to-bin" | "to-text">("to-bin");
+  const [result, setResult] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  function convert() {
+    if (mode === "to-bin") {
+      setResult(input.split("").map(c => c.charCodeAt(0).toString(2).padStart(8,"0")).join(" "));
+    } else {
+      try {
+        setResult(input.trim().split(/\s+/).map(b => String.fromCharCode(parseInt(b,2))).join(""));
+      } catch { setResult("Invalid binary input"); }
+    }
+  }
+
+  function copy() { navigator.clipboard.writeText(result).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  const inputClass2 = "w-full border border-border rounded-xl px-4 py-3 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-sky-500/30 font-mono";
+
+  return (
+    <div className="space-y-4">
+      <div className="flex rounded-xl border border-border overflow-hidden">
+        {(["to-bin","to-text"] as const).map(m => (
+          <button key={m} onClick={() => { setMode(m); setResult(""); setInput(""); }}
+            className={clsx("flex-1 py-2.5 text-sm font-semibold transition-colors", mode === m ? "bg-sky-500 text-white" : "bg-background text-foreground-muted hover:bg-background-subtle")}>
+            {m === "to-bin" ? "Text → Binary" : "Binary → Text"}
+          </button>
+        ))}
+      </div>
+      <textarea className={inputClass2} rows={4} value={input} onChange={e => setInput(e.target.value)}
+        placeholder={mode === "to-bin" ? "Enter text..." : "Enter binary (space-separated bytes)..."} />
+      <button onClick={convert} className="h-11 px-6 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-400 text-white font-semibold text-sm hover:opacity-90 transition-opacity">Convert</button>
+      {result && (
+        <div className="space-y-2">
+          <textarea className={inputClass2} rows={4} value={result} readOnly />
+          <button onClick={copy} className="text-xs text-sky-500 hover:underline">{copied ? "Copied!" : "Copy result"}</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Data Size Converter
+// ─────────────────────────────────────────────────────────────────────────────
+
+function DataSizeTool() {
+  const [value, setValue] = useState("");
+  const [fromUnit, setFromUnit] = useState("MB");
+  const UNITS = ["Bit","Byte","KB","MB","GB","TB","PB"];
+  const TO_BYTES: Record<string,number> = { Bit:0.125, Byte:1, KB:1024, MB:1048576, GB:1073741824, TB:1099511627776, PB:1125899906842624 };
+
+  const num = parseFloat(value);
+  const bytes = isNaN(num) ? 0 : num * TO_BYTES[fromUnit];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-3">
+        <input className="flex-1 border border-border rounded-xl px-4 py-3 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-sky-500/30"
+          type="number" value={value} onChange={e => setValue(e.target.value)} placeholder="Enter value" />
+        <select className="border border-border rounded-xl px-3 py-3 text-sm bg-background text-foreground focus:outline-none"
+          value={fromUnit} onChange={e => setFromUnit(e.target.value)}>
+          {UNITS.map(u => <option key={u}>{u}</option>)}
+        </select>
+      </div>
+      {value && !isNaN(num) && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {UNITS.map(u => (
+            <div key={u} className="rounded-xl border border-card-border bg-background-subtle p-3 text-center">
+              <div className="text-xs text-foreground-muted mb-1">{u}</div>
+              <div className="font-mono text-sm font-bold text-foreground">{(bytes / TO_BYTES[u]).toLocaleString("en", {maximumFractionDigits:6})}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Readability Analyzer
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ReadabilityTool() {
+  const [text, setText] = useState("");
+
+  function syllables(word: string): number {
+    word = word.toLowerCase().replace(/[^a-z]/g,"");
+    if (!word) return 0;
+    const matches = word.match(/[aeiouy]+/g);
+    let count = matches ? matches.length : 0;
+    if (word.endsWith("e") && count > 1) count--;
+    return Math.max(1, count);
+  }
+
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const sylCount = words.reduce((a,w) => a + syllables(w), 0);
+  const W = words.length || 1, S = sentences.length || 1;
+  const fk = 206.835 - 1.015*(W/S) - 84.6*(sylCount/W);
+  const fkGrade = 0.39*(W/S) + 11.8*(sylCount/W) - 15.59;
+
+  function gradeLabel(g: number) {
+    if (g <= 6) return "Elementary";
+    if (g <= 8) return "Middle School";
+    if (g <= 12) return "High School";
+    if (g <= 16) return "College";
+    return "Graduate";
+  }
+
+  return (
+    <div className="space-y-4">
+      <textarea className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-sky-500/30" rows={6}
+        value={text} onChange={e => setText(e.target.value)} placeholder="Paste your text here to analyze readability..." />
+      {text.trim().length > 10 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {[
+            { label: "Words", value: W.toLocaleString() },
+            { label: "Sentences", value: S.toLocaleString() },
+            { label: "Syllables", value: sylCount.toLocaleString() },
+            { label: "Flesch Score", value: fk.toFixed(1), note: fk >= 70 ? "Easy" : fk >= 50 ? "Moderate" : "Difficult" },
+            { label: "Grade Level", value: fkGrade.toFixed(1), note: gradeLabel(fkGrade) },
+            { label: "Avg Sentence", value: (W/S).toFixed(1) + " words" },
+          ].map(({label, value, note}) => (
+            <div key={label} className="rounded-xl border border-card-border bg-background-subtle p-3 text-center">
+              <div className="text-xs text-foreground-muted mb-1">{label}</div>
+              <div className="font-bold text-foreground">{value}</div>
+              {note && <div className="text-xs text-sky-500 mt-0.5">{note}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Speech to Text
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SpeechToTextTool() {
+  const [transcript, setTranscript] = useState("");
+  const [listening, setListening] = useState(false);
+  const [supported, setSupported] = useState(true);
+  const [copied, setCopied] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any;
+    const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (!SR) { setSupported(false); return; }
+    const rec = new SR();
+    rec.continuous = true; rec.interimResults = true; rec.lang = "en-US";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rec.onresult = (e: any) => {
+      let final = "", interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript;
+        else interim += e.results[i][0].transcript;
+      }
+      setTranscript(prev => prev + final + (interim ? ` [${interim}]` : ""));
+    };
+    rec.onend = () => setListening(false);
+    recRef.current = rec;
+  }, []);
+
+  function toggle() {
+    if (!recRef.current) return;
+    if (listening) { recRef.current.stop(); setListening(false); }
+    else { recRef.current.start(); setListening(true); }
+  }
+
+  function copy() { navigator.clipboard.writeText(transcript).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+
+  if (!supported) return <div className="rounded-xl border border-card-border bg-background-subtle p-6 text-center text-sm text-foreground-muted">Speech recognition is not supported in this browser. Try Chrome or Edge.</div>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-3">
+        <button onClick={toggle} className={clsx("h-11 px-6 rounded-xl font-semibold text-sm transition-all", listening ? "bg-red-500 text-white animate-pulse" : "bg-gradient-to-r from-sky-500 to-indigo-400 text-white hover:opacity-90")}>
+          {listening ? "Stop Recording" : "Start Recording"}
+        </button>
+        <button onClick={() => setTranscript("")} className="h-11 px-4 rounded-xl border border-border text-sm text-foreground-muted hover:bg-background-subtle">Clear</button>
+      </div>
+      <textarea className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background text-foreground focus:outline-none min-h-[160px]"
+        value={transcript} onChange={e => setTranscript(e.target.value)} placeholder="Click 'Start Recording' and speak — text will appear here..." />
+      {transcript && <button onClick={copy} className="text-xs text-sky-500 hover:underline">{copied ? "Copied!" : "Copy text"}</button>}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Password Strength Checker
+// ─────────────────────────────────────────────────────────────────────────────
+
+function PasswordStrengthTool() {
+  const [pwd, setPwd] = useState("");
+  const [show, setShow] = useState(false);
+
+  function analyze(p: string) {
+    const checks = [
+      { label: "At least 8 characters", ok: p.length >= 8 },
+      { label: "At least 12 characters", ok: p.length >= 12 },
+      { label: "Uppercase letters (A–Z)", ok: /[A-Z]/.test(p) },
+      { label: "Lowercase letters (a–z)", ok: /[a-z]/.test(p) },
+      { label: "Numbers (0–9)", ok: /\d/.test(p) },
+      { label: "Special characters (!@#…)", ok: /[^a-zA-Z0-9]/.test(p) },
+      { label: "No common patterns", ok: !/^(password|123456|qwerty|abc123)/i.test(p) },
+    ];
+    const score = checks.filter(c => c.ok).length;
+    const label = score <= 2 ? "Very Weak" : score <= 4 ? "Weak" : score <= 5 ? "Moderate" : score === 6 ? "Strong" : "Very Strong";
+    const color = score <= 2 ? "bg-red-500" : score <= 4 ? "bg-orange-400" : score <= 5 ? "bg-yellow-400" : "bg-emerald-500";
+    return { checks, score, label, color };
+  }
+
+  const { checks, score, label, color } = analyze(pwd);
+  const pct = Math.round((score / 7) * 100);
+
+  return (
+    <div className="space-y-4">
+      <div className="relative">
+        <input type={show ? "text" : "password"} className="w-full border border-border rounded-xl px-4 py-3 pr-12 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-sky-500/30"
+          value={pwd} onChange={e => setPwd(e.target.value)} placeholder="Type or paste a password to check strength..." />
+        <button onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-foreground-muted hover:text-foreground">{show ? "Hide" : "Show"}</button>
+      </div>
+      {pwd && (
+        <div className="space-y-3">
+          <div>
+            <div className="flex justify-between text-xs mb-1"><span className="text-foreground-muted">Strength</span><span className="font-bold text-foreground">{label}</span></div>
+            <div className="h-2 bg-border rounded-full overflow-hidden">
+              <div className={clsx("h-full rounded-full transition-all duration-300", color)} style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            {checks.map(c => (
+              <div key={c.label} className="flex items-center gap-2 text-xs">
+                <span className={c.ok ? "text-emerald-500" : "text-foreground-muted"}>{c.ok ? "✓" : "✗"}</span>
+                <span className={c.ok ? "text-foreground" : "text-foreground-muted"}>{c.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const TOOL_TITLES: Record<string, string> = {
   "json-formatter": "JSON Formatter & Validator",
   base64: "Base64 Encoder / Decoder",
@@ -2372,6 +2686,12 @@ const TOOL_TITLES: Record<string, string> = {
   "fancy-text": "Fancy Text Generator",
   "text-to-speech": "Text to Speech",
   "morse-code": "Morse Code Translator",
+  "roman-numeral": "Roman Numeral Converter",
+  "text-binary": "Text ↔ Binary Converter",
+  "data-size": "Data Size Converter",
+  "readability": "Readability Analyzer",
+  "speech-to-text": "Speech to Text",
+  "password-strength": "Password Strength Checker",
 };
 
 export function ConverterTextWorkspace({ tool }: { tool: Tool }) {
@@ -2427,6 +2747,18 @@ export function ConverterTextWorkspace({ tool }: { tool: Tool }) {
         return <TextToSpeech />;
       case "morse-code":
         return <MorseCode />;
+      case "roman-numeral":
+        return <RomanNumeral />;
+      case "text-binary":
+        return <TextBinaryTool />;
+      case "data-size":
+        return <DataSizeTool />;
+      case "readability":
+        return <ReadabilityTool />;
+      case "speech-to-text":
+        return <SpeechToTextTool />;
+      case "password-strength":
+        return <PasswordStrengthTool />;
       default:
         return (
           <p className="text-sm text-foreground-muted">

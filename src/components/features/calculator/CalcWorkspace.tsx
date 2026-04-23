@@ -919,6 +919,491 @@ function FuelCalc() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Mortgage / Home Loan Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function MortgageCalc() {
+  const [price, setPrice] = useState(""); const [down, setDown] = useState("20"); const [rate, setRate] = useState(""); const [years, setYears] = useState("20");
+  const [result, setResult] = useState<{monthly:number;loan:number;interest:number;dp:number;total:number}|null>(null);
+  function calculate() {
+    const p=parseFloat(price),dp=parseFloat(down)/100,r=parseFloat(rate)/12/100,n=parseFloat(years)*12;
+    if(!p||!r||!n||isNaN(p)||isNaN(r)||isNaN(n))return;
+    const loan=p*(1-dp); const monthly=(loan*r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+    setResult({monthly:Math.round(monthly),loan:Math.round(loan),interest:Math.round(monthly*n-loan),dp:Math.round(p*dp),total:Math.round(monthly*n+p*dp)});
+  }
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-4">
+        {[{l:"Property Price (₹)",v:price,s:setPrice,p:"5000000"},{l:"Down Payment (%)",v:down,s:setDown,p:"20"},{l:"Interest Rate (% p.a.)",v:rate,s:setRate,p:"8.5"},{l:"Loan Tenure (Years)",v:years,s:setYears,p:"20"}].map(({l,v,s,p})=>(
+          <div key={l} className="space-y-2"><label className="text-sm font-medium text-foreground block">{l}</label><input type="number" className={inputClass} value={v} onChange={e=>{s(e.target.value);setResult(null);}} placeholder={p} min="0"/></div>
+        ))}
+      </div>
+      <button className={primaryBtn} onClick={calculate} disabled={!price||!rate}>Calculate Mortgage</button>
+      {result&&(<motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {[{l:"Monthly EMI",v:`₹${fmt(result.monthly)}`,h:true},{l:"Down Payment",v:`₹${fmt(result.dp)}`,h:false},{l:"Loan Amount",v:`₹${fmt(result.loan)}`,h:false},{l:"Total Interest",v:`₹${fmt(result.interest)}`,h:false},{l:"Total Cost",v:`₹${fmt(result.total)}`,h:false}].map(({l,v,h})=>(
+          <div key={l} className={clsx(resultCard,"text-center")}><div className={clsx("text-xl font-bold",h?"text-orange-500":"text-foreground")}>{v}</div><div className="text-xs text-foreground-muted mt-0.5">{l}</div></div>
+        ))}
+      </motion.div>)}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROI Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function RoiCalc() {
+  const [invest, setInvest] = useState(""); const [returns, setReturns] = useState(""); const [months, setMonths] = useState("");
+  const [result, setResult] = useState<{roi:number;profit:number;annualRoi:number}|null>(null);
+  function calculate() {
+    const i=parseFloat(invest),r=parseFloat(returns),m=parseFloat(months)||12;
+    if(!i||!r||isNaN(i)||isNaN(r))return;
+    const profit=r-i; const roi=(profit/i)*100; const annualRoi=(roi/m)*12;
+    setResult({roi:Math.round(roi*100)/100,profit:Math.round(profit),annualRoi:Math.round(annualRoi*100)/100});
+  }
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-3 gap-4">
+        {[{l:"Investment Cost (₹)",v:invest,s:setInvest,p:"100000"},{l:"Return / Revenue (₹)",v:returns,s:setReturns,p:"150000"},{l:"Period (Months)",v:months,s:setMonths,p:"12"}].map(({l,v,s,p})=>(
+          <div key={l} className="space-y-2"><label className="text-sm font-medium text-foreground block">{l}</label><input type="number" className={inputClass} value={v} onChange={e=>{s(e.target.value);setResult(null);}} placeholder={p} min="0"/></div>
+        ))}
+      </div>
+      <button className={primaryBtn} onClick={calculate} disabled={!invest||!returns}>Calculate ROI</button>
+      {result&&(<motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="grid grid-cols-3 gap-3">
+        {[{l:"ROI",v:`${result.roi}%`,h:true},{l:"Net Profit",v:`₹${fmt(result.profit)}`,h:false},{l:"Annual ROI",v:`${result.annualRoi}%`,h:false}].map(({l,v,h})=>(
+          <div key={l} className={clsx(resultCard,"text-center")}><div className={clsx("text-xl font-bold",h?(result.roi>=0?"text-emerald-500":"text-rose-500"):"text-foreground")}>{v}</div><div className="text-xs text-foreground-muted mt-0.5">{l}</div></div>
+        ))}
+      </motion.div>)}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Profit Margin Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ProfitCalc() {
+  const [cost, setCost] = useState(""); const [revenue, setRevenue] = useState("");
+  const [result, setResult] = useState<{profit:number;grossMargin:number;markup:number}|null>(null);
+  function calculate() {
+    const c=parseFloat(cost),r=parseFloat(revenue);
+    if(!c||!r||isNaN(c)||isNaN(r))return;
+    setResult({profit:Math.round((r-c)*100)/100,grossMargin:Math.round(((r-c)/r)*10000)/100,markup:Math.round(((r-c)/c)*10000)/100});
+  }
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-4">
+        {[{l:"Cost / COGS (₹)",v:cost,s:setCost,p:"500"},{l:"Revenue / Selling Price (₹)",v:revenue,s:setRevenue,p:"800"}].map(({l,v,s,p})=>(
+          <div key={l} className="space-y-2"><label className="text-sm font-medium text-foreground block">{l}</label><input type="number" className={inputClass} value={v} onChange={e=>{s(e.target.value);setResult(null);}} placeholder={p} min="0"/></div>
+        ))}
+      </div>
+      <button className={primaryBtn} onClick={calculate} disabled={!cost||!revenue}>Calculate Margin</button>
+      {result&&(<motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="grid grid-cols-3 gap-3">
+        {[{l:"Gross Profit",v:`₹${result.profit}`,h:false},{l:"Profit Margin",v:`${result.grossMargin}%`,h:true},{l:"Markup %",v:`${result.markup}%`,h:false}].map(({l,v,h})=>(
+          <div key={l} className={clsx(resultCard,"text-center")}><div className={clsx("text-xl font-bold",h?"text-orange-500":"text-foreground")}>{v}</div><div className="text-xs text-foreground-muted mt-0.5">{l}</div></div>
+        ))}
+      </motion.div>)}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GPA Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+const GRADE_POINTS: Record<string,number> = {"A+":4.0,"A":4.0,"A-":3.7,"B+":3.3,"B":3.0,"B-":2.7,"C+":2.3,"C":2.0,"C-":1.7,"D+":1.3,"D":1.0,"F":0.0};
+
+function GpaCalc() {
+  const [courses, setCourses] = useState([{id:1,name:"",grade:"A",credits:"3"},{id:2,name:"",grade:"B+",credits:"3"}]);
+  const [gpa, setGpa] = useState<number|null>(null);
+  function addCourse(){setCourses(p=>[...p,{id:Date.now(),name:"",grade:"A",credits:"3"}]);}
+  function update(id:number,f:string,v:string){setCourses(p=>p.map(c=>c.id===id?{...c,[f]:v}:c));setGpa(null);}
+  function calculate(){
+    const valid=courses.filter(c=>c.credits);
+    const totalCredits=valid.reduce((s,c)=>s+parseFloat(c.credits),0);
+    if(!totalCredits)return;
+    const totalPoints=valid.reduce((s,c)=>s+(GRADE_POINTS[c.grade]??0)*parseFloat(c.credits),0);
+    setGpa(Math.round((totalPoints/totalCredits)*100)/100);
+  }
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-foreground-muted uppercase tracking-wide">
+          <span className="col-span-5">Course</span><span className="col-span-4">Grade</span><span className="col-span-2">Credits</span><span className="col-span-1"></span>
+        </div>
+        {courses.map(c=>(
+          <div key={c.id} className="grid grid-cols-12 gap-2 items-center">
+            <input className={clsx(inputClass,"col-span-5 py-2")} value={c.name} onChange={e=>update(c.id,"name",e.target.value)} placeholder="Course name"/>
+            <select className={clsx(inputClass,"col-span-4 py-2")} value={c.grade} onChange={e=>update(c.id,"grade",e.target.value)}>
+              {Object.keys(GRADE_POINTS).map(g=><option key={g}>{g}</option>)}
+            </select>
+            <input type="number" className={clsx(inputClass,"col-span-2 py-2 text-center")} value={c.credits} onChange={e=>update(c.id,"credits",e.target.value)} min="1" max="6"/>
+            <button onClick={()=>setCourses(p=>p.filter(x=>x.id!==c.id))} className="col-span-1 text-foreground-muted hover:text-rose-500 text-lg text-center">×</button>
+          </div>
+        ))}
+        <button onClick={addCourse} className="text-xs font-semibold text-orange-500 hover:text-orange-600">+ Add Course</button>
+      </div>
+      <button className={primaryBtn} onClick={calculate}>Calculate GPA</button>
+      {gpa!==null&&(<motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className={clsx(resultCard,"text-center")}>
+        <div className="text-5xl font-black text-orange-500">{gpa.toFixed(2)}</div>
+        <p className="text-sm text-foreground-muted mt-1">GPA (out of 4.0)</p>
+        <p className="text-xs text-foreground-muted mt-1">{gpa>=3.7?"A — Excellent":gpa>=3.0?"B — Good":gpa>=2.0?"C — Satisfactory":"D/F — Needs Improvement"}</p>
+      </motion.div>)}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fraction Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function gcd(a:number,b:number):number{return b===0?Math.abs(a):gcd(b,a%b);}
+
+function FractionCalc() {
+  const [n1,setN1]=useState("");const [d1,setD1]=useState("");const [op,setOp]=useState("+");const [n2,setN2]=useState("");const [d2,setD2]=useState("");
+  const [result,setResult]=useState<{num:number;den:number;decimal:number}|null>(null);
+  function calculate(){
+    const a=parseInt(n1),b=parseInt(d1)||1,c=parseInt(n2),d=parseInt(d2)||1;
+    if(isNaN(a)||isNaN(c))return;
+    let rn,rd;
+    if(op==="+"){rn=a*d+c*b;rd=b*d;}
+    else if(op==="-"){rn=a*d-c*b;rd=b*d;}
+    else if(op==="×"){rn=a*c;rd=b*d;}
+    else{rn=a*d;rd=b*c;}
+    const g=gcd(Math.abs(rn),Math.abs(rd));
+    setResult({num:rn/g,den:rd/g,decimal:Math.round((rn/rd)*100000)/100000});
+  }
+  return (
+    <div className="space-y-5">
+      <div className="flex items-end gap-3 flex-wrap">
+        <div className="space-y-1.5 text-center">
+          <input type="number" className={clsx(inputClass,"w-20 text-center")} value={n1} onChange={e=>{setN1(e.target.value);setResult(null);}} placeholder="3"/>
+          <div className="border-t-2 border-foreground mx-2"/>
+          <input type="number" className={clsx(inputClass,"w-20 text-center")} value={d1} onChange={e=>{setD1(e.target.value);setResult(null);}} placeholder="4"/>
+        </div>
+        <div className="flex flex-col gap-1.5 mb-1">
+          {["+","-","×","÷"].map(o=>(
+            <button key={o} onClick={()=>setOp(o)} className={clsx("w-8 h-8 rounded-lg border text-sm font-bold transition-colors",op===o?"bg-orange-500 text-white border-orange-500":"bg-background border-border text-foreground-muted hover:border-orange-400")}>{o}</button>
+          ))}
+        </div>
+        <div className="space-y-1.5 text-center">
+          <input type="number" className={clsx(inputClass,"w-20 text-center")} value={n2} onChange={e=>{setN2(e.target.value);setResult(null);}} placeholder="1"/>
+          <div className="border-t-2 border-foreground mx-2"/>
+          <input type="number" className={clsx(inputClass,"w-20 text-center")} value={d2} onChange={e=>{setD2(e.target.value);setResult(null);}} placeholder="2"/>
+        </div>
+      </div>
+      <button className={primaryBtn} onClick={calculate} disabled={!n1||!n2}>= Calculate</button>
+      {result&&(<motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className={clsx(resultCard,"text-center space-y-1")}>
+        <div className="text-3xl font-black text-orange-500">{result.num}/{result.den}</div>
+        <p className="text-sm text-foreground-muted">= {result.decimal}</p>
+      </motion.div>)}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Statistics Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function StatsCalc() {
+  const [input,setInput]=useState("");
+  const [stats,setStats]=useState<{count:number;sum:number;mean:number;median:number;mode:string;range:number;variance:number;sd:number;min:number;max:number}|null>(null);
+  function calculate(){
+    const nums=input.split(/[\s,\n]+/).map(s=>parseFloat(s.trim())).filter(n=>!isNaN(n));
+    if(nums.length===0)return;
+    const sorted=[...nums].sort((a,b)=>a-b);
+    const n=nums.length,sum=nums.reduce((s,v)=>s+v,0),mean=sum/n;
+    const mid=Math.floor(n/2); const median=n%2===0?(sorted[mid-1]+sorted[mid])/2:sorted[mid];
+    const freq:Record<number,number>={};nums.forEach(v=>{freq[v]=(freq[v]||0)+1;});
+    const maxF=Math.max(...Object.values(freq));const modes=Object.entries(freq).filter(([,f])=>f===maxF).map(([v])=>v);
+    const mode=maxF===1?"No mode":modes.join(", ");
+    const variance=nums.reduce((s,v)=>s+Math.pow(v-mean,2),0)/n;
+    setStats({count:n,sum:Math.round(sum*1000)/1000,mean:Math.round(mean*1000)/1000,median:Math.round(median*1000)/1000,mode,range:sorted[n-1]-sorted[0],variance:Math.round(variance*1000)/1000,sd:Math.round(Math.sqrt(variance)*1000)/1000,min:sorted[0],max:sorted[n-1]});
+  }
+  return (
+    <div className="space-y-5">
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground block">Enter Numbers (comma, space, or newline separated)</label>
+        <textarea className={clsx(inputClass,"h-24 resize-none")} value={input} onChange={e=>{setInput(e.target.value);setStats(null);}} placeholder="e.g. 4, 8, 15, 16, 23, 42"/>
+      </div>
+      <button className={primaryBtn} onClick={calculate} disabled={!input.trim()}>Calculate Statistics</button>
+      {stats&&(<motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {[{l:"Count",v:stats.count},{l:"Sum",v:stats.sum},{l:"Mean",v:stats.mean},{l:"Median",v:stats.median},{l:"Mode",v:stats.mode},{l:"Range",v:stats.range},{l:"Std Dev (σ)",v:stats.sd},{l:"Variance (σ²)",v:stats.variance},{l:"Min",v:stats.min},{l:"Max",v:stats.max}].map(({l,v})=>(
+          <div key={l} className={clsx(resultCard,"text-center")}>
+            <div className="text-lg font-bold text-foreground truncate">{v}</div>
+            <div className="text-xs text-foreground-muted mt-0.5">{l}</div>
+          </div>
+        ))}
+      </motion.div>)}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Body Fat % Calculator (US Navy Method)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function BodyFatCalc() {
+  const [gender,setGender]=useState<"male"|"female">("male");
+  const [height,setHeight]=useState("");const [waist,setWaist]=useState("");const [neck,setNeck]=useState("");const [hips,setHips]=useState("");
+  const [result,setResult]=useState<{bf:number;category:string}|null>(null);
+  function calculate(){
+    const h=parseFloat(height),w=parseFloat(waist),n=parseFloat(neck),hi=parseFloat(hips);
+    if(!h||!w||!n||(gender==="female"&&!hi))return;
+    let bf:number;
+    if(gender==="male"){bf=495/(1.0324-0.19077*Math.log10(w-n)+0.15456*Math.log10(h))-450;}
+    else{bf=495/(1.29579-0.35004*Math.log10(w+hi-n)+0.22100*Math.log10(h))-450;}
+    bf=Math.round(bf*10)/10;
+    const cats=gender==="male"?[{l:6,u:13.9,n:"Athlete"},{l:14,u:17.9,n:"Fitness"},{l:18,u:24.9,n:"Average"},{l:25,u:Infinity,n:"Obese"}]:[{l:20,u:23.9,n:"Athlete"},{l:24,u:30.9,n:"Fitness"},{l:31,u:38.9,n:"Average"},{l:39,u:Infinity,n:"Obese"}];
+    const category=bf<(gender==="male"?6:14)?"Essential Fat":cats.find(c=>bf>=c.l&&bf<=c.u)?.n??"Unknown";
+    setResult({bf,category});
+  }
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-foreground-muted">US Navy Method — requires body measurements in cm</p>
+      <div className="flex rounded-xl border border-border overflow-hidden w-fit">
+        {(["male","female"] as const).map(g=>(
+          <button key={g} onClick={()=>{setGender(g);setResult(null);}} className={clsx("px-5 py-2 text-xs font-semibold capitalize transition-colors",gender===g?"bg-orange-500 text-white":"bg-background text-foreground-muted hover:bg-background-subtle")}>{g}</button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        {[{l:"Height (cm)",v:height,s:setHeight,p:"175"},{l:"Waist (cm)",v:waist,s:setWaist,p:"80"},{l:"Neck (cm)",v:neck,s:setNeck,p:"38"},
+          ...(gender==="female"?[{l:"Hips (cm)",v:hips,s:setHips,p:"95"}]:[])].map(({l,v,s,p})=>(
+          <div key={l} className="space-y-2"><label className="text-sm font-medium text-foreground block">{l}</label><input type="number" className={inputClass} value={v} onChange={e=>{s(e.target.value);setResult(null);}} placeholder={p} min="0"/></div>
+        ))}
+      </div>
+      <button className={primaryBtn} onClick={calculate} disabled={!height||!waist||!neck}>Calculate Body Fat</button>
+      {result&&(<motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className={clsx(resultCard,"text-center space-y-2")}>
+        <div className="text-4xl font-black text-orange-500">{result.bf}%</div>
+        <p className="text-sm font-semibold text-foreground">{result.category}</p>
+        <p className="text-xs text-foreground-muted">Body Fat Percentage</p>
+      </motion.div>)}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pregnancy Due Date Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function PregnancyCalc() {
+  const [lmp,setLmp]=useState("");const [result,setResult]=useState<{edd:string;weeks:number;days:number;trimester:number;daysLeft:number}|null>(null);
+  function calculate(){
+    if(!lmp)return;
+    const lmpDate=new Date(lmp);
+    const edd=new Date(lmpDate.getTime()+280*24*60*60*1000);
+    const today=new Date(); const diffMs=today.getTime()-lmpDate.getTime();
+    const totalDaysPregnant=Math.max(0,Math.floor(diffMs/(24*60*60*1000)));
+    const weeks=Math.floor(totalDaysPregnant/7); const days=totalDaysPregnant%7;
+    const trimester=weeks<13?1:weeks<27?2:3;
+    const daysLeft=Math.max(0,Math.ceil((edd.getTime()-today.getTime())/(24*60*60*1000)));
+    setResult({edd:edd.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"}),weeks,days,trimester,daysLeft});
+  }
+  return (
+    <div className="space-y-5">
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground block">First Day of Last Menstrual Period (LMP)</label>
+        <input type="date" className={inputClass} value={lmp} onChange={e=>{setLmp(e.target.value);setResult(null);}} max={new Date().toISOString().slice(0,10)}/>
+      </div>
+      <button className={primaryBtn} onClick={calculate} disabled={!lmp}>Calculate Due Date</button>
+      {result&&(<motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="space-y-3">
+        <div className={clsx(resultCard,"text-center bg-pink-50 dark:bg-pink-900/20")}>
+          <p className="text-xs text-foreground-muted">Expected Due Date</p>
+          <p className="text-2xl font-black text-pink-600">{result.edd}</p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[{l:"Week",v:result.weeks},{l:"Extra Days",v:result.days},{l:"Trimester",v:result.trimester},{l:"Days Remaining",v:result.daysLeft}].map(({l,v})=>(
+            <div key={l} className={clsx(resultCard,"text-center")}><div className="text-2xl font-bold text-foreground">{v}</div><div className="text-xs text-foreground-muted mt-0.5">{l}</div></div>
+          ))}
+        </div>
+      </motion.div>)}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ideal Weight Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function IdealWeightCalc() {
+  const [gender,setGender]=useState<"male"|"female">("male");const [height,setHeight]=useState("");
+  const [result,setResult]=useState<Record<string,number>|null>(null);
+  function calculate(){
+    const h=parseFloat(height);if(!h||isNaN(h))return;
+    const hi=(h-100)/2.54; // inches
+    const base=gender==="male"?50:45.5;const baseIn=gender==="male"?60:60;
+    const devine=base+2.3*(hi-baseIn);
+    const robinson=base+0.75*(hi-baseIn); const miller=base+2.2*(hi-baseIn);
+    const hamwi=gender==="male"?48+2.7*(hi-60):45.5+2.2*(hi-60);
+    setResult({Devine:Math.round(devine),Robinson:Math.round(robinson),Miller:Math.round(miller),Hamwi:Math.round(hamwi)});
+  }
+  return (
+    <div className="space-y-5">
+      <div className="flex rounded-xl border border-border overflow-hidden w-fit">
+        {(["male","female"] as const).map(g=>(
+          <button key={g} onClick={()=>{setGender(g);setResult(null);}} className={clsx("px-5 py-2 text-xs font-semibold capitalize transition-colors",gender===g?"bg-orange-500 text-white":"bg-background text-foreground-muted hover:bg-background-subtle")}>{g}</button>
+        ))}
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground block">Height (cm)</label>
+        <input type="number" className={inputClass} value={height} onChange={e=>{setHeight(e.target.value);setResult(null);}} placeholder="170" min="100" max="250"/>
+      </div>
+      <button className={primaryBtn} onClick={calculate} disabled={!height}>Calculate Ideal Weight</button>
+      {result&&(<motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="grid grid-cols-2 gap-3">
+        {Object.entries(result).map(([formula,kg])=>(
+          <div key={formula} className={clsx(resultCard,"text-center")}>
+            <div className="text-xl font-bold text-orange-500">{kg} kg</div>
+            <div className="text-xs text-foreground-muted mt-0.5">{formula} Formula</div>
+          </div>
+        ))}
+        <div className={clsx(resultCard,"col-span-2 text-center")}>
+          <p className="text-sm text-foreground-muted">Average: <span className="font-bold text-foreground">{Math.round(Object.values(result).reduce((s,v)=>s+v,0)/4)} kg</span></p>
+        </div>
+      </motion.div>)}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Water Intake Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function WaterCalc() {
+  const [weight,setWeight]=useState("");const [activity,setActivity]=useState("moderate");const [climate,setClimate]=useState("normal");
+  const [result,setResult]=useState<{liters:number;glasses:number;ml:number}|null>(null);
+  function calculate(){
+    const w=parseFloat(weight);if(!w||isNaN(w))return;
+    let base=w*35; // ml
+    if(activity==="light")base*=1;else if(activity==="moderate")base*=1.1;else if(activity==="active")base*=1.25;else base*=1.4;
+    if(climate==="hot")base*=1.15;else if(climate==="cold")base*=0.9;
+    const ml=Math.round(base);
+    setResult({ml,liters:Math.round(ml/100)/10,glasses:Math.round(ml/250)});
+  }
+  return (
+    <div className="space-y-5">
+      <div className="space-y-2"><label className="text-sm font-medium text-foreground block">Body Weight (kg)</label><input type="number" className={inputClass} value={weight} onChange={e=>{setWeight(e.target.value);setResult(null);}} placeholder="70" min="0"/></div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground block">Activity Level</label>
+          <select className={inputClass} value={activity} onChange={e=>{setActivity(e.target.value);setResult(null);}}>
+            {[["sedentary","Sedentary (desk job)"],["light","Light (1-3 days/week)"],["moderate","Moderate (3-5 days)"],["active","Active (6-7 days)"],["very-active","Very Active (athlete)"]].map(([v,l])=><option key={v} value={v}>{l}</option>)}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground block">Climate</label>
+          <select className={inputClass} value={climate} onChange={e=>{setClimate(e.target.value);setResult(null);}}>
+            {[["cold","Cold"],["normal","Normal"],["hot","Hot / Humid"]].map(([v,l])=><option key={v} value={v}>{l}</option>)}
+          </select>
+        </div>
+      </div>
+      <button className={primaryBtn} onClick={calculate} disabled={!weight}>Calculate Water Intake</button>
+      {result&&(<motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="grid grid-cols-3 gap-3">
+        {[{l:"Daily Water",v:`${result.liters}L`,h:true},{l:"Milliliters",v:`${result.ml} ml`,h:false},{l:"Glasses (250ml)",v:`${result.glasses}`,h:false}].map(({l,v,h})=>(
+          <div key={l} className={clsx(resultCard,"text-center")}><div className={clsx("text-xl font-bold",h?"text-blue-500":"text-foreground")}>{v}</div><div className="text-xs text-foreground-muted mt-0.5">{l}</div></div>
+        ))}
+      </motion.div>)}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sleep Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SleepCalc() {
+  const [mode,setMode]=useState<"wake"|"sleep">("wake");const [time,setTime]=useState("");
+  const [times,setTimes]=useState<string[]|null>(null);
+  function calculate(){
+    if(!time)return;
+    const [h,m]=time.split(":").map(Number);const base=new Date();base.setHours(h,m,0,0);
+    const CYCLE=90*60*1000; const FALLASLEEP=14*60*1000;
+    const results:string[]=[];
+    for(let cycles=6;cycles>=4;cycles--){
+      let target:Date;
+      if(mode==="wake"){target=new Date(base.getTime()-(cycles*CYCLE+FALLASLEEP));}
+      else{target=new Date(base.getTime()+cycles*CYCLE+FALLASLEEP);}
+      const th=target.getHours(),tm=target.getMinutes();
+      results.push(`${String(th).padStart(2,"0")}:${String(tm).padStart(2,"0")} (${cycles} cycles = ${cycles*1.5}h)`);
+    }
+    setTimes(results);
+  }
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-foreground-muted">Based on 90-minute sleep cycles. Takes ~14 min to fall asleep.</p>
+      <div className="flex rounded-xl border border-border overflow-hidden w-fit">
+        {(["wake","sleep"] as const).map(m=>(
+          <button key={m} onClick={()=>{setMode(m);setTimes(null);}} className={clsx("px-5 py-2 text-xs font-semibold transition-colors",mode===m?"bg-orange-500 text-white":"bg-background text-foreground-muted hover:bg-background-subtle")}>
+            {m==="wake"?"I want to wake at…":"I need to sleep at…"}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground block">{mode==="wake"?"Wake Up Time":"Bedtime"}</label>
+        <input type="time" className={inputClass} value={time} onChange={e=>{setTime(e.target.value);setTimes(null);}}/>
+      </div>
+      <button className={primaryBtn} onClick={calculate} disabled={!time}>Find Sleep Times</button>
+      {times&&(<motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="space-y-2">
+        <p className="text-sm font-semibold text-foreground">{mode==="wake"?"Suggested bedtimes:":"Wake up at:"}</p>
+        {times.map((t,i)=>(
+          <div key={i} className={clsx(resultCard,"flex justify-between items-center")}>
+            <span className="text-base font-bold text-foreground font-mono">{t.split(" ")[0]}</span>
+            <span className="text-xs text-foreground-muted">{t.split(" ").slice(1).join(" ")}</span>
+            {i===0&&<span className="text-xs bg-emerald-500 text-white px-2 py-0.5 rounded-full font-semibold">Best</span>}
+          </div>
+        ))}
+      </motion.div>)}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Electricity Bill Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+type Appliance={id:number;name:string;watts:string;hours:string;days:string};
+
+function ElectricityCalc() {
+  const [appliances,setAppliances]=useState<Appliance[]>([{id:1,name:"AC",watts:"1500",hours:"8",days:"30"},{id:2,name:"Fan",watts:"75",hours:"12",days:"30"},{id:3,name:"LED TV",watts:"100",hours:"5",days:"30"}]);
+  const [rate,setRate]=useState("8");const [result,setResult]=useState<{totalUnits:number;monthlyCost:number;annualCost:number}|null>(null);
+  function addAppliance(){setAppliances(p=>[...p,{id:Date.now(),name:"",watts:"",hours:"",days:"30"}]);}
+  function update(id:number,f:keyof Appliance,v:string){setAppliances(p=>p.map(a=>a.id===id?{...a,[f]:v}:a));setResult(null);}
+  function calculate(){
+    const r=parseFloat(rate)||8;
+    const totalUnits=appliances.reduce((s,a)=>{
+      const w=parseFloat(a.watts),h=parseFloat(a.hours),d=parseFloat(a.days);
+      return s+(w&&h&&d?(w*h*d)/1000:0);
+    },0);
+    setResult({totalUnits:Math.round(totalUnits*100)/100,monthlyCost:Math.round(totalUnits*r),annualCost:Math.round(totalUnits*r*12)});
+  }
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-foreground-muted uppercase tracking-wide">
+          <span className="col-span-4">Appliance</span><span className="col-span-2">Watts</span><span className="col-span-2">Hrs/Day</span><span className="col-span-2">Days</span><span className="col-span-2"></span>
+        </div>
+        {appliances.map(a=>(
+          <div key={a.id} className="grid grid-cols-12 gap-2 items-center">
+            <input className={clsx(inputClass,"col-span-4 py-2")} value={a.name} onChange={e=>update(a.id,"name",e.target.value)} placeholder="Appliance"/>
+            <input type="number" className={clsx(inputClass,"col-span-2 py-2")} value={a.watts} onChange={e=>update(a.id,"watts",e.target.value)} placeholder="W" min="0"/>
+            <input type="number" className={clsx(inputClass,"col-span-2 py-2")} value={a.hours} onChange={e=>update(a.id,"hours",e.target.value)} placeholder="h" min="0" max="24"/>
+            <input type="number" className={clsx(inputClass,"col-span-2 py-2")} value={a.days} onChange={e=>update(a.id,"days",e.target.value)} placeholder="days" min="0" max="31"/>
+            <button onClick={()=>setAppliances(p=>p.filter(x=>x.id!==a.id))} className="col-span-2 text-foreground-muted hover:text-rose-500 text-lg text-center">×</button>
+          </div>
+        ))}
+        <button onClick={addAppliance} className="text-xs font-semibold text-orange-500 hover:text-orange-600">+ Add Appliance</button>
+      </div>
+      <div className="space-y-2"><label className="text-sm font-medium text-foreground block">Electricity Rate (₹/unit)</label><input type="number" className={inputClass} value={rate} onChange={e=>{setRate(e.target.value);setResult(null);}} placeholder="8" min="0"/></div>
+      <button className={primaryBtn} onClick={calculate}>Calculate Bill</button>
+      {result&&(<motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="grid grid-cols-3 gap-3">
+        {[{l:"Units (kWh)",v:result.totalUnits,h:false},{l:"Monthly Bill",v:`₹${fmt(result.monthlyCost)}`,h:true},{l:"Annual Cost",v:`₹${fmt(result.annualCost)}`,h:false}].map(({l,v,h})=>(
+          <div key={l} className={clsx(resultCard,"text-center")}><div className={clsx("text-xl font-bold",h?"text-orange-500":"text-foreground")}>{v}</div><div className="text-xs text-foreground-muted mt-0.5">{l}</div></div>
+        ))}
+      </motion.div>)}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Scientific Calculator
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1242,6 +1727,18 @@ const TOOL_TITLES: Record<string, string> = {
   calorie: "Calorie & TDEE Calculator",
   tip: "Tip Calculator",
   discount: "Discount Calculator",
+  mortgage: "Mortgage / Home Loan Calculator",
+  roi: "ROI Calculator",
+  "profit-margin": "Profit Margin Calculator",
+  gpa: "GPA Calculator",
+  fraction: "Fraction Calculator",
+  statistics: "Statistics Calculator",
+  "body-fat": "Body Fat % Calculator",
+  pregnancy: "Pregnancy Due Date Calculator",
+  "ideal-weight": "Ideal Weight Calculator",
+  "water-intake": "Water Intake Calculator",
+  sleep: "Sleep Calculator",
+  electricity: "Electricity Bill Calculator",
 };
 
 export function CalcWorkspace({ tool }: { tool: Tool }) {
@@ -1263,6 +1760,18 @@ export function CalcWorkspace({ tool }: { tool: Tool }) {
       case "calorie": return <CalorieCalc />;
       case "tip": return <TipCalc />;
       case "discount": return <DiscountCalc />;
+      case "mortgage": return <MortgageCalc />;
+      case "roi": return <RoiCalc />;
+      case "profit-margin": return <ProfitCalc />;
+      case "gpa": return <GpaCalc />;
+      case "fraction": return <FractionCalc />;
+      case "statistics": return <StatsCalc />;
+      case "body-fat": return <BodyFatCalc />;
+      case "pregnancy": return <PregnancyCalc />;
+      case "ideal-weight": return <IdealWeightCalc />;
+      case "water-intake": return <WaterCalc />;
+      case "sleep": return <SleepCalc />;
+      case "electricity": return <ElectricityCalc />;
       default:
         return <p className="text-sm text-foreground-muted">This calculator is coming soon.</p>;
     }

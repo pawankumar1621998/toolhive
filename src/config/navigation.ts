@@ -14,6 +14,9 @@ export const NAV_LINKS: NavItem[] = [
   { label: "Invoice", href: "/invoice-generator" },
   { label: "Pomodoro", href: "/pomodoro" },
   { label: "Colors", href: "/color-palette" },
+  { label: "Countdown", href: "/countdown" },
+  { label: "Spin Wheel", href: "/spin-wheel" },
+  { label: "Typing Test", href: "/typing-test" },
   { label: "AI Writing", href: "/tools/ai-writing" },
   { label: "All Tools", href: "/tools" },
 ];
@@ -76,7 +79,7 @@ export const TOOL_CATEGORIES = [
     iconName: "ArrowRightLeft",
     color: "sky",
     gradient: "from-sky-500 to-indigo-400",
-    toolCount: 25,
+    toolCount: 31,
     href: "/tools/converter",
   },
   {
@@ -98,7 +101,7 @@ export const TOOL_CATEGORIES = [
     iconName: "Calculator",
     color: "orange",
     gradient: "from-orange-500 to-amber-400",
-    toolCount: 16,
+    toolCount: 28,
     href: "/tools/calculator",
   },
 ] as const;
