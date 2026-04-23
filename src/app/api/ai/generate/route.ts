@@ -693,6 +693,26 @@ Provide 3-4 career paths, 4-5 skills to learn, 3 industries. Be specific and act
       const { name, position, company, lastDay, reason, tone } = params as { name?: string; position?: string; company?: string; lastDay?: string; reason?: string; tone?: string };
       return `Write a ${tone ?? "professional"} resignation letter.\nName: ${name ?? "Employee"}\nPosition: ${position ?? "current position"}\nCompany: ${company ?? "the company"}\nLast working day: ${lastDay ?? "two weeks from now"}\n${reason ? `Reason (brief): ${reason}` : ""}\n\nKeep it gracious, professional, and brief. Express gratitude, state last day clearly, offer transition help.`;
     }
+    case "interview-prep": {
+      const { role, company, type, count } = params as { role: string; company?: string; type?: string; count?: number };
+      return `Generate ${count ?? 10} interview questions with model answers for: "${role}"${company ? ` at ${company}` : ""}.\nInterview type: ${type ?? "Mixed (behavioral + technical)"}\n\nFormat each as:\nQ: [question]\nA: [strong model answer using STAR method where applicable]\n\nCover: experience-based, behavioral, situational, and role-specific technical questions. Make answers concise, impressive, and authentic.`;
+    }
+    case "linkedin-post": {
+      const { topic, tone: postTone, goal } = params as { topic: string; tone?: string; goal?: string };
+      return `Write a viral LinkedIn post about: "${topic}"\nTone: ${postTone ?? "Authentic & professional"}\n${goal ? `Goal: ${goal}` : ""}\n\nStructure:\n1. Hook (first line that stops scrolling)\n2. Story or insight (3-5 short paragraphs, each 1-2 sentences)\n3. Key takeaway\n4. CTA (question or call to action)\n\nUse line breaks generously. No hashtag overload (max 3 relevant hashtags at the end). Sound human, not corporate.`;
+    }
+    case "youtube-script": {
+      const { title, niche, duration, style } = params as { title: string; niche?: string; duration?: string; style?: string };
+      return `Write a complete YouTube video script for: "${title}"\n${niche ? `Channel niche: ${niche}` : ""}\nVideo length: ${duration ?? "8-10 minutes"}\nStyle: ${style ?? "Educational / informative"}\n\nInclude these labeled sections:\n[HOOK] - First 30 seconds, pattern interrupt that grabs attention\n[INTRO] - Brief intro, what viewer will learn, subscribe mention\n[MAIN CONTENT] - 3-5 clearly labeled sections with transitions\n[OUTRO] - Recap key points, CTA to subscribe/like/comment, tease next video\n\nWrite natural, conversational speech. Suggest B-roll visuals in brackets.`;
+    }
+    case "twitter-thread": {
+      const { topic, angle, tweetCount } = params as { topic: string; angle?: string; tweetCount?: number };
+      return `Write a viral Twitter/X thread about: "${topic}"\n${angle ? `Angle: ${angle}` : ""}\nNumber of tweets: ${tweetCount ?? 10}\n\nFormat:\n1/ [Hook tweet — bold statement or surprising fact that makes people want to read more]\n2/ [Supporting point]\n...\n${tweetCount ?? 10}/ [Strong closing + CTA: follow for more, retweet, or question]\n\nEach tweet max 280 characters. Use line breaks inside tweets. No filler. Every tweet must add value or build curiosity.`;
+    }
+    case "bio-writer": {
+      const { name, role, achievements, platform, length, personality } = params as { name?: string; role: string; achievements?: string; platform?: string; length?: string; personality?: string };
+      return `Write a professional bio for ${name ?? "a professional"}.\nRole/Title: ${role}\n${achievements ? `Key achievements: ${achievements}` : ""}\nPlatform: ${platform ?? "LinkedIn / General"}\nLength: ${length ?? "Short (2-3 sentences)"}\nPersonality: ${personality ?? "Professional & approachable"}\n\nWrite in third person. Start with the name. Highlight unique value, notable achievements, and personality. End with current focus or mission. Sound human, not robotic.`;
+    }
 
     default: {
       const { text, topic } = params as { text?: string; topic?: string };

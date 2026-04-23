@@ -3719,6 +3719,18 @@ export function AIWritingWorkspace({ tool }: { tool: Tool }) {
         return <FaqGeneratorTool />;
       case "cover-letter-gen":
         return <CoverLetterGenTool />;
+      case "resignation-letter":
+        return <ResignationLetterTool />;
+      case "interview-prep":
+        return <InterviewPrepTool />;
+      case "linkedin-post":
+        return <LinkedInPostTool />;
+      case "youtube-script":
+        return <YouTubeScriptTool />;
+      case "twitter-thread":
+        return <TwitterThreadTool />;
+      case "bio-writer":
+        return <BioWriterTool />;
       default:
         return <DefaultTool tool={tool} />;
     }
@@ -4076,6 +4088,251 @@ function CoverLetterGenTool() {
       <NvBtn loading={loading} disabled={!role.trim() || !company.trim()} onClick={() => generate({ name, role, company, experience, skills })} label="Write Cover Letter" />
       {error && <ErrorBanner message={error} />}
       <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Cover Letter" />}</AnimatePresence>
+    </div>
+  );
+}
+
+function ResignationLetterTool() {
+  const [name, setName] = useState("");
+  const [position, setPosition] = useState("");
+  const [company, setCompany] = useState("");
+  const [lastDay, setLastDay] = useState("");
+  const [reason, setReason] = useState("");
+  const [tone, setTone] = useState("Professional");
+  const tones = ["Professional", "Warm & Grateful", "Brief & Direct", "Formal"];
+  const { output, loading, error, generate, clear } = useAIGenerate("resignation-letter");
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Your Name</label>
+          <input className={inputClass} placeholder="e.g. Rahul Sharma" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Your Position *</label>
+          <input className={inputClass} placeholder="e.g. Senior Developer" value={position} onChange={(e) => setPosition(e.target.value)} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Company *</label>
+          <input className={inputClass} placeholder="e.g. TechCorp India" value={company} onChange={(e) => setCompany(e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Last Working Day</label>
+          <input className={inputClass} placeholder="e.g. May 15, 2025" value={lastDay} onChange={(e) => setLastDay(e.target.value)} />
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Reason (optional)</label>
+        <input className={inputClass} placeholder="e.g. Pursuing higher education / better opportunity" value={reason} onChange={(e) => setReason(e.target.value)} />
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-foreground-muted mb-2">Tone</p>
+        <div className="flex flex-wrap gap-2">
+          {tones.map((t) => (
+            <button key={t} onClick={() => setTone(t)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", tone === t ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-border-strong")}>{t}</button>
+          ))}
+        </div>
+      </div>
+      <NvBtn loading={loading} disabled={!position.trim() || !company.trim()} onClick={() => generate({ name, position, company, lastDay, reason, tone })} label="Write Resignation Letter" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Resignation Letter" />}</AnimatePresence>
+    </div>
+  );
+}
+
+function InterviewPrepTool() {
+  const [role, setRole] = useState("");
+  const [company, setCompany] = useState("");
+  const [type, setType] = useState("Mixed (Behavioral + Technical)");
+  const [count, setCount] = useState(10);
+  const types = ["Mixed (Behavioral + Technical)", "Behavioral only", "Technical only", "Situational / Case"];
+  const { output, loading, error, generate, clear } = useAIGenerate("interview-prep");
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Job Role *</label>
+        <input className={inputClass} placeholder="e.g. Product Manager, Data Scientist, Software Engineer" value={role} onChange={(e) => setRole(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Company (optional)</label>
+        <input className={inputClass} placeholder="e.g. Google, Amazon, startup" value={company} onChange={(e) => setCompany(e.target.value)} />
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-foreground-muted mb-2">Interview Type</p>
+        <div className="flex flex-wrap gap-2">
+          {types.map((t) => (
+            <button key={t} onClick={() => setType(t)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", type === t ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-border-strong")}>{t}</button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Number of Questions: {count}</label>
+        <input type="range" min={5} max={20} value={count} onChange={(e) => setCount(Number(e.target.value))} className="w-full accent-emerald-500" />
+      </div>
+      <NvBtn loading={loading} disabled={!role.trim()} onClick={() => generate({ role, company, type, count })} label="Generate Interview Q&A" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Interview Questions & Answers" />}</AnimatePresence>
+    </div>
+  );
+}
+
+function LinkedInPostTool() {
+  const [topic, setTopic] = useState("");
+  const [tone, setTone] = useState("Authentic & Professional");
+  const [goal, setGoal] = useState("");
+  const tones = ["Authentic & Professional", "Inspirational", "Educational", "Storytelling", "Thought Leadership"];
+  const goals = ["", "Grow network", "Showcase expertise", "Announce achievement", "Share lesson", "Promote product"];
+  const { output, loading, error, generate, clear } = useAIGenerate("linkedin-post");
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Post Topic *</label>
+        <textarea className={inputClass} rows={3} placeholder="e.g. I just got promoted after 2 years of hard work... / 5 things I learned building my startup..." value={topic} onChange={(e) => setTopic(e.target.value)} />
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-foreground-muted mb-2">Post Tone</p>
+        <div className="flex flex-wrap gap-2">
+          {tones.map((t) => (
+            <button key={t} onClick={() => setTone(t)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", tone === t ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-border-strong")}>{t}</button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Goal (optional)</label>
+        <select className={inputClass} value={goal} onChange={(e) => setGoal(e.target.value)}>
+          {goals.map((g) => <option key={g} value={g}>{g || "— No specific goal —"}</option>)}
+        </select>
+      </div>
+      <NvBtn loading={loading} disabled={!topic.trim()} onClick={() => generate({ topic, tone, goal })} label="Write LinkedIn Post" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="LinkedIn Post" />}</AnimatePresence>
+    </div>
+  );
+}
+
+function YouTubeScriptTool() {
+  const [title, setTitle] = useState("");
+  const [niche, setNiche] = useState("");
+  const [duration, setDuration] = useState("8-10 minutes");
+  const [style, setStyle] = useState("Educational / Informative");
+  const durations = ["3-5 minutes", "8-10 minutes", "15-20 minutes"];
+  const styles = ["Educational / Informative", "Entertaining / Fun", "Tutorial / How-to", "Vlog / Story", "Review / Opinion"];
+  const { output, loading, error, generate, clear } = useAIGenerate("youtube-script");
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Video Title / Topic *</label>
+        <input className={inputClass} placeholder="e.g. 10 Python Tips I Wish I Knew Earlier" value={title} onChange={(e) => setTitle(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Channel Niche</label>
+        <input className={inputClass} placeholder="e.g. Tech & Programming, Finance, Fitness" value={niche} onChange={(e) => setNiche(e.target.value)} />
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-foreground-muted mb-2">Video Length</p>
+        <div className="flex flex-wrap gap-2">
+          {durations.map((d) => (
+            <button key={d} onClick={() => setDuration(d)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", duration === d ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-border-strong")}>{d}</button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-foreground-muted mb-2">Video Style</p>
+        <div className="flex flex-wrap gap-2">
+          {styles.map((s) => (
+            <button key={s} onClick={() => setStyle(s)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", style === s ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-border-strong")}>{s}</button>
+          ))}
+        </div>
+      </div>
+      <NvBtn loading={loading} disabled={!title.trim()} onClick={() => generate({ title, niche, duration, style })} label="Write YouTube Script" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="YouTube Script" />}</AnimatePresence>
+    </div>
+  );
+}
+
+function TwitterThreadTool() {
+  const [topic, setTopic] = useState("");
+  const [angle, setAngle] = useState("");
+  const [tweetCount, setTweetCount] = useState(10);
+  const { output, loading, error, generate, clear } = useAIGenerate("twitter-thread");
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Thread Topic *</label>
+        <textarea className={inputClass} rows={2} placeholder="e.g. How to grow on Twitter in 2025 / The truth about building a startup" value={topic} onChange={(e) => setTopic(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Specific Angle (optional)</label>
+        <input className={inputClass} placeholder="e.g. From personal experience / Contrarian take / Step-by-step guide" value={angle} onChange={(e) => setAngle(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Number of Tweets: {tweetCount}</label>
+        <input type="range" min={5} max={20} value={tweetCount} onChange={(e) => setTweetCount(Number(e.target.value))} className="w-full accent-emerald-500" />
+      </div>
+      <NvBtn loading={loading} disabled={!topic.trim()} onClick={() => generate({ topic, angle, tweetCount })} label="Write Twitter Thread" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Twitter/X Thread" />}</AnimatePresence>
+    </div>
+  );
+}
+
+function BioWriterTool() {
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("");
+  const [achievements, setAchievements] = useState("");
+  const [platform, setPlatform] = useState("LinkedIn");
+  const [length, setLength] = useState("Short (2-3 sentences)");
+  const [personality, setPersonality] = useState("Professional & Approachable");
+  const platforms = ["LinkedIn", "Twitter/X", "Portfolio", "Instagram", "General / All"];
+  const lengths = ["Short (2-3 sentences)", "Medium (1 paragraph)", "Long (2-3 paragraphs)"];
+  const personalities = ["Professional & Approachable", "Bold & Confident", "Creative & Quirky", "Formal & Academic"];
+  const { output, loading, error, generate, clear } = useAIGenerate("bio-writer");
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Your Name</label>
+          <input className={inputClass} placeholder="e.g. Priya Sharma" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Role / Title *</label>
+          <input className={inputClass} placeholder="e.g. Full-Stack Developer at Google" value={role} onChange={(e) => setRole(e.target.value)} />
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Key Achievements (optional)</label>
+        <textarea className={inputClass} rows={2} placeholder="e.g. Built products used by 1M+ users. Ex-Amazon. IIT Delhi grad." value={achievements} onChange={(e) => setAchievements(e.target.value)} />
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-foreground-muted mb-2">Platform</p>
+        <div className="flex flex-wrap gap-2">
+          {platforms.map((p) => (
+            <button key={p} onClick={() => setPlatform(p)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", platform === p ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-border-strong")}>{p}</button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-foreground-muted mb-2">Length</p>
+        <div className="flex flex-wrap gap-2">
+          {lengths.map((l) => (
+            <button key={l} onClick={() => setLength(l)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", length === l ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-border-strong")}>{l}</button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-foreground-muted mb-2">Personality</p>
+        <div className="flex flex-wrap gap-2">
+          {personalities.map((p) => (
+            <button key={p} onClick={() => setPersonality(p)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", personality === p ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-border-strong")}>{p}</button>
+          ))}
+        </div>
+      </div>
+      <NvBtn loading={loading} disabled={!role.trim()} onClick={() => generate({ name, role, achievements, platform, length, personality })} label="Write My Bio" />
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Professional Bio" />}</AnimatePresence>
     </div>
   );
 }

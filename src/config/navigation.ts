@@ -62,7 +62,7 @@ export const TOOL_CATEGORIES = [
     iconName: "Pen",
     color: "emerald",
     gradient: "from-emerald-500 to-teal-400",
-    toolCount: 26,
+    toolCount: 32,
     href: "/tools/ai-writing",
   },
   {
