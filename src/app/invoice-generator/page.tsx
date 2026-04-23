@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { InvoiceGenerator } from "@/components/features/invoice/InvoiceGenerator";
 
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = {
   title: "Free Invoice Generator — Create & Download Invoice PDF | ToolHive",
   description: "Create professional invoices instantly. Add your business details, client info, line items, taxes, and download as PDF. Free, no signup needed.",

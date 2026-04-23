@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { clsx } from "clsx";
 
@@ -21,8 +21,8 @@ export function InvoiceGenerator() {
   const [toEmail, setToEmail] = useState("");
   const [toAddress, setToAddress] = useState("");
 
-  const [invoiceNo, setInvoiceNo] = useState(() => `INV-${new Date().getFullYear()}-001`);
-  const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [invoiceNo, setInvoiceNo] = useState("INV-001");
+  const [invoiceDate, setInvoiceDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [currency, setCurrency] = useState("INR");
   const [taxRate, setTaxRate] = useState("18");
@@ -31,6 +31,12 @@ export function InvoiceGenerator() {
   const [items, setItems] = useState<LineItem[]>([{ id: genId(), description: "", qty: "1", rate: "" }]);
 
   const previewRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const now = new Date();
+    setInvoiceNo(`INV-${now.getFullYear()}-001`);
+    setInvoiceDate(now.toISOString().slice(0, 10));
+  }, []);
 
   function addItem() { setItems(prev => [...prev, { id: genId(), description: "", qty: "1", rate: "" }]); }
   function removeItem(id: number) { setItems(prev => prev.filter(i => i.id !== id)); }
