@@ -6,7 +6,9 @@ import { clsx } from "clsx";
 import {
   Scissors, Upload, Play, Pause, Plus, Trash2, Download,
   Sparkles, Loader2, ChevronRight, Film, Clock, X, Check,
+  Link as LinkIcon, AlertCircle,
 } from "lucide-react";
+import Image from "next/image";
 import { useAIGenerate } from "@/hooks/useAIGenerate";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -20,6 +22,16 @@ interface Clip {
   blob?: string;
 }
 
+interface VideoMeta {
+  title: string;
+  author: string;
+  duration: string;
+  thumbnail: string | null;
+  platform: string;
+}
+
+type InputMode = "file" | "url";
+
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
 function fmtTime(s: number): string {
@@ -32,7 +44,6 @@ function fmtTime(s: number): string {
 
 function parseTimeInput(val: string, duration: number): number {
   const trimmed = val.trim();
-  // mm:ss or hh:mm:ss
   const parts = trimmed.split(":").map(Number);
   let secs = 0;
   if (parts.length === 3) secs = parts[0] * 3600 + parts[1] * 60 + parts[2];
@@ -75,7 +86,6 @@ function ClipRow({
       initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
       className="border border-border rounded-xl bg-background p-3 space-y-3"
     >
-      {/* Label row */}
       <div className="flex items-center gap-2">
         <Film className="h-4 w-4 text-orange-500 shrink-0" />
         <input
@@ -92,14 +102,13 @@ function ClipRow({
         </button>
       </div>
 
-      {/* Time inputs */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: "Start", val: startStr, set: setStartStr, commit: commitStart },
-          { label: "End", val: endStr, set: setEndStr, commit: commitEnd },
+          { label: "Start (mm:ss)", val: startStr, set: setStartStr, commit: commitStart },
+          { label: "End (mm:ss)", val: endStr, set: setEndStr, commit: commitEnd },
         ].map(({ label, val, set, commit }) => (
           <div key={label} className="space-y-1">
-            <label className="text-xs font-medium text-foreground-muted">{label} (mm:ss)</label>
+            <label className="text-xs font-medium text-foreground-muted">{label}</label>
             <input
               value={val}
               onChange={e => set(e.target.value)}
@@ -112,7 +121,6 @@ function ClipRow({
         ))}
       </div>
 
-      {/* Visual timeline bar */}
       {duration > 0 && (
         <div className="relative h-3 bg-background-subtle rounded-full overflow-hidden">
           <div
@@ -125,7 +133,6 @@ function ClipRow({
         </div>
       )}
 
-      {/* Extract button */}
       <div className="flex items-center gap-2">
         {clip.status === "done" && clip.blob ? (
           <a
@@ -141,7 +148,7 @@ function ClipRow({
           </div>
         ) : clip.status === "error" ? (
           <button onClick={() => onExtract(clip.id)}
-            className="flex-1 h-9 rounded-xl border border-red-300 text-red-600 text-xs font-semibold hover:bg-red-50 transition-colors">
+            className="flex-1 h-9 rounded-xl border border-red-300 text-red-600 text-xs font-semibold hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors">
             Retry
           </button>
         ) : (
@@ -158,8 +165,14 @@ function ClipRow({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function VideoClipper() {
+  const [inputMode, setInputMode] = useState<InputMode>("file");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoMeta, setVideoMeta] = useState<VideoMeta | null>(null);
+  const [urlInput, setUrlInput] = useState("");
+  const [urlLoading, setUrlLoading] = useState(false);
+  const [urlError, setUrlError] = useState("");
+
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -174,29 +187,46 @@ export function VideoClipper() {
 
   const { output: aiOutput, loading: aiLoading, generate: getAiClips, clear: clearAi } = useAIGenerate("video-clipper");
 
-  // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
       clips.forEach(c => { if (c.blob) URL.revokeObjectURL(c.blob); });
-      if (videoUrl) URL.revokeObjectURL(videoUrl);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadVideo = useCallback((file: File) => {
-    if (videoUrl) URL.revokeObjectURL(videoUrl);
+  function resetVideo() {
+    if (videoUrl && !videoFile) { /* URL-based, don't revoke */ }
+    else if (videoUrl) URL.revokeObjectURL(videoUrl);
+    setVideoFile(null);
+    setVideoUrl(null);
+    setVideoMeta(null);
+    setClips([]);
+    setCurrentTime(0);
+    setPlaying(false);
+    setDuration(0);
+    clearAi();
+    setUrlInput("");
+    setUrlError("");
+  }
+
+  // ── File mode ──────────────────────────────────────────────────────────────
+
+  const loadFile = useCallback((file: File) => {
+    if (videoUrl && videoFile) URL.revokeObjectURL(videoUrl);
     const url = URL.createObjectURL(file);
     setVideoFile(file);
     setVideoUrl(url);
+    setVideoMeta({ title: file.name, author: "Local file", duration: "", thumbnail: null, platform: "File" });
     setClips([]);
     setCurrentTime(0);
     setPlaying(false);
     clearAi();
-  }, [videoUrl, clearAi]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
-    if (f) loadVideo(f);
+    if (f) loadFile(f);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -204,8 +234,57 @@ export function VideoClipper() {
     e.preventDefault();
     setDragOver(false);
     const f = e.dataTransfer.files[0];
-    if (f && f.type.startsWith("video/")) loadVideo(f);
+    if (f && f.type.startsWith("video/")) loadFile(f);
   }
+
+  // ── URL mode ───────────────────────────────────────────────────────────────
+
+  async function loadFromUrl() {
+    const url = urlInput.trim();
+    if (!url) return;
+    setUrlLoading(true);
+    setUrlError("");
+
+    try {
+      // 1. Get video info
+      const infoRes = await fetch("/api/video/info", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+        signal: AbortSignal.timeout(30_000),
+      });
+      const infoJson = await infoRes.json() as { success: boolean; message?: string; data?: VideoMeta };
+      if (!infoJson.success || !infoJson.data) throw new Error(infoJson.message ?? "Could not fetch video info");
+
+      // 2. Get direct stream URL
+      const dlRes = await fetch("/api/video/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, quality: "720p" }),
+        signal: AbortSignal.timeout(35_000),
+      });
+      const dlJson = await dlRes.json() as { success: boolean; message?: string; downloadUrl?: string };
+      if (!dlJson.success || !dlJson.downloadUrl) throw new Error(dlJson.message ?? "Could not get video stream");
+
+      // 3. Proxy through our CORS-safe stream endpoint
+      const proxyUrl = `/api/video/stream?u=${encodeURIComponent(dlJson.downloadUrl)}`;
+
+      setVideoFile(null);
+      setVideoUrl(proxyUrl);
+      setVideoMeta(infoJson.data);
+      setClips([]);
+      setCurrentTime(0);
+      setPlaying(false);
+      clearAi();
+      if (infoJson.data.title) setAiTopic(infoJson.data.title);
+    } catch (err: unknown) {
+      setUrlError((err as Error).message ?? "Failed to load video");
+    } finally {
+      setUrlLoading(false);
+    }
+  }
+
+  // ── Player controls ────────────────────────────────────────────────────────
 
   function togglePlay() {
     const v = videoRef.current;
@@ -232,7 +311,8 @@ export function VideoClipper() {
     });
   }
 
-  // Extract a clip using canvas + MediaRecorder (real-time)
+  // ── Clip extraction ────────────────────────────────────────────────────────
+
   async function extractClip(id: string) {
     const clip = clips.find(c => c.id === id);
     const video = videoRef.current;
@@ -242,16 +322,12 @@ export function VideoClipper() {
     updateClip(id, { status: "extracting", blob: undefined });
 
     try {
-      video.currentTime = clip.start;
       canvas.width = video.videoWidth || 640;
       canvas.height = video.videoHeight || 360;
-
       const ctx = canvas.getContext("2d")!;
       const stream = canvas.captureStream(30);
       const recorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-          ? "video/webm;codecs=vp9"
-          : "video/webm",
+        mimeType: MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm",
         videoBitsPerSecond: 4_000_000,
       });
 
@@ -277,75 +353,56 @@ export function VideoClipper() {
         }
 
         video.currentTime = clip.start;
-        video.oncanplay = null;
         const onSeeked = () => {
           video.removeEventListener("seeked", onSeeked);
-          video.play().then(() => {
-            rafId = requestAnimationFrame(drawFrame);
-          }).catch(reject);
+          video.play().then(() => { rafId = requestAnimationFrame(drawFrame); }).catch(reject);
         };
         video.addEventListener("seeked", onSeeked);
       });
 
       const blob = new Blob(chunks, { type: "video/webm" });
-      const blobUrl = URL.createObjectURL(blob);
-      updateClip(id, { status: "done", blob: blobUrl });
+      updateClip(id, { status: "done", blob: URL.createObjectURL(blob) });
     } catch {
       updateClip(id, { status: "error" });
     }
   }
 
-  // AI-suggested clip times
+  // ── AI clip suggestions ────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!aiOutput || !duration) return;
     const text = aiOutput;
-
-    // Try to parse JSON array
     const jsonMatch = text.match(/\[[\s\S]*?\]/);
     if (jsonMatch) {
       try {
         const arr = JSON.parse(jsonMatch[0]) as Array<{
-          label?: string; start?: string | number; end?: string | number;
-          from?: string | number; to?: string | number;
-          title?: string; reason?: string;
+          label?: string; title?: string;
+          start?: string | number; from?: string | number;
+          end?: string | number; to?: string | number;
         }>;
-
-        const newClips: Clip[] = arr.slice(0, 10).map((item) => {
-          const startRaw = item.start ?? item.from ?? 0;
-          const endRaw = item.end ?? item.to ?? (Number(startRaw) + 30);
-          const start = typeof startRaw === "string" ? parseTimeInput(startRaw, duration) : Math.min(Number(startRaw), duration);
-          const end = typeof endRaw === "string" ? parseTimeInput(endRaw, duration) : Math.min(Number(endRaw), duration);
-          return {
-            id: newClipId(),
-            label: item.label ?? item.title ?? `AI Clip`,
-            start,
-            end: Math.max(end, start + 3),
-            status: "pending" as const,
-          };
+        const newClips: Clip[] = arr.slice(0, 10).map(item => {
+          const s = item.start ?? item.from ?? 0;
+          const e = item.end ?? item.to ?? (Number(s) + 30);
+          const start = typeof s === "string" ? parseTimeInput(s, duration) : Math.min(Number(s), duration);
+          const end   = typeof e === "string" ? parseTimeInput(e, duration) : Math.min(Number(e), duration);
+          return { id: newClipId(), label: item.label ?? item.title ?? "AI Clip", start, end: Math.max(end, start + 3), status: "pending" as const };
         });
-
-        if (newClips.length) {
-          setClips(p => [...p, ...newClips]);
-          return;
-        }
+        if (newClips.length) { setClips(p => [...p, ...newClips]); return; }
       } catch { /* ignore */ }
     }
-
-    // Fallback: parse "mm:ss - mm:ss" patterns
-    const timeRegex = /(\d{1,2}:\d{2})\s*[-–to]+\s*(\d{1,2}:\d{2})/g;
-    const labelRegex = /(?:clip|moment|scene|highlight)[:\s]+([^\n\r]+)/gi;
-    const timeMatches = [...text.matchAll(timeRegex)];
-    const labelMatches = [...text.matchAll(labelRegex)];
-
-    if (timeMatches.length) {
-      const newClips: Clip[] = timeMatches.map((m, i) => ({
-        id: newClipId(),
-        label: labelMatches[i]?.[1]?.trim() ?? `AI Clip ${i + 1}`,
-        start: parseTimeInput(m[1], duration),
-        end: parseTimeInput(m[2], duration),
-        status: "pending" as const,
-      }));
-      setClips(p => [...p, ...newClips]);
+    // Fallback: parse "0:30 - 1:00" patterns
+    const matches = [...text.matchAll(/(\d{1,2}:\d{2})\s*[-–to]+\s*(\d{1,2}:\d{2})/g)];
+    if (matches.length) {
+      setClips(p => [
+        ...p,
+        ...matches.map((m, i) => ({
+          id: newClipId(),
+          label: `AI Clip ${i + 1}`,
+          start: parseTimeInput(m[1], duration),
+          end: parseTimeInput(m[2], duration),
+          status: "pending" as const,
+        })),
+      ]);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aiOutput]);
@@ -353,22 +410,20 @@ export function VideoClipper() {
   function requestAiClips() {
     if (!duration) return;
     clearAi();
-    const prompt = `Video duration: ${fmtTime(duration)} (${Math.round(duration)} seconds total).
-${aiTopic ? `Content description: ${aiTopic}` : ""}
-
-Find the best ${aiClipCount} short clip segments (each 15-60 seconds long) from this video.
-Spread them across the full duration to capture the most interesting/valuable moments.
-${aiTopic ? `Focus on: ${aiTopic}` : "Focus on high-energy, informative, or entertaining moments."}
-
-Return ONLY a valid JSON array, no explanation:
-[{"label":"Clip name","start":"mm:ss","end":"mm:ss"},...]
-
-Make sure start/end times are within 0:00 to ${fmtTime(duration)}.`;
-
+    const prompt = `Video duration: ${fmtTime(duration)} (${Math.round(duration)} seconds).
+${aiTopic ? `Content: ${aiTopic}` : ""}
+Find the best ${aiClipCount} clip segments (each 15-60 seconds). Spread across the full duration.
+${aiTopic ? `Focus on interesting/key moments from: ${aiTopic}` : "Focus on high-energy or informative moments."}
+Return ONLY valid JSON array (no markdown, no explanation):
+[{"label":"Short clip name","start":"m:ss","end":"m:ss"},...]
+All times must be within 0:00 to ${fmtTime(duration)}.`;
     getAiClips({ text: prompt, options: { task: prompt } });
   }
 
+  const hasVideo = !!videoUrl;
   const doneCount = clips.filter(c => c.status === "done").length;
+
+  // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
@@ -379,12 +434,30 @@ Make sure start/end times are within 0:00 to ${fmtTime(duration)}.`;
         </div>
         <h1 className="text-3xl font-bold text-foreground mb-2">AI Video Clipper</h1>
         <p className="text-foreground-muted max-w-xl mx-auto text-sm">
-          Upload a video, let AI suggest the best clips, or mark your own time segments. Extract as many clips as you need.
+          Upload a video or paste a URL (YouTube, TikTok, Vimeo…). Let AI find the best clips, or mark your own time segments.
         </p>
       </div>
 
-      {/* Upload zone */}
-      {!videoFile ? (
+      {/* Input mode tabs */}
+      {!hasVideo && (
+        <div className="flex rounded-xl border border-border overflow-hidden w-fit mx-auto">
+          {(["file", "url"] as InputMode[]).map(m => (
+            <button
+              key={m}
+              onClick={() => { setInputMode(m); setUrlError(""); }}
+              className={clsx(
+                "flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold transition-colors",
+                inputMode === m ? "bg-orange-500 text-white" : "bg-background text-foreground-muted hover:bg-background-subtle"
+              )}
+            >
+              {m === "file" ? <><Upload className="h-3.5 w-3.5" />Upload File</> : <><LinkIcon className="h-3.5 w-3.5" />From URL</>}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── File upload ── */}
+      {!hasVideo && inputMode === "file" && (
         <div
           onDragOver={e => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
@@ -392,25 +465,97 @@ Make sure start/end times are within 0:00 to ${fmtTime(duration)}.`;
           onClick={() => fileInputRef.current?.click()}
           className={clsx(
             "border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all",
-            dragOver
-              ? "border-orange-500 bg-orange-500/5"
-              : "border-border hover:border-orange-500/50 hover:bg-orange-500/5"
+            dragOver ? "border-orange-500 bg-orange-500/5" : "border-border hover:border-orange-500/50 hover:bg-orange-500/5"
           )}
         >
           <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={onFileChange} />
           <Upload className="h-12 w-12 text-orange-500 mx-auto mb-4" />
           <p className="text-lg font-semibold text-foreground">Drop a video file here</p>
-          <p className="text-sm text-foreground-muted mt-1">or click to browse — MP4, WebM, MOV, AVI, MKV supported</p>
-          <p className="text-xs text-foreground-muted mt-3">Processing happens entirely in your browser — no upload to any server</p>
+          <p className="text-sm text-foreground-muted mt-1">or click to browse — MP4, WebM, MOV, AVI, MKV</p>
+          <p className="text-xs text-foreground-muted mt-3">Processed entirely in your browser — nothing uploaded</p>
         </div>
-      ) : (
+      )}
+
+      {/* ── URL input ── */}
+      {!hasVideo && inputMode === "url" && (
         <div className="space-y-4">
+          <div className="border border-card-border bg-card rounded-2xl p-6 space-y-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <LinkIcon className="h-4 w-4 text-orange-500" />
+              Paste Video URL
+            </div>
+            <div className="space-y-2">
+              <input
+                value={urlInput}
+                onChange={e => { setUrlInput(e.target.value); setUrlError(""); }}
+                onKeyDown={e => e.key === "Enter" && loadFromUrl()}
+                placeholder="https://youtube.com/watch?v=... or TikTok, Vimeo URL"
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-background text-foreground placeholder:text-foreground-muted/60 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+              />
+              {urlError && (
+                <div className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400 p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>{urlError}</span>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={loadFromUrl}
+              disabled={urlLoading || !urlInput.trim()}
+              className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {urlLoading
+                ? <><Loader2 className="h-4 w-4 animate-spin" />Loading video…</>
+                : <><Film className="h-4 w-4" />Load Video<ChevronRight className="h-4 w-4" /></>
+              }
+            </button>
+
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { name: "YouTube", emoji: "▶️" },
+                { name: "TikTok", emoji: "🎵" },
+                { name: "Vimeo", emoji: "🎬" },
+              ].map(({ name, emoji }) => (
+                <div key={name} className="text-center py-2 px-3 rounded-xl bg-background-subtle border border-card-border">
+                  <span className="text-lg">{emoji}</span>
+                  <p className="text-xs font-medium text-foreground mt-0.5">{name}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-foreground-muted text-center">
+              YouTube, TikTok, and Vimeo URLs supported. Instagram/Facebook videos must be uploaded as files.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Video loaded ── */}
+      {hasVideo && (
+        <div className="space-y-4">
+          {/* Video meta card */}
+          {videoMeta && (
+            <div className="flex items-center gap-3 border border-card-border bg-card rounded-2xl p-3">
+              {videoMeta.thumbnail && (
+                <div className="relative w-16 h-10 rounded-lg overflow-hidden shrink-0">
+                  <Image src={videoMeta.thumbnail} alt={videoMeta.title} fill className="object-cover" unoptimized />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{videoMeta.title}</p>
+                <p className="text-xs text-foreground-muted">{videoMeta.author} · {videoMeta.platform}</p>
+              </div>
+              <button onClick={resetVideo} className="text-xs text-foreground-muted hover:text-foreground flex items-center gap-1 shrink-0 px-2 py-1 rounded-lg border border-border">
+                <X className="h-3.5 w-3.5" /> Change
+              </button>
+            </div>
+          )}
 
           {/* Video player */}
           <div className="border border-card-border rounded-2xl overflow-hidden bg-black">
             <video
               ref={videoRef}
               src={videoUrl!}
+              crossOrigin="anonymous"
               className="w-full max-h-80 object-contain"
               onTimeUpdate={e => setCurrentTime(e.currentTarget.currentTime)}
               onDurationChange={e => setDuration(e.currentTarget.duration)}
@@ -421,14 +566,13 @@ Make sure start/end times are within 0:00 to ${fmtTime(duration)}.`;
             />
           </div>
 
-          {/* Video info + controls */}
+          {/* Controls row */}
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2 text-sm text-foreground-muted">
-              <Film className="h-4 w-4" />
-              <span className="font-medium text-foreground">{videoFile.name}</span>
-              <span>·</span>
-              <Clock className="h-3.5 w-3.5" />
-              <span>{fmtTime(duration)}</span>
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="h-4 w-4 text-foreground-muted" />
+              <span className="text-foreground-muted">Position:</span>
+              <span className="font-mono font-semibold text-orange-500">{fmtTime(currentTime)}</span>
+              <span className="text-foreground-muted">/ {fmtTime(duration)}</span>
             </div>
             <div className="ml-auto flex gap-2">
               <button
@@ -439,24 +583,12 @@ Make sure start/end times are within 0:00 to ${fmtTime(duration)}.`;
                 {playing ? "Pause" : "Play"}
               </button>
               <button
-                onClick={() => { setVideoFile(null); setVideoUrl(null); setClips([]); clearAi(); }}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-border hover:bg-background-subtle transition-colors text-foreground-muted"
+                onClick={addClip}
+                className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 text-white hover:opacity-90 transition-opacity"
               >
-                <X className="h-3.5 w-3.5" /> Change Video
+                <Plus className="h-3.5 w-3.5" /> Add Clip Here
               </button>
             </div>
-          </div>
-
-          {/* Current position indicator */}
-          <div className="flex items-center gap-3 text-sm">
-            <span className="text-foreground-muted">Current position:</span>
-            <span className="font-mono font-semibold text-orange-500">{fmtTime(currentTime)}</span>
-            <button
-              onClick={addClip}
-              className="ml-auto flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 text-white hover:opacity-90 transition-opacity"
-            >
-              <Plus className="h-3.5 w-3.5" /> Add Clip from Here
-            </button>
           </div>
 
           {/* AI Clip Suggester */}
@@ -467,11 +599,11 @@ Make sure start/end times are within 0:00 to ${fmtTime(duration)}.`;
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2 space-y-1">
-                <label className="text-xs font-medium text-foreground-muted">Describe your video (optional)</label>
+                <label className="text-xs font-medium text-foreground-muted">Describe the video (helps AI pick better clips)</label>
                 <input
                   value={aiTopic}
                   onChange={e => setAiTopic(e.target.value)}
-                  placeholder="e.g. cooking tutorial, wedding ceremony, sports highlights…"
+                  placeholder="e.g. cooking tutorial, wedding highlights, sports reel…"
                   className="w-full text-sm border border-border rounded-xl px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/30"
                 />
               </div>
@@ -480,7 +612,7 @@ Make sure start/end times are within 0:00 to ${fmtTime(duration)}.`;
                 <select
                   value={aiClipCount}
                   onChange={e => setAiClipCount(Number(e.target.value))}
-                  className="w-full text-sm border border-border rounded-xl px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                  className="w-full text-sm border border-border rounded-xl px-3 py-2 bg-background text-foreground focus:outline-none"
                 >
                   {[3, 5, 7, 10].map(n => <option key={n} value={n}>{n} clips</option>)}
                 </select>
@@ -498,7 +630,7 @@ Make sure start/end times are within 0:00 to ${fmtTime(duration)}.`;
             </button>
             {aiOutput && !aiLoading && (
               <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <Check className="h-3.5 w-3.5" /> AI added clip suggestions below — review and extract them
+                <Check className="h-3.5 w-3.5" /> AI added suggestions below — review and extract them
               </p>
             )}
           </div>
@@ -508,7 +640,7 @@ Make sure start/end times are within 0:00 to ${fmtTime(duration)}.`;
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground">
                 Clips ({clips.length})
-                {doneCount > 0 && <span className="ml-2 text-xs text-emerald-600 font-normal">{doneCount} ready to download</span>}
+                {doneCount > 0 && <span className="ml-2 text-xs text-emerald-600 font-normal">{doneCount} ready</span>}
               </h3>
               {clips.length > 0 && (
                 <button
@@ -522,30 +654,21 @@ Make sure start/end times are within 0:00 to ${fmtTime(duration)}.`;
 
             <AnimatePresence mode="popLayout">
               {clips.map(clip => (
-                <ClipRow
-                  key={clip.id}
-                  clip={clip}
-                  duration={duration}
-                  onUpdate={updateClip}
-                  onDelete={deleteClip}
-                  onExtract={extractClip}
-                />
+                <ClipRow key={clip.id} clip={clip} duration={duration} onUpdate={updateClip} onDelete={deleteClip} onExtract={extractClip} />
               ))}
             </AnimatePresence>
 
             {clips.length === 0 && (
               <div className="text-center py-8 text-sm text-foreground-muted border border-dashed border-border rounded-2xl">
                 <Scissors className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                <p>No clips yet — use "Add Clip from Here" while playing,</p>
-                <p>or let AI suggest the best moments.</p>
+                <p>No clips yet — click "Add Clip Here" while playing,</p>
+                <p>or use AI to suggest the best moments.</p>
               </div>
             )}
           </div>
 
-          {/* Extraction note */}
           <div className="text-xs text-foreground-muted text-center p-3 rounded-xl bg-background-subtle border border-card-border">
-            Clips are extracted in real-time in your browser using canvas recording. Extraction takes as long as the clip duration.
-            Downloaded clips are in <strong>.webm</strong> format (open in VLC, Chrome, or convert with HandBrake).
+            Clips are extracted in real-time using canvas recording. A 30-second clip takes ~30 seconds. Downloads as <strong>.webm</strong> (plays in Chrome, VLC, Firefox).
           </div>
         </div>
       )}
