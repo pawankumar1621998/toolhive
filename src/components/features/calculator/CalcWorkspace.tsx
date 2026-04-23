@@ -919,6 +919,309 @@ function FuelCalc() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Scientific Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function safeEval(expr: string, toRad: number): number {
+  const sin = (x: number) => Math.sin(x * toRad);
+  const cos = (x: number) => Math.cos(x * toRad);
+  const tan = (x: number) => Math.tan(x * toRad);
+  const sqrt = Math.sqrt, log = Math.log10, ln = Math.log, abs = Math.abs, cbrt = Math.cbrt;
+  const PI = Math.PI, E = Math.E;
+  const e = expr.toLowerCase()
+    .replace(/\^/g, "**").replace(/\bpi\b/g, String(PI)).replace(/\be\b/g, String(E))
+    .replace(/\bsqrt\b/g, "sqrt").replace(/\bcbrt\b/g, "cbrt")
+    .replace(/\bsin\b/g, "sin").replace(/\bcos\b/g, "cos").replace(/\btan\b/g, "tan")
+    .replace(/\bln\b/g, "ln").replace(/\blog\b/g, "log").replace(/\babs\b/g, "abs");
+  // eslint-disable-next-line no-new-func
+  return Function("sin","cos","tan","sqrt","cbrt","log","ln","abs","PI","E", `"use strict"; return (${e});`)(sin,cos,tan,sqrt,cbrt,log,ln,abs,PI,E);
+}
+
+function ScientificCalc() {
+  const [expr, setExpr] = useState("");
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [angleMode, setAngleMode] = useState<"deg" | "rad">("deg");
+
+  const ins = (s: string) => setExpr(p => p + s);
+
+  function evaluate() {
+    if (!expr.trim()) return;
+    try {
+      const toRad = angleMode === "deg" ? Math.PI / 180 : 1;
+      const res = safeEval(expr, toRad);
+      if (!isFinite(res) || isNaN(res)) throw new Error("Undefined");
+      setResult(parseFloat(res.toPrecision(12)).toString());
+      setError(null);
+    } catch { setError("Invalid expression"); setResult(null); }
+  }
+
+  const btnClass = (variant: "fn" | "num" | "op" | "eq") => clsx(
+    "h-10 rounded-lg text-sm font-semibold border transition-colors",
+    variant === "fn" && "bg-background-subtle border-border text-foreground-muted hover:border-orange-400 hover:text-orange-500 text-xs",
+    variant === "num" && "bg-background border-border text-foreground hover:bg-background-subtle",
+    variant === "op" && "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700 text-orange-600 hover:bg-orange-100",
+    variant === "eq" && "bg-gradient-to-r from-orange-500 to-amber-400 text-white border-transparent hover:opacity-90"
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 items-center">
+        {(["deg","rad"] as const).map(m => (
+          <button key={m} onClick={() => setAngleMode(m)} className={clsx("px-3 py-1 text-xs font-bold rounded-lg border uppercase transition-colors", angleMode===m?"bg-orange-500 text-white border-orange-500":"bg-background border-border text-foreground-muted")}>{m}</button>
+        ))}
+        <span className="text-xs text-foreground-muted">Angle mode for trig functions</span>
+      </div>
+
+      <div className="space-y-2">
+        <input className={clsx(inputClass, "font-mono text-base")} value={expr} onChange={e => { setExpr(e.target.value); setResult(null); setError(null); }} placeholder="e.g.  sin(45) + sqrt(16) * pi" onKeyDown={e => e.key === "Enter" && evaluate()} />
+        {result !== null && <div className={clsx(resultCard, "text-center")}><span className="text-sm text-foreground-muted">= </span><span className="text-2xl font-bold text-orange-500">{result}</span></div>}
+        {error && <p className="text-xs text-rose-500">{error}</p>}
+      </div>
+
+      <div className="grid grid-cols-6 gap-1.5">
+        {[
+          {l:"sin",a:()=>ins("sin("),v:"fn"},{l:"cos",a:()=>ins("cos("),v:"fn"},{l:"tan",a:()=>ins("tan("),v:"fn"},
+          {l:"log",a:()=>ins("log("),v:"fn"},{l:"ln",a:()=>ins("ln("),v:"fn"},{l:"√",a:()=>ins("sqrt("),v:"fn"},
+          {l:"x²",a:()=>ins("^2"),v:"fn"},{l:"xⁿ",a:()=>ins("^"),v:"fn"},{l:"π",a:()=>ins("pi"),v:"fn"},
+          {l:"e",a:()=>ins("e"),v:"fn"},{l:"(",a:()=>ins("("),v:"fn"},{l:")",a:()=>ins(")"),v:"fn"},
+          {l:"7",a:()=>ins("7"),v:"num"},{l:"8",a:()=>ins("8"),v:"num"},{l:"9",a:()=>ins("9"),v:"num"},
+          {l:"÷",a:()=>ins("/"),v:"op"},{l:"4",a:()=>ins("4"),v:"num"},{l:"5",a:()=>ins("5"),v:"num"},
+          {l:"6",a:()=>ins("6"),v:"num"},{l:"×",a:()=>ins("*"),v:"op"},{l:"1",a:()=>ins("1"),v:"num"},
+          {l:"2",a:()=>ins("2"),v:"num"},{l:"3",a:()=>ins("3"),v:"num"},{l:"−",a:()=>ins("-"),v:"op"},
+          {l:"0",a:()=>ins("0"),v:"num"},{l:".",a:()=>ins("."),v:"num"},{l:"%",a:()=>ins("%"),v:"op"},
+          {l:"+",a:()=>ins("+"),v:"op"},{l:"⌫",a:()=>setExpr(p=>p.slice(0,-1)),v:"op"},{l:"C",a:()=>{setExpr("");setResult(null);setError(null);},v:"op"},
+        ].map(({l,a,v}) => (
+          <button key={l} className={btnClass(v as "fn"|"num"|"op"|"eq")} onClick={a}>{l}</button>
+        ))}
+        <button className={clsx(btnClass("eq"),"col-span-6")} onClick={evaluate}>=</button>
+      </div>
+      <p className="text-xs text-foreground-muted text-center">Type or click buttons. Supports: sin, cos, tan, log, ln, sqrt, cbrt, abs, pi, e, ^ (power)</p>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Calorie / BMR / TDEE Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function CalorieCalc() {
+  const [gender, setGender] = useState<"male" | "female">("male");
+  const [age, setAge] = useState("");
+  const [weight, setWeight] = useState("");
+  const [height, setHeight] = useState("");
+  const [activity, setActivity] = useState(1.55);
+  const [result, setResult] = useState<{ bmr: number; tdee: number } | null>(null);
+
+  const activityLevels = [
+    { label: "Sedentary (office job, no exercise)", value: 1.2 },
+    { label: "Lightly active (1-3 days/week)", value: 1.375 },
+    { label: "Moderately active (3-5 days/week)", value: 1.55 },
+    { label: "Very active (6-7 days/week)", value: 1.725 },
+    { label: "Extra active (athlete / physical job)", value: 1.9 },
+  ];
+
+  function calculate() {
+    const w = parseFloat(weight), h = parseFloat(height), a = parseFloat(age);
+    if (!w || !h || !a) return;
+    const bmr = gender === "male"
+      ? 10 * w + 6.25 * h - 5 * a + 5
+      : 10 * w + 6.25 * h - 5 * a - 161;
+    setResult({ bmr: Math.round(bmr), tdee: Math.round(bmr * activity) });
+  }
+
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-foreground-muted">Mifflin-St Jeor formula — most accurate for general population</p>
+      <div className="flex rounded-xl border border-border overflow-hidden w-fit">
+        {(["male","female"] as const).map(g => (
+          <button key={g} onClick={() => { setGender(g); setResult(null); }}
+            className={clsx("px-5 py-2 text-xs font-semibold capitalize transition-colors", gender===g?"bg-orange-500 text-white":"bg-background text-foreground-muted hover:bg-background-subtle")}>
+            {g}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: "Age (years)", value: age, set: setAge, placeholder: "25" },
+          { label: "Weight (kg)", value: weight, set: setWeight, placeholder: "70" },
+          { label: "Height (cm)", value: height, set: setHeight, placeholder: "170" },
+        ].map(({ label, value, set, placeholder }) => (
+          <div key={label} className="space-y-2">
+            <label className="text-sm font-medium text-foreground block">{label}</label>
+            <input type="number" className={inputClass} value={value} onChange={e => { set(e.target.value); setResult(null); }} placeholder={placeholder} min="0" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground block">Activity Level</label>
+        <select className={inputClass} value={activity} onChange={e => { setActivity(parseFloat(e.target.value)); setResult(null); }}>
+          {activityLevels.map(al => <option key={al.value} value={al.value}>{al.label}</option>)}
+        </select>
+      </div>
+      <button className={primaryBtn} onClick={calculate} disabled={!age || !weight || !height}>Calculate Calories</button>
+      {result && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className={clsx(resultCard, "text-center")}>
+              <div className="text-2xl font-bold text-foreground">{result.bmr.toLocaleString()}</div>
+              <div className="text-xs text-foreground-muted mt-0.5">BMR (kcal/day)</div>
+              <div className="text-xs text-foreground-muted">Calories at rest</div>
+            </div>
+            <div className={clsx(resultCard, "text-center")}>
+              <div className="text-2xl font-bold text-orange-500">{result.tdee.toLocaleString()}</div>
+              <div className="text-xs text-foreground-muted mt-0.5">TDEE (kcal/day)</div>
+              <div className="text-xs text-foreground-muted">Calories to maintain weight</div>
+            </div>
+          </div>
+          <div className={resultCard}>
+            <p className="text-xs font-semibold text-foreground-muted mb-2">Daily Calorie Goals</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { goal: "Extreme loss", cal: result.tdee - 1000, color: "text-rose-600" },
+                { goal: "Weight loss", cal: result.tdee - 500, color: "text-amber-600" },
+                { goal: "Maintain", cal: result.tdee, color: "text-foreground" },
+                { goal: "Weight gain", cal: result.tdee + 500, color: "text-emerald-600" },
+              ].map(({ goal, cal, color }) => (
+                <div key={goal} className="text-center">
+                  <div className={clsx("text-base font-bold", color)}>{cal.toLocaleString()}</div>
+                  <div className="text-xs text-foreground-muted">{goal}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tip Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function TipCalc() {
+  const [bill, setBill] = useState("");
+  const [tipPct, setTipPct] = useState(18);
+  const [people, setPeople] = useState(1);
+
+  const billNum = parseFloat(bill) || 0;
+  const tipAmount = (billNum * tipPct) / 100;
+  const totalAmount = billNum + tipAmount;
+  const perPerson = people > 0 ? totalAmount / people : totalAmount;
+
+  return (
+    <div className="space-y-5">
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground block">Bill Amount</label>
+        <input type="number" className={inputClass} value={bill} onChange={e => setBill(e.target.value)} placeholder="500.00" min="0" step="0.01" />
+      </div>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-foreground">Tip Percentage</label>
+          <span className="text-lg font-bold text-orange-500">{tipPct}%</span>
+        </div>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {[5, 10, 15, 18, 20, 25].map(p => (
+            <button key={p} onClick={() => setTipPct(p)}
+              className={clsx("px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                tipPct === p ? "bg-orange-500 text-white border-orange-500" : "bg-background border-border text-foreground-muted hover:border-orange-500/50")}>
+              {p}%
+            </button>
+          ))}
+        </div>
+        <input type="range" min={0} max={50} value={tipPct} onChange={e => setTipPct(Number(e.target.value))} className="w-full accent-orange-500" />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground block">Split Between (people)</label>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setPeople(p => Math.max(1, p - 1))} className="h-10 w-10 rounded-xl border border-border bg-background text-foreground hover:bg-background-subtle text-lg font-bold transition-colors">&minus;</button>
+          <span className="text-2xl font-bold text-foreground w-8 text-center">{people}</span>
+          <button onClick={() => setPeople(p => p + 1)} className="h-10 w-10 rounded-xl border border-border bg-background text-foreground hover:bg-background-subtle text-lg font-bold transition-colors">+</button>
+        </div>
+      </div>
+      {billNum > 0 && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: "Tip Amount", value: `${tipAmount.toFixed(2)}` },
+            { label: "Total Bill", value: `${totalAmount.toFixed(2)}` },
+            { label: "Per Person", value: `${perPerson.toFixed(2)}`, highlight: true },
+            { label: "Tip/Person", value: `${(tipAmount / people).toFixed(2)}` },
+          ].map(({ label, value, highlight }) => (
+            <div key={label} className={clsx(resultCard, "text-center")}>
+              <div className={clsx("text-xl font-bold", highlight ? "text-orange-500" : "text-foreground")}>{value}</div>
+              <div className="text-xs text-foreground-muted mt-0.5">{label}</div>
+            </div>
+          ))}
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Discount Calculator
+// ─────────────────────────────────────────────────────────────────────────────
+
+type DiscMode = "saleprice" | "findpct" | "original";
+
+function DiscountCalc() {
+  const [mode, setMode] = useState<DiscMode>("saleprice");
+  const [a, setA] = useState("");
+  const [b, setB] = useState("");
+  const [result, setResult] = useState<string | null>(null);
+
+  const modes: Array<{ id: DiscMode; label: string; la: string; lb: string }> = [
+    { id: "saleprice", label: "Sale Price", la: "Original Price", lb: "Discount (%)" },
+    { id: "findpct", label: "Find Discount %", la: "Original Price", lb: "Sale Price" },
+    { id: "original", label: "Find Original", la: "Sale Price", lb: "Discount (%)" },
+  ];
+
+  function calculate() {
+    const na = parseFloat(a), nb = parseFloat(b);
+    if (isNaN(na) || isNaN(nb)) return;
+    if (mode === "saleprice") {
+      const disc = na * (nb / 100);
+      setResult(`Sale Price: ${(na - disc).toFixed(2)}  (you save ${disc.toFixed(2)})`);
+    } else if (mode === "findpct") {
+      setResult(`${(((na - nb) / na) * 100).toFixed(2)}% discount`);
+    } else {
+      setResult(`Original Price: ${(na / (1 - nb / 100)).toFixed(2)}`);
+    }
+  }
+
+  const activeMode = modes.find(m => m.id === mode)!;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap gap-2">
+        {modes.map(m => (
+          <button key={m.id} onClick={() => { setMode(m.id); setResult(null); setA(""); setB(""); }}
+            className={clsx("px-4 py-2 text-xs font-semibold rounded-xl border transition-colors",
+              mode === m.id ? "bg-orange-500 text-white border-orange-500" : "bg-background border-border text-foreground-muted hover:border-orange-500/50")}>
+            {m.label}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        {[{ label: activeMode.la, val: a, set: setA }, { label: activeMode.lb, val: b, set: setB }].map(({ label, val, set }) => (
+          <div key={label} className="space-y-2">
+            <label className="text-sm font-medium text-foreground block">{label}</label>
+            <input type="number" className={inputClass} value={val} onChange={e => { set(e.target.value); setResult(null); }} placeholder="0" min="0" />
+          </div>
+        ))}
+      </div>
+      <button className={primaryBtn} onClick={calculate} disabled={!a || !b}>Calculate</button>
+      {result && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={clsx(resultCard, "text-center")}>
+          <p className="text-xl font-bold text-orange-500">{result}</p>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main export
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -935,6 +1238,10 @@ const TOOL_TITLES: Record<string, string> = {
   salary: "In-Hand Salary Calculator",
   unit: "Unit Converter",
   fuel: "Fuel Cost Calculator",
+  scientific: "Scientific Calculator",
+  calorie: "Calorie & TDEE Calculator",
+  tip: "Tip Calculator",
+  discount: "Discount Calculator",
 };
 
 export function CalcWorkspace({ tool }: { tool: Tool }) {
@@ -952,6 +1259,10 @@ export function CalcWorkspace({ tool }: { tool: Tool }) {
       case "salary": return <SalaryCalc />;
       case "unit": return <UnitCalc />;
       case "fuel": return <FuelCalc />;
+      case "scientific": return <ScientificCalc />;
+      case "calorie": return <CalorieCalc />;
+      case "tip": return <TipCalc />;
+      case "discount": return <DiscountCalc />;
       default:
         return <p className="text-sm text-foreground-muted">This calculator is coming soon.</p>;
     }

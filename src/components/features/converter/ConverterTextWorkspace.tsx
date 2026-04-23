@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/Badge";
@@ -1678,6 +1678,674 @@ function DedupeTool() {
 // Main export
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Code Formatter
+// ─────────────────────────────────────────────────────────────────────────────
+
+type CodeLang = "json" | "html" | "css" | "sql";
+
+function formatHtml(html: string): string {
+  const voidTags = new Set(["area","base","br","col","embed","hr","img","input","link","meta","param","source","track","wbr"]);
+  let result = "", indent = 0;
+  const parts = html.replace(/>\s+</g, "><").trim().split(/(<[^>]+>)/);
+  for (const part of parts) {
+    const t = part.trim();
+    if (!t) continue;
+    if (t.startsWith("</")) { indent = Math.max(0, indent - 1); result += "  ".repeat(indent) + t + "\n"; }
+    else if (t.startsWith("<")) {
+      result += "  ".repeat(indent) + t + "\n";
+      const tag = t.match(/<([a-z][a-z0-9]*)/i)?.[1]?.toLowerCase();
+      if (tag && !voidTags.has(tag) && !t.endsWith("/>") && !t.startsWith("<!")) indent++;
+    } else { result += "  ".repeat(indent) + t + "\n"; }
+  }
+  return result.trim();
+}
+
+function formatCss(css: string): string {
+  return css
+    .replace(/\s*\{\s*/g, " {\n  ")
+    .replace(/;\s*/g, ";\n  ")
+    .replace(/\s*\}\s*/g, "\n}\n\n")
+    .replace(/,\s*(?=[^}]*\{)/g, ",\n")
+    .replace(/  \n\}/g, "\n}")
+    .trim();
+}
+
+function formatSql(sql: string): string {
+  const kw = ["SELECT","FROM","WHERE","LEFT JOIN","RIGHT JOIN","INNER JOIN","JOIN","ON","GROUP BY","ORDER BY","HAVING","LIMIT","OFFSET","INSERT INTO","VALUES","UPDATE","SET","DELETE FROM","CREATE TABLE","ALTER TABLE","DROP TABLE","UNION ALL","UNION","AND","OR"];
+  let s = sql;
+  for (const k of kw) s = s.replace(new RegExp(`\\b${k}\\b`, "gi"), `\n${k}`);
+  return s.replace(/^\n/, "").trim();
+}
+
+function CodeFormatter() {
+  const [lang, setLang] = useState<CodeLang>("json");
+  const [input, setInput] = useState("");
+  const [output, setOutput] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  function handleFormat() {
+    setError(null);
+    try {
+      if (lang === "json") { setOutput(JSON.stringify(JSON.parse(input), null, 2)); }
+      else if (lang === "html") setOutput(formatHtml(input));
+      else if (lang === "css") setOutput(formatCss(input));
+      else if (lang === "sql") setOutput(formatSql(input));
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Format error"); }
+  }
+
+  function handleMinify() {
+    if (lang === "json") {
+      try { setOutput(JSON.stringify(JSON.parse(input))); setError(null); }
+      catch (e: unknown) { setError(e instanceof Error ? e.message : "Invalid JSON"); }
+    }
+  }
+
+  function copy() {
+    navigator.clipboard.writeText(output).catch(() => {});
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  }
+
+  const langTabs: { id: CodeLang; label: string }[] = [
+    { id: "json", label: "JSON" }, { id: "html", label: "HTML" }, { id: "css", label: "CSS" }, { id: "sql", label: "SQL" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        {langTabs.map(t => (
+          <button key={t.id} onClick={() => { setLang(t.id); setOutput(""); setError(null); }}
+            className={clsx("px-4 py-2 text-xs font-semibold rounded-xl border transition-colors",
+              lang === t.id ? "bg-sky-500 text-white border-sky-500" : "bg-background border-border text-foreground-muted hover:border-sky-400")}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <textarea className={clsx(cardClass, "w-full font-mono text-xs resize-none h-40 focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground")} value={input} onChange={e => setInput(e.target.value)} placeholder={`Paste your ${lang.toUpperCase()} code here…`} />
+      <div className="flex gap-2">
+        <button className="h-10 px-5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-400 text-white font-semibold text-sm hover:opacity-90 transition-opacity" onClick={handleFormat} disabled={!input}>Format / Beautify</button>
+        {lang === "json" && <button className="h-10 px-4 rounded-xl border border-border bg-background text-foreground-muted text-sm hover:bg-background-subtle transition-colors" onClick={handleMinify} disabled={!input}>Minify</button>}
+      </div>
+      {error && <p className="text-xs text-rose-500">{error}</p>}
+      {output && (
+        <div className="relative">
+          <pre className={clsx(cardClass, "font-mono text-xs overflow-auto max-h-64 whitespace-pre-wrap")}>{output}</pre>
+          <button onClick={copy} className={clsx("absolute top-2 right-2 text-xs px-2.5 py-1 rounded-lg border transition-colors", copied ? "bg-sky-500/10 border-sky-400 text-sky-600" : "bg-background border-border text-foreground-muted hover:text-foreground")}>
+            {copied ? "Copied ✓" : "Copy"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Diff Checker
+// ─────────────────────────────────────────────────────────────────────────────
+
+function diffText(a: string, b: string): Array<{ type: "same" | "added" | "removed"; line: string }> {
+  const la = a.split("\n"), lb = b.split("\n");
+  const result: Array<{ type: "same" | "added" | "removed"; line: string }> = [];
+  let i = 0, j = 0;
+  while (i < la.length || j < lb.length) {
+    if (i >= la.length) { result.push({ type: "added", line: lb[j++] }); }
+    else if (j >= lb.length) { result.push({ type: "removed", line: la[i++] }); }
+    else if (la[i] === lb[j]) { result.push({ type: "same", line: la[i] }); i++; j++; }
+    else {
+      const nextInB = lb.slice(j, j + 5).indexOf(la[i]);
+      const nextInA = la.slice(i, i + 5).indexOf(lb[j]);
+      if (nextInB !== -1 && (nextInA === -1 || nextInB <= nextInA)) {
+        result.push({ type: "added", line: lb[j++] });
+      } else {
+        result.push({ type: "removed", line: la[i++] });
+      }
+    }
+  }
+  return result;
+}
+
+function DiffChecker() {
+  const [textA, setTextA] = useState("");
+  const [textB, setTextB] = useState("");
+  const [diff, setDiff] = useState<Array<{ type: "same" | "added" | "removed"; line: string }> | null>(null);
+
+  function compare() { setDiff(diffText(textA, textB)); }
+
+  const added = diff?.filter(d => d.type === "added").length ?? 0;
+  const removed = diff?.filter(d => d.type === "removed").length ?? 0;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">Original Text</label>
+          <textarea className={clsx(cardClass, "w-full font-mono text-xs resize-none h-36 focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground")} value={textA} onChange={e => { setTextA(e.target.value); setDiff(null); }} placeholder="Paste original text here…" />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">Changed Text</label>
+          <textarea className={clsx(cardClass, "w-full font-mono text-xs resize-none h-36 focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground")} value={textB} onChange={e => { setTextB(e.target.value); setDiff(null); }} placeholder="Paste modified text here…" />
+        </div>
+      </div>
+      <button className="h-10 px-6 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-400 text-white font-semibold text-sm hover:opacity-90 transition-opacity" onClick={compare} disabled={!textA && !textB}>Compare Texts</button>
+      {diff && (
+        <div className="space-y-2">
+          <div className="flex gap-4 text-xs">
+            <span className="text-emerald-600 font-semibold">+{added} lines added</span>
+            <span className="text-rose-600 font-semibold">−{removed} lines removed</span>
+          </div>
+          <div className={clsx(cardClass, "font-mono text-xs overflow-auto max-h-72")}>
+            {diff.map((d, i) => (
+              <div key={i} className={clsx("px-3 py-0.5 leading-5",
+                d.type === "added" && "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300",
+                d.type === "removed" && "bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300",
+                d.type === "same" && "text-foreground-muted")}>
+                <span className="select-none mr-2">{d.type === "added" ? "+" : d.type === "removed" ? "−" : " "}</span>
+                {d.line}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Hash Generator (Web Crypto API)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function computeHash(text: string, algo: string): Promise<string> {
+  const data = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest(algo, data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function HashGenerator() {
+  const [input, setInput] = useState("");
+  const [hashes, setHashes] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  async function generate() {
+    if (!input) return;
+    setLoading(true);
+    const [sha1, sha256, sha512] = await Promise.all([
+      computeHash(input, "SHA-1"),
+      computeHash(input, "SHA-256"),
+      computeHash(input, "SHA-512"),
+    ]);
+    setHashes({ SHA1: sha1, "SHA-256": sha256, "SHA-512": sha512 });
+    setLoading(false);
+  }
+
+  function copy(key: string, val: string) {
+    navigator.clipboard.writeText(val).catch(() => {});
+    setCopiedKey(key); setTimeout(() => setCopiedKey(null), 2000);
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-foreground-muted">Generate cryptographic hash of any text. Useful for verifying file integrity, storing passwords, and data verification.</p>
+      <textarea className={clsx(cardClass, "w-full font-mono text-xs resize-none h-28 focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground")} value={input} onChange={e => { setInput(e.target.value); setHashes({}); }} placeholder="Enter text to hash…" />
+      <button className="h-10 px-6 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-400 text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50" onClick={generate} disabled={!input || loading}>
+        {loading ? "Generating…" : "Generate Hashes"}
+      </button>
+      {Object.entries(hashes).map(([algo, hash]) => (
+        <div key={algo} className={cardClass}>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-bold text-sky-600">{algo}</span>
+            <button onClick={() => copy(algo, hash)} className={clsx("text-xs px-2.5 py-1 rounded-lg border transition-colors", copiedKey === algo ? "bg-sky-500/10 border-sky-400 text-sky-600" : "bg-background border-border text-foreground-muted hover:text-foreground")}>
+              {copiedKey === algo ? "Copied ✓" : "Copy"}
+            </button>
+          </div>
+          <p className="font-mono text-xs text-foreground break-all">{hash}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Regex Tester
+// ─────────────────────────────────────────────────────────────────────────────
+
+function RegexTester() {
+  const [pattern, setPattern] = useState("");
+  const [flags, setFlags] = useState("gi");
+  const [testText, setTestText] = useState("");
+  const [matches, setMatches] = useState<RegExpExecArray[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function testRegex() {
+    if (!pattern) return;
+    try {
+      const re = new RegExp(pattern, flags);
+      const ms: RegExpExecArray[] = [];
+      let m: RegExpExecArray | null;
+      const src = flags.includes("g") ? testText : testText.slice(0, 5000);
+      const re2 = new RegExp(pattern, flags);
+      while ((m = re2.exec(src)) !== null) {
+        ms.push(m);
+        if (!flags.includes("g") || ms.length > 500) break;
+      }
+      setMatches(ms); setError(null);
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : "Invalid pattern"); setMatches(null); }
+  }
+
+  const allFlags = ["g", "i", "m", "s"];
+
+  function toggleFlag(f: string) {
+    setFlags(prev => prev.includes(f) ? prev.replace(f, "") : prev + f);
+    setMatches(null);
+  }
+
+  const highlightText = () => {
+    if (!matches || matches.length === 0 || !testText) return testText;
+    let result = "", last = 0;
+    for (const m of matches) {
+      result += testText.slice(last, m.index).replace(/</g, "&lt;");
+      result += `<mark class="bg-yellow-200 dark:bg-yellow-700 rounded">${m[0].replace(/</g, "&lt;")}</mark>`;
+      last = (m.index ?? 0) + m[0].length;
+      if (last >= testText.length) break;
+    }
+    result += testText.slice(last).replace(/</g, "&lt;");
+    return result;
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-3 items-start">
+        <div className="flex-1 space-y-1.5">
+          <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">Pattern</label>
+          <input className={clsx(cardClass, "w-full font-mono text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground px-3 py-2")} value={pattern} onChange={e => { setPattern(e.target.value); setMatches(null); setError(null); }} placeholder="e.g. \b[A-Z][a-z]+\b" />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">Flags</label>
+          <div className="flex gap-1">
+            {allFlags.map(f => (
+              <button key={f} onClick={() => toggleFlag(f)}
+                className={clsx("w-8 h-9 rounded-lg text-xs font-mono font-bold border transition-colors",
+                  flags.includes(f) ? "bg-sky-500 text-white border-sky-500" : "bg-background border-border text-foreground-muted hover:border-sky-400")}>
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">Test String</label>
+        <textarea className={clsx(cardClass, "w-full font-mono text-xs resize-none h-28 focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground")} value={testText} onChange={e => { setTestText(e.target.value); setMatches(null); }} placeholder="Paste text to test your regex against…" />
+      </div>
+      <button className="h-10 px-6 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-400 text-white font-semibold text-sm hover:opacity-90 transition-opacity" onClick={testRegex} disabled={!pattern}>Test Regex</button>
+      {error && <p className="text-xs text-rose-500 font-mono">{error}</p>}
+      {matches !== null && (
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-foreground">{matches.length === 0 ? "No matches found" : `${matches.length} match${matches.length !== 1 ? "es" : ""} found`}</p>
+          {matches.length > 0 && (
+            <>
+              <div className={clsx(cardClass, "font-mono text-xs overflow-auto max-h-36")} dangerouslySetInnerHTML={{ __html: highlightText() }} />
+              <div className={clsx(cardClass, "max-h-36 overflow-auto space-y-1")}>
+                {matches.slice(0, 50).map((m, i) => (
+                  <div key={i} className="flex gap-2 text-xs">
+                    <span className="text-foreground-muted w-6 shrink-0">{i + 1}.</span>
+                    <span className="font-mono text-sky-600 font-semibold">{JSON.stringify(m[0])}</span>
+                    {m.index !== undefined && <span className="text-foreground-muted">@ index {m.index}</span>}
+                  </div>
+                ))}
+                {matches.length > 50 && <p className="text-xs text-foreground-muted">…and {matches.length - 50} more</p>}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Currency Converter
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CURRENCIES = ["USD","EUR","GBP","INR","JPY","CAD","AUD","CHF","CNY","AED","SGD","HKD","MYR","THB","IDR","BRL","MXN","PKR","BDT","NZD","SEK","NOK","DKK","ZAR","KRW","TRY","SAR","QAR","KWD","OMR"];
+
+function CurrencyConverter() {
+  const [from, setFrom] = useState("USD");
+  const [to, setTo] = useState("INR");
+  const [amount, setAmount] = useState("1");
+  const [rate, setRate] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [updated, setUpdated] = useState<string | null>(null);
+
+  async function convert() {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`https://open.er-api.com/v6/latest/${from}`);
+      const data = await res.json() as { rates?: Record<string, number> };
+      if (data.rates?.[to]) {
+        setRate(data.rates[to]);
+        setUpdated(new Date().toLocaleTimeString());
+      } else throw new Error("Rate not found");
+    } catch { setError("Could not fetch rates. Try again."); }
+    setLoading(false);
+  }
+
+  const result = rate !== null && amount ? parseFloat(amount) * rate : null;
+
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-foreground-muted">Live exchange rates — updated in real time via open.er-api.com</p>
+      <div className="grid grid-cols-3 gap-3 items-end">
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">Amount</label>
+          <input type="number" className={clsx(cardClass, "w-full font-mono text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground px-3 py-2.5")} value={amount} onChange={e => { setAmount(e.target.value); setRate(null); }} placeholder="1" min="0" />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">From</label>
+          <select className={clsx(cardClass, "w-full text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground px-3 py-2.5")} value={from} onChange={e => { setFrom(e.target.value); setRate(null); }}>
+            {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">To</label>
+          <select className={clsx(cardClass, "w-full text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground px-3 py-2.5")} value={to} onChange={e => { setTo(e.target.value); setRate(null); }}>
+            {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+      </div>
+      <button className="h-11 px-6 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-400 text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50" onClick={convert} disabled={loading || !amount}>
+        {loading ? "Fetching rates…" : "Convert"}
+      </button>
+      {error && <p className="text-xs text-rose-500">{error}</p>}
+      {result !== null && rate !== null && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={clsx(cardClass, "text-center space-y-2")}>
+          <p className="text-3xl font-bold text-sky-600">{result.toLocaleString(undefined, { maximumFractionDigits: 4 })} <span className="text-lg">{to}</span></p>
+          <p className="text-sm text-foreground-muted">{amount} {from} = {result.toLocaleString(undefined, { maximumFractionDigits: 4 })} {to}</p>
+          <p className="text-xs text-foreground-muted">1 {from} = {rate.toFixed(4)} {to} {updated && `· Updated ${updated}`}</p>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Timezone Converter
+// ─────────────────────────────────────────────────────────────────────────────
+
+const TZ_LIST = [
+  { label: "UTC / GMT", tz: "UTC" },
+  { label: "India (IST, UTC+5:30)", tz: "Asia/Kolkata" },
+  { label: "New York (EST/EDT)", tz: "America/New_York" },
+  { label: "London (GMT/BST)", tz: "Europe/London" },
+  { label: "Dubai (GST, UTC+4)", tz: "Asia/Dubai" },
+  { label: "Tokyo (JST, UTC+9)", tz: "Asia/Tokyo" },
+  { label: "Sydney (AEST/AEDT)", tz: "Australia/Sydney" },
+  { label: "Singapore (SGT, UTC+8)", tz: "Asia/Singapore" },
+  { label: "Los Angeles (PST/PDT)", tz: "America/Los_Angeles" },
+  { label: "Paris (CET/CEST)", tz: "Europe/Paris" },
+  { label: "Toronto (EST/EDT)", tz: "America/Toronto" },
+  { label: "Chicago (CST/CDT)", tz: "America/Chicago" },
+  { label: "Berlin (CET/CEST)", tz: "Europe/Berlin" },
+  { label: "São Paulo (BRT)", tz: "America/Sao_Paulo" },
+  { label: "Karachi (PKT, UTC+5)", tz: "Asia/Karachi" },
+  { label: "Dhaka (BST, UTC+6)", tz: "Asia/Dhaka" },
+  { label: "Riyadh (AST, UTC+3)", tz: "Asia/Riyadh" },
+  { label: "Shanghai (CST, UTC+8)", tz: "Asia/Shanghai" },
+];
+
+function TimezoneConverter() {
+  const [dateStr, setDateStr] = useState(() => new Date().toISOString().slice(0, 16));
+  const [fromTz, setFromTz] = useState("Asia/Kolkata");
+  const [toTzList, setToTzList] = useState(["UTC", "America/New_York", "Europe/London", "Asia/Tokyo"]);
+  const [liveTime, setLiveTime] = useState(new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setLiveTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  function formatInTz(date: Date, tz: string) {
+    return date.toLocaleString("en-US", { timeZone: tz, year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
+  }
+
+  const inputDate = new Date(dateStr);
+  const conversions = toTzList.map(tz => ({ tz, label: TZ_LIST.find(t => t.tz === tz)?.label ?? tz, converted: formatInTz(inputDate, tz) }));
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">Date & Time</label>
+          <input type="datetime-local" className={clsx(cardClass, "w-full text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground px-3 py-2.5")} value={dateStr} onChange={e => setDateStr(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">From Timezone</label>
+          <select className={clsx(cardClass, "w-full text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground px-3 py-2.5")} value={fromTz} onChange={e => setFromTz(e.target.value)}>
+            {TZ_LIST.map(t => <option key={t.tz} value={t.tz}>{t.label}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="space-y-2">
+        {conversions.map(({ tz, label, converted }) => (
+          <div key={tz} className={clsx(cardClass, "flex justify-between items-center")}>
+            <div>
+              <p className="text-xs font-semibold text-foreground-muted">{label}</p>
+              <p className="text-sm font-mono font-semibold text-foreground mt-0.5">{converted}</p>
+            </div>
+            <div className="text-right text-xs text-sky-600 font-mono font-bold">{formatInTz(liveTime, tz).split(",")[1]?.trim()}</div>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-foreground-muted text-center">Live clocks update every second</p>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fancy Text Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FONT_MAPS: Record<string, [string, string, string]> = {
+  Bold: ["𝗔𝗕𝗖𝗗𝗘𝗙𝗚𝗛𝗜𝗝𝗞𝗟𝗠𝗡𝗢𝗣𝗤𝗥𝗦𝗧𝗨𝗩𝗪𝗫𝗬𝗭𝗮𝗯𝗰𝗱𝗲𝗳𝗴𝗵𝗶𝗷𝗸𝗹𝗺𝗻𝗼𝗽𝗾𝗿𝘀𝘁𝘂𝘃𝘄𝘅𝘆𝘇𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz0123456789"],
+  Italic: ["𝘈𝘉𝘊𝘋𝘌𝘍𝘎𝘏𝘐𝘑𝘒𝘓𝘔𝘕𝘖𝘗𝘘𝘙𝘚𝘛𝘜𝘝𝘞𝘟𝘠𝘡𝘢𝘣𝘤𝘥𝘦𝘧𝘨𝘩𝘪𝘫𝘬𝘭𝘮𝘯𝘰𝘱𝘲𝘳𝘴𝘵𝘶𝘷𝘸𝘹𝘺𝘻", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"],
+  "Bold Italic": ["𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"],
+  Script: ["𝒜ℬ𝒞𝒟ℰℱ𝒢ℋℐ𝒥𝒦ℒℳ𝒩𝒪𝒫𝒬ℛ𝒮𝒯𝒰𝒱𝒲𝒳𝒴𝒵𝒶𝒷𝒸𝒹ℯ𝒻ℊ𝒽𝒾𝒿𝓀𝓁𝓂𝓃ℴ𝓅𝓆𝓇𝓈𝓉𝓊𝓋𝓌𝓍𝓎𝓏", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"],
+  Fraktur: ["𝔄𝔅ℭ𝔇𝔈𝔉𝔊ℌℑ𝔍𝔎𝔏𝔐𝔑𝔒𝔓𝔔ℜ𝔖𝔗𝔘𝔙𝔚𝔛𝔜ℨ𝔞𝔟𝔠𝔡𝔢𝔣𝔤𝔥𝔦𝔧𝔨𝔩𝔪𝔫𝔬𝔭𝔮𝔯𝔰𝔱𝔲𝔳𝔴𝔵𝔶𝔷", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"],
+  Monospace: ["𝙰𝙱𝙲𝙳𝙴𝙵𝙶𝙷𝙸𝙹𝙺𝙻𝙼𝙽𝙾𝙿𝚀𝚁𝚂𝚃𝚄𝚅𝚆𝚇𝚈𝚉𝚊𝚋𝚌𝚍𝚎𝚏𝚐𝚑𝚒𝚓𝚔𝚕𝚖𝚗𝚘𝚙𝚚𝚛𝚜𝚝𝚞𝚟𝚠𝚡𝚢𝚣", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"],
+  "Double Struck": ["𝔸𝔹ℂ𝔻𝔼𝔽𝔾ℍ𝕀𝕁𝕂𝕃𝕄ℕ𝕆ℙℚℝ𝕊𝕋𝕌𝕍𝕎𝕏𝕐ℤ𝕒𝕓𝕔𝕕𝕖𝕗𝕘𝕙𝕚𝕛𝕜𝕝𝕞𝕟𝕠𝕡𝕢𝕣𝕤𝕥𝕦𝕧𝕨𝕩𝕪𝕫", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"],
+};
+
+function convertToFancy(text: string, fontName: string): string {
+  const [chars, upper, lower] = FONT_MAPS[fontName];
+  const charsArr = [...chars];
+  return [...text].map(c => {
+    const ui = upper.indexOf(c);
+    const li = lower.indexOf(c);
+    if (ui !== -1) return charsArr[ui] ?? c;
+    if (li !== -1) return charsArr[upper.length + li] ?? c;
+    return c;
+  }).join("");
+}
+
+function FancyText() {
+  const [input, setInput] = useState("");
+  const [copiedFont, setCopiedFont] = useState<string | null>(null);
+
+  function copy(font: string, text: string) {
+    navigator.clipboard.writeText(text).catch(() => {});
+    setCopiedFont(font); setTimeout(() => setCopiedFont(null), 2000);
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-foreground-muted">Convert text into fancy Unicode fonts for Instagram bio, WhatsApp, Twitter, Facebook and more.</p>
+      <input className={clsx(cardClass, "w-full text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground px-3 py-3")} value={input} onChange={e => setInput(e.target.value)} placeholder="Type your text here…" />
+      {input && (
+        <div className="space-y-2">
+          {Object.keys(FONT_MAPS).map(font => {
+            const converted = convertToFancy(input, font);
+            return (
+              <div key={font} className={clsx(cardClass, "flex items-center justify-between gap-3")}>
+                <div>
+                  <p className="text-xs text-foreground-muted mb-0.5">{font}</p>
+                  <p className="text-base">{converted}</p>
+                </div>
+                <button onClick={() => copy(font, converted)}
+                  className={clsx("shrink-0 text-xs px-3 py-1.5 rounded-lg border transition-colors", copiedFont === font ? "bg-sky-500/10 border-sky-400 text-sky-600" : "bg-background border-border text-foreground-muted hover:text-foreground")}>
+                  {copiedFont === font ? "Copied ✓" : "Copy"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Text to Speech
+// ─────────────────────────────────────────────────────────────────────────────
+
+function TextToSpeech() {
+  const [text, setText] = useState("");
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState("");
+  const [rate, setRate] = useState(1);
+  const [pitch, setPitch] = useState(1);
+  const [speaking, setSpeaking] = useState(false);
+  const [supported] = useState(() => typeof window !== "undefined" && "speechSynthesis" in window);
+
+  useEffect(() => {
+    if (!supported) return;
+    function load() {
+      const v = window.speechSynthesis.getVoices();
+      setVoices(v);
+      if (v.length > 0 && !selectedVoice) setSelectedVoice(v.find(x => x.lang.startsWith("en"))?.name ?? v[0].name);
+    }
+    load();
+    window.speechSynthesis.addEventListener("voiceschanged", load);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supported]);
+
+  function speak() {
+    if (!text || !supported) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const voice = voices.find(v => v.name === selectedVoice);
+    if (voice) u.voice = voice;
+    u.rate = rate; u.pitch = pitch;
+    u.onend = () => setSpeaking(false);
+    u.onerror = () => setSpeaking(false);
+    setSpeaking(true);
+    window.speechSynthesis.speak(u);
+  }
+
+  function stop() { window.speechSynthesis.cancel(); setSpeaking(false); }
+
+  if (!supported) return <p className="text-sm text-foreground-muted">Your browser does not support the Web Speech API. Try Chrome or Edge.</p>;
+
+  return (
+    <div className="space-y-5">
+      <p className="text-xs text-foreground-muted">Convert any text to speech using your browser&apos;s built-in voices. Works offline — no API needed.</p>
+      <textarea className={clsx(cardClass, "w-full text-sm resize-none h-32 focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground")} value={text} onChange={e => setText(e.target.value)} placeholder="Type or paste text to read aloud…" />
+      {voices.length > 0 && (
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">Voice</label>
+          <select className={clsx(cardClass, "w-full text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground px-3 py-2.5")} value={selectedVoice} onChange={e => setSelectedVoice(e.target.value)}>
+            {voices.map(v => <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>)}
+          </select>
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <div className="flex justify-between">
+            <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">Speed</label>
+            <span className="text-xs font-bold text-sky-600">{rate}×</span>
+          </div>
+          <input type="range" min={0.5} max={2} step={0.1} value={rate} onChange={e => setRate(parseFloat(e.target.value))} className="w-full accent-sky-500" />
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex justify-between">
+            <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">Pitch</label>
+            <span className="text-xs font-bold text-sky-600">{pitch}</span>
+          </div>
+          <input type="range" min={0.5} max={2} step={0.1} value={pitch} onChange={e => setPitch(parseFloat(e.target.value))} className="w-full accent-sky-500" />
+        </div>
+      </div>
+      <div className="flex gap-3">
+        <button className="h-11 px-6 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-400 text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50" onClick={speak} disabled={!text || speaking}>
+          {speaking ? "Speaking…" : "▶ Speak"}
+        </button>
+        {speaking && (
+          <button className="h-11 px-5 rounded-xl border border-border bg-background text-foreground-muted text-sm hover:bg-background-subtle transition-colors" onClick={stop}>■ Stop</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Morse Code Translator
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MORSE: Record<string, string> = {
+  A:".-",B:"-...",C:"-.-.",D:"-..",E:".",F:"..-.",G:"--.",H:"....",I:"..",J:".---",K:"-.-",L:".-..",M:"--",N:"-.",O:"---",P:".--.",Q:"--.-",R:".-.",S:"...",T:"-",U:"..-",V:"...-",W:".--",X:"-..-",Y:"-.--",Z:"--..",
+  "0":"-----","1":".----","2":"..---","3":"...--","4":"....-","5":".....","6":"-....","7":"--...","8":"---..","9":"----.",".":".-.-.-",",":"--..--","?":"..--..","/":"-..-.","-":"-....-","(":"-.--.",")":"-.--.-",
+};
+const REVERSE_MORSE = Object.fromEntries(Object.entries(MORSE).map(([k,v]) => [v,k]));
+
+function MorseCode() {
+  const [mode, setMode] = useState<"encode" | "decode">("encode");
+  const [input, setInput] = useState("");
+  const [output, setOutput] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  function convert() {
+    if (mode === "encode") {
+      setOutput(input.toUpperCase().split("").map(c => c === " " ? "/" : (MORSE[c] ?? "?")).join(" "));
+    } else {
+      setOutput(input.trim().split(" / ").map(word => word.split(" ").map(code => REVERSE_MORSE[code] ?? "?").join("")).join(" "));
+    }
+  }
+
+  function copy() {
+    navigator.clipboard.writeText(output).catch(() => {});
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex rounded-xl border border-border overflow-hidden w-fit">
+        {(["encode","decode"] as const).map(m => (
+          <button key={m} onClick={() => { setMode(m); setInput(""); setOutput(""); }}
+            className={clsx("px-5 py-2 text-xs font-semibold capitalize transition-colors", mode===m?"bg-sky-500 text-white":"bg-background text-foreground-muted hover:bg-background-subtle")}>
+            {m === "encode" ? "Text → Morse" : "Morse → Text"}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">{mode === "encode" ? "Text" : "Morse Code"}</label>
+        <textarea className={clsx(cardClass, "w-full font-mono text-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-sky-500/30 bg-background text-foreground")}
+          value={input} onChange={e => { setInput(e.target.value); setOutput(""); }}
+          placeholder={mode === "encode" ? "Type text to convert to Morse…" : "Enter Morse code (dots/dashes, space between letters, / between words)…"} />
+      </div>
+      <button className="h-10 px-6 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-400 text-white font-semibold text-sm hover:opacity-90 transition-opacity" onClick={convert} disabled={!input}>Convert</button>
+      {output && (
+        <div className={clsx(cardClass, "relative")}>
+          <p className="font-mono text-sm break-all pr-16">{output}</p>
+          <button onClick={copy} className={clsx("absolute top-2 right-2 text-xs px-2.5 py-1 rounded-lg border transition-colors", copied ? "bg-sky-500/10 border-sky-400 text-sky-600" : "bg-background border-border text-foreground-muted hover:text-foreground")}>
+            {copied ? "✓" : "Copy"}
+          </button>
+        </div>
+      )}
+      <p className="text-xs text-foreground-muted">Encode: spaces become /  |  Decode: use spaces between codes, / between words</p>
+    </div>
+  );
+}
+
 const TOOL_TITLES: Record<string, string> = {
   "json-formatter": "JSON Formatter & Validator",
   base64: "Base64 Encoder / Decoder",
@@ -1695,6 +2363,15 @@ const TOOL_TITLES: Record<string, string> = {
   "text-reverser": "Text Reverser",
   "random-number": "Random Number Generator",
   "remove-duplicates": "Remove Duplicate Lines",
+  "code-formatter": "Code Formatter & Beautifier",
+  "diff-checker": "Text Diff Checker",
+  "hash-generator": "Hash Generator",
+  "regex-tester": "Regex Tester",
+  "currency-converter": "Currency Converter",
+  "timezone-converter": "Timezone Converter",
+  "fancy-text": "Fancy Text Generator",
+  "text-to-speech": "Text to Speech",
+  "morse-code": "Morse Code Translator",
 };
 
 export function ConverterTextWorkspace({ tool }: { tool: Tool }) {
@@ -1732,6 +2409,24 @@ export function ConverterTextWorkspace({ tool }: { tool: Tool }) {
         return <RandomNumberGen />;
       case "remove-duplicates":
         return <DedupeTool />;
+      case "code-formatter":
+        return <CodeFormatter />;
+      case "diff-checker":
+        return <DiffChecker />;
+      case "hash-generator":
+        return <HashGenerator />;
+      case "regex-tester":
+        return <RegexTester />;
+      case "currency-converter":
+        return <CurrencyConverter />;
+      case "timezone-converter":
+        return <TimezoneConverter />;
+      case "fancy-text":
+        return <FancyText />;
+      case "text-to-speech":
+        return <TextToSpeech />;
+      case "morse-code":
+        return <MorseCode />;
       default:
         return (
           <p className="text-sm text-foreground-muted">

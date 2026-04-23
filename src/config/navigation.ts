@@ -11,6 +11,9 @@ export const NAV_LINKS: NavItem[] = [
   { label: "Cover Letter", href: "/cover-letter" },
   { label: "Legal Analyzer", href: "/legal-analyzer" },
   { label: "QR & Barcode", href: "/qr-barcode" },
+  { label: "Invoice", href: "/invoice-generator" },
+  { label: "Pomodoro", href: "/pomodoro" },
+  { label: "Colors", href: "/color-palette" },
   { label: "AI Writing", href: "/tools/ai-writing" },
   { label: "All Tools", href: "/tools" },
 ];
@@ -68,12 +71,12 @@ export const TOOL_CATEGORIES = [
   {
     id: "converter",
     label: "Converter",
-    description: "Convert between 100+ file formats instantly.",
+    description: "Currency, timezone, code formatter, diff checker, regex, fancy text, TTS, hash, morse — 25+ tools.",
     icon: "🔄",
     iconName: "ArrowRightLeft",
     color: "sky",
     gradient: "from-sky-500 to-indigo-400",
-    toolCount: 16,
+    toolCount: 25,
     href: "/tools/converter",
   },
   {
@@ -90,12 +93,12 @@ export const TOOL_CATEGORIES = [
   {
     id: "calculator",
     label: "Calculators",
-    description: "EMI, SIP, GST, Income Tax, FD, Salary, Unit, Fuel — 12 practical daily-life calculators.",
+    description: "EMI, SIP, GST, Income Tax, FD, Scientific, Calorie, Tip, Discount — 16 practical daily-life calculators.",
     icon: "🧮",
     iconName: "Calculator",
     color: "orange",
     gradient: "from-orange-500 to-amber-400",
-    toolCount: 12,
+    toolCount: 16,
     href: "/tools/calculator",
   },
 ] as const;
