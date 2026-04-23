@@ -10,6 +10,7 @@ export const NAV_LINKS: NavItem[] = [
   { label: "Smart Resume", href: "/smart-resume" },
   { label: "Cover Letter", href: "/cover-letter" },
   { label: "Legal Analyzer", href: "/legal-analyzer" },
+  { label: "QR & Barcode", href: "/qr-barcode" },
   { label: "AI Writing", href: "/tools/ai-writing" },
   { label: "All Tools", href: "/tools" },
 ];
@@ -89,12 +90,12 @@ export const TOOL_CATEGORIES = [
   {
     id: "calculator",
     label: "Calculators",
-    description: "Age, BMI, percentage, EMI, tip, discount — instant calculators for everyday use.",
+    description: "EMI, SIP, GST, Income Tax, FD, Salary, Unit, Fuel — 12 practical daily-life calculators.",
     icon: "🧮",
     iconName: "Calculator",
     color: "orange",
     gradient: "from-orange-500 to-amber-400",
-    toolCount: 7,
+    toolCount: 12,
     href: "/tools/calculator",
   },
 ] as const;
