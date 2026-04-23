@@ -42,7 +42,7 @@ function newExpense(): Expense {
 export function BudgetPlanner() {
   const [income,   setIncome]   = useState("");
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [draft,    setDraft]    = useState<Expense>(newExpense());
+  const [draft,    setDraft]    = useState<Expense>({ id: "draft", category: "Other", description: "", amount: 0 });
   const [saved,    setSaved]    = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
