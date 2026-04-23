@@ -9,7 +9,8 @@ const labelClass = "text-xs font-semibold text-foreground-muted uppercase tracki
 
 type LineItem = { id: number; description: string; qty: string; rate: string };
 
-function genId() { return Date.now() + Math.random(); }
+let _id = 1;
+function genId() { return _id++; }
 
 export function InvoiceGenerator() {
   const [fromName, setFromName] = useState("");
