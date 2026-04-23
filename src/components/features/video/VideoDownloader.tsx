@@ -42,6 +42,8 @@ interface PlatformConfig {
   tips: string[];
   qualities: QualityOption[];
   defaultQuality: string;
+  directDownload?: boolean;   // skip validate step, navigate directly
+  limitedSupport?: string;    // show a warning banner if set
 }
 
 const YOUTUBE_QUALITIES: QualityOption[] = [
@@ -79,6 +81,7 @@ const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
     tips: ["Works with YouTube Shorts, regular videos, and playlists", "MP3 option extracts audio only", "4K quality needs good internet speed"],
     qualities: YOUTUBE_QUALITIES,
     defaultQuality: "720p",
+    directDownload: true,
   },
   instagram: {
     name: "Instagram",
@@ -87,9 +90,10 @@ const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
     btnClass: "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white",
     domains: /instagram\.com/i,
     urlPlaceholder: "Paste Instagram Reel or post URL — e.g. https://instagram.com/reel/...",
-    tips: ["Works with Reels, videos, and carousel posts", "Tap the 3-dot menu on Instagram → Copy Link", "Only public posts can be downloaded"],
+    tips: ["Tap the 3-dot menu on Instagram post → Copy Link", "Only public posts can be downloaded", "Private accounts and Stories cannot be downloaded"],
     qualities: SOCIAL_QUALITIES,
     defaultQuality: "720p",
+    limitedSupport: "Instagram requires account login to access videos. Only fully public posts from public accounts may work. Private or login-protected content will fail.",
   },
   facebook: {
     name: "Facebook",
@@ -98,9 +102,10 @@ const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
     btnClass: "bg-blue-600 hover:bg-blue-700 text-white",
     domains: /facebook\.com|fb\.watch/i,
     urlPlaceholder: "Paste Facebook video URL — e.g. https://facebook.com/watch/?v=... or fb.watch/...",
-    tips: ["Works with public Facebook videos and Reels", "Also supports fb.watch short links", "Private videos cannot be downloaded"],
+    tips: ["Use the public watch URL format: facebook.com/watch/?v=VIDEO_ID", "Also supports fb.watch short links", "Private/friends-only videos cannot be downloaded"],
     qualities: SOCIAL_QUALITIES,
     defaultQuality: "720p",
+    limitedSupport: "Facebook video downloads work for some public videos. Due to Facebook's anti-scraping measures, some videos may fail. Try the fb.watch short link format for best results.",
   },
   tiktok: {
     name: "TikTok",
@@ -109,9 +114,10 @@ const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
     btnClass: "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white",
     domains: /tiktok\.com/i,
     urlPlaceholder: "Paste TikTok video URL — e.g. https://tiktok.com/@user/video/123...",
-    tips: ["Downloads WITHOUT TikTok watermark", "Tap Share on TikTok → Copy Link", "Works on both mobile and desktop"],
+    tips: ["Tap Share on any TikTok video → Copy Link", "Downloads WITHOUT TikTok watermark", "Paste URL and click Download — no preview needed"],
     qualities: SOCIAL_QUALITIES,
     defaultQuality: "720p",
+    directDownload: true,
   },
   twitter: {
     name: "Twitter / X",
@@ -120,9 +126,10 @@ const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
     btnClass: "bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900",
     domains: /twitter\.com|x\.com/i,
     urlPlaceholder: "Paste Twitter / X tweet URL — e.g. https://x.com/user/status/123...",
-    tips: ["Works with twitter.com and x.com links", "Supports videos and animated GIFs", "Get the tweet URL from the browser bar or Share → Copy link"],
+    tips: ["Must be a tweet that contains a video (not just text/images)", "Get the URL from the browser address bar", "Works with twitter.com and x.com links"],
     qualities: SOCIAL_QUALITIES,
     defaultQuality: "720p",
+    limitedSupport: "Only tweets that contain a native video can be downloaded. Text-only tweets and external YouTube embeds won't work. Make sure your tweet URL contains a video.",
   },
   vimeo: {
     name: "Vimeo",
@@ -134,6 +141,7 @@ const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
     tips: ["Only public Vimeo videos can be downloaded", "Password-protected videos are not supported", "High-quality downloads available up to 1080p"],
     qualities: VIMEO_QUALITIES,
     defaultQuality: "720p",
+    directDownload: true,
   },
 };
 
@@ -210,11 +218,16 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
       setVideoInfo(json.data!);
     } catch (err: unknown) {
       const msg = (err as Error).message ?? "Failed to fetch video info.";
-      setFetchError(
-        msg.includes("aborted") || msg.includes("AbortError")
-          ? "Request timed out. The server may be starting up — please try again in a moment."
-          : msg
-      );
+      // For direct-download platforms, info preview failing is non-critical
+      if (cfg.directDownload) {
+        setFetchError("Preview unavailable — you can still click Download below.");
+      } else {
+        setFetchError(
+          msg.includes("aborted") || msg.includes("AbortError")
+            ? "Preview timed out. You can still try downloading below."
+            : msg
+        );
+      }
     } finally {
       clearTimeout(timer);
       setIsFetching(false);
@@ -226,12 +239,12 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
     setDownloading(true);
     setDownloadError(null);
 
-    const isYouTube = /youtube\.com|youtu\.be/.test(url.trim());
-
     try {
-      if (isYouTube) {
+      if (cfg.directDownload) {
+        // YouTube, TikTok, Vimeo: backend streams directly — just navigate
         window.location.href = buildStreamUrl();
       } else {
+        // Instagram, Facebook, Twitter: validate first
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 50_000);
         const validateRes = await fetch(buildStreamUrl() + "&validate=1", { signal: controller.signal });
@@ -277,6 +290,22 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
           <span className="text-xs text-foreground-muted">Free · No signup · HD quality</span>
         </div>
 
+        {/* Limited support warning */}
+        {cfg.limitedSupport && (
+          <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>{cfg.limitedSupport}</span>
+          </div>
+        )}
+
+        {/* Direct download hint for TikTok */}
+        {cfg.directDownload && tool.slug === "tiktok" && (
+          <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+            <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>Paste the TikTok URL and click <strong>Download</strong> directly — no need to click &quot;Get Info&quot; first.</span>
+          </div>
+        )}
+
         {/* URL input */}
         <div className="space-y-2">
           <label className="block text-sm font-semibold text-foreground">{cfg.name} Video URL</label>
@@ -319,7 +348,12 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
           {fetchError && (
             <motion.div
               initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-              className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300"
+              className={clsx(
+                "flex items-start gap-2 rounded-xl border px-4 py-3 text-sm",
+                cfg.directDownload
+                  ? "border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 text-amber-700 dark:text-amber-300"
+                  : "border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800 text-red-700 dark:text-red-300"
+              )}
             >
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>{fetchError}</span>
