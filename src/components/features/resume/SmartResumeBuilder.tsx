@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { nanoid } from "nanoid";
 import {
@@ -9,7 +9,7 @@ import {
   TrendingUp, ShieldCheck, FileText, Loader2,
 } from "lucide-react";
 
-// ─── Company data ──────────────────────────────────────────────────────────────
+// ─── Company data ─────────────────────────────────────────────────────────────
 
 const COMPANIES = [
   { id: "google",     name: "Google",         logo: "G",  color: "#4285F4", bg: "#EEF3FF", industry: "Tech",       tier: "FAANG" },
@@ -39,46 +39,40 @@ const COMPANIES = [
 const INDUSTRIES = ["All", "Tech", "Finance", "Consulting", "IT"];
 const TIERS = ["All", "FAANG", "Top-10", "India", "Global", "Big-4", "Top-25"];
 
+// ─── Template types ───────────────────────────────────────────────────────────
+
+type TemplateType = "modern" | "classic" | "minimal" | "sidebar";
+const TEMPLATES: TemplateType[] = ["modern", "classic", "minimal", "sidebar"];
+
+const COMPANY_TEMPLATE: Record<string, TemplateType> = {
+  google: "modern", amazon: "sidebar", microsoft: "minimal", meta: "modern",
+  apple: "minimal", netflix: "modern", uber: "modern", airbnb: "modern",
+  linkedin: "modern", salesforce: "minimal", goldman: "classic", jpmorgan: "classic",
+  mckinsey: "classic", bcg: "classic", deloitte: "classic", tcs: "sidebar",
+  infosys: "sidebar", wipro: "sidebar", accenture: "classic", ibm: "minimal",
+  adobe: "modern", twitter: "modern",
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface CompanyInsights {
-  pageLength: string;
-  format: string;
-  bulletStyle: string;
-  keyPrinciples: string[];
-  mustHaveKeywords: string[];
-  mustHaveSections: string[];
-  avoid: string[];
-  bulletExample: { bad: string; good: string };
-  insiderTip: string;
-  atsScore: string;
-  hiringVolume: string;
+  pageLength: string; format: string; bulletStyle: string;
+  keyPrinciples: string[]; mustHaveKeywords: string[]; mustHaveSections: string[];
+  avoid: string[]; bulletExample: { bad: string; good: string };
+  insiderTip: string; atsScore: string; hiringVolume: string;
 }
 
 interface WorkExp { id: string; jobTitle: string; company: string; startDate: string; endDate: string; isPresent: boolean; description: string; }
 interface Education { id: string; degree: string; school: string; graduationYear: string; }
-interface Project {
-  id: string;
-  name: string;
-  tech: string;
-  description: string;
-  url: string;
-}
-interface Certification {
-  id: string;
-  name: string;
-  issuer: string;
-  year: string;
-}
+interface Project { id: string; name: string; tech: string; description: string; url: string; }
+interface Certification { id: string; name: string; issuer: string; year: string; }
 interface ResumeForm {
   fullName: string; email: string; phone: string; location: string;
   linkedin: string; jobTitle: string; summary: string;
   workExperience: WorkExp[]; education: Education[];
   technicalSkills: string[]; softSkills: string[];
-  projects: Project[];
-  certifications: Certification[];
-  languages: string[];
-  website: string;
+  projects: Project[]; certifications: Certification[];
+  languages: string[]; website: string;
 }
 
 function mkJob(): WorkExp { return { id: nanoid(6), jobTitle: "", company: "", startDate: "", endDate: "", isPresent: false, description: "" }; }
@@ -89,14 +83,11 @@ function mkCert(): Certification { return { id: nanoid(6), name: "", issuer: "",
 const BLANK: ResumeForm = {
   fullName: "", email: "", phone: "", location: "", linkedin: "", jobTitle: "", summary: "",
   workExperience: [mkJob()], education: [mkEdu()],
-  technicalSkills: [], softSkills: [],
-  projects: [mkProject()],
-  certifications: [],
-  languages: [],
-  website: "",
+  technicalSkills: [], softSkills: [], projects: [mkProject()],
+  certifications: [], languages: [], website: "",
 };
 
-// ─── Small helpers ─────────────────────────────────────────────────────────────
+// ─── Small UI helpers ─────────────────────────────────────────────────────────
 
 function Field({ label, value, onChange, placeholder, type = "text" }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
@@ -122,144 +113,28 @@ function TA({ label, value, onChange, placeholder, rows = 3 }: {
   );
 }
 
-// ─── Resume PDF generator ──────────────────────────────────────────────────────
+// ─── PDF download via html2canvas + jsPDF ─────────────────────────────────────
 
-async function downloadPDF(form: ResumeForm, company: string) {
-  const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
-  const doc = await PDFDocument.create();
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const reg  = await doc.embedFont(StandardFonts.Helvetica);
-  const W = 595, H = 842, MX = 48, CW = W - MX * 2;
-  let page = doc.addPage([W, H]);
-  let y = H - 50;
-
-  function newPage() { page = doc.addPage([W, H]); y = H - 50; }
-  function need(n: number) { if (y - n < 50) newPage(); }
-  function wrap(text: string, x: number, mw: number, sz: number, font: typeof bold, clr: [number,number,number] = [0.12,0.12,0.12]) {
-    const lh = sz * 1.5;
-    let line = "";
-    for (const w of text.split(" ")) {
-      const test = line ? `${line} ${w}` : w;
-      if (font.widthOfTextAtSize(test, sz) > mw && line) {
-        need(lh); page.drawText(line, { x, y, size: sz, font, color: rgb(...clr) }); y -= lh; line = w;
-      } else line = test;
-    }
-    if (line) { need(lh); page.drawText(line, { x, y, size: sz, font, color: rgb(...clr) }); y -= lh; }
+async function downloadPDFFromPreview(ref: { current: HTMLDivElement | null }, filename: string) {
+  if (!ref.current) return;
+  const html2canvas = (await import("html2canvas")).default;
+  const { jsPDF } = await import("jspdf");
+  const canvas = await html2canvas(ref.current, { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false });
+  const imgData = canvas.toDataURL("image/png");
+  const A4_W = 595.28;
+  const A4_H = 841.89;
+  const imgH = (canvas.height / canvas.width) * A4_W;
+  const pdf = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+  let yOffset = 0;
+  while (yOffset < imgH) {
+    if (yOffset > 0) pdf.addPage();
+    pdf.addImage(imgData, "PNG", 0, -yOffset, A4_W, imgH);
+    yOffset += A4_H;
   }
-  function secHead(title: string) {
-    y -= 8; need(18);
-    page.drawText(title.toUpperCase(), { x: MX, y, size: 8, font: bold, color: rgb(0.28,0.28,0.28) });
-    y -= 5;
-    page.drawLine({ start: { x: MX, y }, end: { x: W - MX, y }, thickness: 0.5, color: rgb(0.6,0.6,0.6) });
-    y -= 10;
-  }
-
-  // Name
-  const nw = bold.widthOfTextAtSize(form.fullName || "Resume", 20);
-  page.drawText(form.fullName || "Resume", { x: (W - nw) / 2, y, size: 20, font: bold, color: rgb(0.05,0.05,0.05) });
-  y -= 26;
-  if (form.jobTitle) {
-    const tw = reg.widthOfTextAtSize(form.jobTitle, 11);
-    page.drawText(form.jobTitle, { x: (W - tw) / 2, y, size: 11, font: reg, color: rgb(0.3,0.3,0.3) });
-    y -= 16;
-  }
-  const contact = [form.email, form.phone, form.location, form.linkedin, form.website].filter(Boolean).join("  |  ");
-  if (contact) {
-    const cw = reg.widthOfTextAtSize(contact, 8.5);
-    page.drawText(contact, { x: Math.max(MX, (W - cw) / 2), y, size: 8.5, font: reg, color: rgb(0.4,0.4,0.4) });
-    y -= 6;
-  }
-  page.drawLine({ start: { x: MX, y }, end: { x: W - MX, y }, thickness: 1, color: rgb(0.1,0.1,0.1) });
-  y -= 12;
-
-  if (form.summary.trim()) { secHead("Professional Summary"); wrap(form.summary, MX, CW, 10, reg); y -= 3; }
-
-  const jobs = form.workExperience.filter(j => j.jobTitle || j.company);
-  if (jobs.length) {
-    secHead("Work Experience");
-    for (const job of jobs) {
-      need(24);
-      const title = [job.jobTitle, job.company].filter(Boolean).join(" — ");
-      const dates = [job.startDate, job.isPresent ? "Present" : job.endDate].filter(Boolean).join(" – ");
-      page.drawText(title, { x: MX, y, size: 10, font: bold, color: rgb(0.08,0.08,0.08) });
-      if (dates) { const dw = reg.widthOfTextAtSize(dates, 9); page.drawText(dates, { x: W - MX - dw, y, size: 9, font: reg, color: rgb(0.45,0.45,0.45) }); }
-      y -= 13;
-      for (const line of job.description.split("\n").filter(Boolean)) wrap(line.startsWith("•") ? line : `• ${line}`, MX + 8, CW - 8, 9.5, reg);
-      y -= 5;
-    }
-  }
-
-  const edus = form.education.filter(e => e.degree || e.school);
-  if (edus.length) {
-    secHead("Education");
-    for (const e of edus) {
-      need(16);
-      page.drawText([e.degree, e.school && `— ${e.school}`].filter(Boolean).join(" "), { x: MX, y, size: 10, font: bold, color: rgb(0.08,0.08,0.08) });
-      if (e.graduationYear) { const gw = reg.widthOfTextAtSize(e.graduationYear, 9); page.drawText(e.graduationYear, { x: W - MX - gw, y, size: 9, font: reg, color: rgb(0.45,0.45,0.45) }); }
-      y -= 15;
-    }
-  }
-
-  if (form.technicalSkills.length || form.softSkills.length) {
-    secHead("Skills");
-    if (form.technicalSkills.length) wrap(`Technical: ${form.technicalSkills.join("  ·  ")}`, MX, CW, 10, reg);
-    if (form.softSkills.length) wrap(`Soft Skills: ${form.softSkills.join("  ·  ")}`, MX, CW, 10, reg);
-  }
-
-  // Projects
-  const projects = form.projects.filter(p => p.name);
-  if (projects.length) {
-    secHead("Projects");
-    for (const proj of projects) {
-      need(20);
-      const projTitle = proj.tech ? `${proj.name} — ${proj.tech}` : proj.name;
-      page.drawText(projTitle, { x: MX, y, size: 10, font: bold, color: rgb(0.08,0.08,0.08) });
-      if (proj.url) { const uw = reg.widthOfTextAtSize(proj.url, 8); page.drawText(proj.url, { x: W - MX - uw, y, size: 8, font: reg, color: rgb(0.3,0.5,0.9) }); }
-      y -= 13;
-      if (proj.description) {
-        for (const line of proj.description.split("\n").filter(Boolean)) wrap(line.startsWith("•") ? line : `• ${line}`, MX + 8, CW - 8, 9.5, reg);
-      }
-      y -= 4;
-    }
-  }
-
-  // Certifications
-  const certs = form.certifications.filter(c => c.name);
-  if (certs.length) {
-    secHead("Certifications & Awards");
-    for (const cert of certs) {
-      need(16);
-      const certTitle = cert.issuer ? `${cert.name} — ${cert.issuer}` : cert.name;
-      page.drawText(certTitle, { x: MX, y, size: 10, font: bold, color: rgb(0.08,0.08,0.08) });
-      if (cert.year) { const yw = reg.widthOfTextAtSize(cert.year, 9); page.drawText(cert.year, { x: W - MX - yw, y, size: 9, font: reg, color: rgb(0.45,0.45,0.45) }); }
-      y -= 15;
-    }
-  }
-
-  // Languages
-  if (form.languages.length) {
-    secHead("Languages");
-    wrap(form.languages.join("  ·  "), MX, CW, 10, reg);
-  }
-
-  // Footer
-  const footerText = `Optimized for ${company} | Generated by ToolHive`;
-  const fw = reg.widthOfTextAtSize(footerText, 7);
-  page.drawText(footerText, { x: (W - fw) / 2, y: 30, size: 7, font: reg, color: rgb(0.6,0.6,0.6) });
-
-  const bytes = await doc.save();
-  const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${(form.fullName || "resume").replace(/\s+/g, "_")}_${company}_Resume.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  pdf.save(filename);
 }
 
-// ─── Main component ────────────────────────────────────────────────────────────
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export function SmartResumeBuilder() {
   const [phase, setPhase] = useState<"select" | "insights" | "build">("select");
@@ -278,6 +153,12 @@ export function SmartResumeBuilder() {
   const [search, setSearch] = useState("");
   const [filterIndustry, setFilterIndustry] = useState("All");
   const [filterTier, setFilterTier] = useState("All");
+  const [template, setTemplate] = useState<TemplateType>("modern");
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selectedCompany) setTemplate(COMPANY_TEMPLATE[selectedCompany.id] ?? "modern");
+  }, [selectedCompany]);
 
   const filteredCompanies = COMPANIES.filter(c => {
     const matchSearch = c.name.toLowerCase().includes(search.toLowerCase());
@@ -342,7 +223,7 @@ export function SmartResumeBuilder() {
   const updProject = (id: string, f: keyof Project, v: string) => upd("projects", form.projects.map(p => p.id === id ? { ...p, [f]: v } : p));
   const updCert = (id: string, f: keyof Certification, v: string) => upd("certifications", form.certifications.map(c => c.id === id ? { ...c, [f]: v } : c));
 
-  // ── Phase: Select company ──
+  // ── Phase: Select ──────────────────────────────────────────────────────────
 
   if (phase === "select") {
     return (
@@ -359,14 +240,12 @@ export function SmartResumeBuilder() {
           </div>
         </div>
 
-        {/* Role input */}
         <div className="mb-5 max-w-md">
           <label className="block text-sm font-medium text-foreground mb-1.5">What role are you applying for?</label>
           <input value={role} onChange={e => setRole(e.target.value)} placeholder="e.g. Software Engineer, Data Scientist, Product Manager…"
             className="w-full border border-border rounded-xl px-4 py-2.5 text-sm bg-background text-foreground placeholder:text-foreground-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-colors" />
         </div>
 
-        {/* Search + Filters */}
         <div className="flex flex-wrap gap-2 mb-4">
           <div className="relative flex-1 min-w-[180px] max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
@@ -381,7 +260,6 @@ export function SmartResumeBuilder() {
           </select>
         </div>
 
-        {/* Company grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 mb-6">
           {filteredCompanies.map(company => (
             <motion.button key={company.id} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -404,7 +282,6 @@ export function SmartResumeBuilder() {
           ))}
         </div>
 
-        {/* Continue button */}
         <div className="flex justify-center">
           <button onClick={loadInsights} disabled={!selectedCompany || insightsLoading}
             className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none shadow-xl shadow-indigo-500/20">
@@ -416,7 +293,7 @@ export function SmartResumeBuilder() {
     );
   }
 
-  // ── Phase: Insights ──
+  // ── Phase: Insights ────────────────────────────────────────────────────────
 
   if (phase === "insights" && insights && selectedCompany) {
     return (
@@ -425,7 +302,6 @@ export function SmartResumeBuilder() {
           <ChevronLeft className="h-4 w-4" /> Back to Companies
         </button>
 
-        {/* Company header */}
         <div className="flex items-center gap-4 mb-6 p-5 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-2xl">
           <div className="h-16 w-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg" style={{ backgroundColor: selectedCompany.bg, color: selectedCompany.color }}>
             {selectedCompany.logo}
@@ -442,7 +318,6 @@ export function SmartResumeBuilder() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {/* Key Principles */}
           <div className="border border-card-border bg-card rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3"><Target className="h-4 w-4 text-indigo-500" /><h3 className="font-semibold text-sm text-foreground">What {selectedCompany.name} Looks For</h3></div>
             <ul className="space-y-2">
@@ -455,7 +330,6 @@ export function SmartResumeBuilder() {
             </ul>
           </div>
 
-          {/* Must-have keywords */}
           <div className="border border-card-border bg-card rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3"><Zap className="h-4 w-4 text-amber-500" /><h3 className="font-semibold text-sm text-foreground">Must-Have Keywords</h3></div>
             <div className="flex flex-wrap gap-1.5">
@@ -465,7 +339,6 @@ export function SmartResumeBuilder() {
             </div>
           </div>
 
-          {/* Bullet example */}
           <div className="border border-card-border bg-card rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3"><TrendingUp className="h-4 w-4 text-emerald-500" /><h3 className="font-semibold text-sm text-foreground">Bullet Style: {insights.bulletStyle}</h3></div>
             <div className="space-y-2">
@@ -480,7 +353,6 @@ export function SmartResumeBuilder() {
             </div>
           </div>
 
-          {/* Avoid + Insider tip */}
           <div className="space-y-4">
             <div className="border border-card-border bg-card rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-3"><AlertCircle className="h-4 w-4 text-red-400" /><h3 className="font-semibold text-sm text-foreground">Avoid These Mistakes</h3></div>
@@ -495,7 +367,6 @@ export function SmartResumeBuilder() {
           </div>
         </div>
 
-        {/* Sections */}
         <div className="border border-card-border bg-card rounded-2xl p-5 mb-6">
           <div className="flex items-center gap-2 mb-3"><ShieldCheck className="h-4 w-4 text-indigo-500" /><h3 className="font-semibold text-sm text-foreground">Required Sections for {selectedCompany.name}</h3></div>
           <div className="flex flex-wrap gap-2">
@@ -517,10 +388,12 @@ export function SmartResumeBuilder() {
     );
   }
 
-  // ── Phase: Build ──
+  // ── Phase: Build ───────────────────────────────────────────────────────────
 
   if (phase === "build" && selectedCompany) {
     const accentColor = selectedCompany.color;
+    const pdfFilename = `${(form.fullName || "resume").replace(/\s+/g, "_")}_${selectedCompany.name}_Resume.pdf`;
+
     return (
       <div className="w-full">
         <div className="flex items-center gap-3 mb-5">
@@ -533,9 +406,8 @@ export function SmartResumeBuilder() {
         </div>
 
         <div className="flex flex-col xl:flex-row gap-6">
-          {/* Form */}
+          {/* ── Form ── */}
           <div className="xl:w-[480px] shrink-0 space-y-4">
-            {/* Personal */}
             <Section title="Personal Info" color={accentColor}>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Full Name" value={form.fullName} onChange={v => upd("fullName", v)} placeholder="Jane Smith" />
@@ -548,13 +420,11 @@ export function SmartResumeBuilder() {
               </div>
             </Section>
 
-            {/* Summary */}
             <Section title="Professional Summary" color={accentColor}>
               <TA label="Summary" value={form.summary} onChange={v => upd("summary", v)} placeholder="Results-driven engineer with 5+ years building scalable systems…" rows={4} />
-              {insights && <p className="text-[11px] text-foreground-muted mt-1.5">💡 Tip: {insights.insiderTip.slice(0, 100)}…</p>}
+              {insights && <p className="text-[11px] text-foreground-muted mt-1.5">💡 {insights.insiderTip.slice(0, 100)}…</p>}
             </Section>
 
-            {/* Experience */}
             <Section title="Work Experience" color={accentColor}>
               {form.workExperience.map((job, idx) => (
                 <div key={job.id} className="mb-4 p-3.5 bg-slate-800/40 rounded-xl border border-slate-700 space-y-2.5">
@@ -577,7 +447,6 @@ export function SmartResumeBuilder() {
               </button>
             </Section>
 
-            {/* Education */}
             <Section title="Education" color={accentColor}>
               {form.education.map((edu, idx) => (
                 <div key={edu.id} className="mb-3 p-3.5 bg-slate-800/40 rounded-xl border border-slate-700 space-y-2">
@@ -597,7 +466,6 @@ export function SmartResumeBuilder() {
               </button>
             </Section>
 
-            {/* Skills */}
             <Section title="Skills" color={accentColor}>
               {insights && (
                 <div className="mb-3 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
@@ -610,7 +478,9 @@ export function SmartResumeBuilder() {
                 </div>
               )}
               <div className="flex gap-2 mb-2">
-                <input value={skillInput} onChange={e => setSkillInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && skillInput.trim()) { upd("technicalSkills", [...form.technicalSkills, skillInput.trim()]); setSkillInput(""); } }} placeholder="Add technical skill (Enter)" className="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" />
+                <input value={skillInput} onChange={e => setSkillInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && skillInput.trim()) { upd("technicalSkills", [...form.technicalSkills, skillInput.trim()]); setSkillInput(""); }}}
+                  placeholder="Add technical skill (Enter)" className="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" />
               </div>
               {form.technicalSkills.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-3">
@@ -622,7 +492,9 @@ export function SmartResumeBuilder() {
                 </div>
               )}
               <div className="flex gap-2">
-                <input value={softInput} onChange={e => setSoftInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && softInput.trim()) { upd("softSkills", [...form.softSkills, softInput.trim()]); setSoftInput(""); } }} placeholder="Add soft skill (Enter)" className="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" />
+                <input value={softInput} onChange={e => setSoftInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && softInput.trim()) { upd("softSkills", [...form.softSkills, softInput.trim()]); setSoftInput(""); }}}
+                  placeholder="Add soft skill (Enter)" className="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" />
               </div>
               {form.softSkills.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2">
@@ -633,14 +505,11 @@ export function SmartResumeBuilder() {
                   ))}
                 </div>
               )}
-              {/* Languages */}
               <div className="mt-3">
                 <p className="text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wide">Languages</p>
-                <div className="flex gap-2">
-                  <input value={langInput} onChange={e => setLangInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter" && langInput.trim()) { upd("languages", [...form.languages, langInput.trim()]); setLangInput(""); }}}
-                    placeholder="Add language (Enter)" className="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" />
-                </div>
+                <input value={langInput} onChange={e => setLangInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && langInput.trim()) { upd("languages", [...form.languages, langInput.trim()]); setLangInput(""); }}}
+                  placeholder="Add language (Enter)" className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" />
                 {form.languages.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {form.languages.map(l => (
@@ -653,7 +522,6 @@ export function SmartResumeBuilder() {
               </div>
             </Section>
 
-            {/* Projects */}
             <Section title="Projects" color={accentColor}>
               {form.projects.map((proj, idx) => (
                 <div key={proj.id} className="mb-4 p-3.5 bg-slate-800/40 rounded-xl border border-slate-700 space-y-2.5">
@@ -662,20 +530,18 @@ export function SmartResumeBuilder() {
                     <button onClick={() => upd("projects", form.projects.filter(p => p.id !== proj.id))} className="text-slate-500 hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <Field label="Project Name" value={proj.name} onChange={v => updProject(proj.id, "name", v)} placeholder="e.g. E-Commerce Platform" />
-                    <Field label="Tech Stack" value={proj.tech} onChange={v => updProject(proj.id, "tech", v)} placeholder="React, Node.js, MongoDB" />
+                    <Field label="Project Name" value={proj.name} onChange={v => updProject(proj.id, "name", v)} placeholder="E-Commerce Platform" />
+                    <Field label="Tech Stack" value={proj.tech} onChange={v => updProject(proj.id, "tech", v)} placeholder="React, Node.js" />
                   </div>
                   <Field label="Live URL / GitHub" value={proj.url} onChange={v => updProject(proj.id, "url", v)} placeholder="github.com/user/project" />
                   <TA label="Description" value={proj.description} onChange={v => updProject(proj.id, "description", v)} placeholder="Built a full-stack app that..." rows={2} />
                 </div>
               ))}
-              <button onClick={() => upd("projects", [...form.projects, mkProject()])}
-                className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+              <button onClick={() => upd("projects", [...form.projects, mkProject()])} className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
                 <Plus className="h-3.5 w-3.5" /> Add Project
               </button>
             </Section>
 
-            {/* Certifications */}
             <Section title="Certifications & Awards" color={accentColor}>
               {form.certifications.map((cert, idx) => (
                 <div key={cert.id} className="mb-3 p-3 bg-slate-800/40 rounded-xl border border-slate-700 space-y-2">
@@ -690,8 +556,7 @@ export function SmartResumeBuilder() {
                   <Field label="Year" value={cert.year} onChange={v => updCert(cert.id, "year", v)} placeholder="2024" />
                 </div>
               ))}
-              <button onClick={() => upd("certifications", [...form.certifications, mkCert()])}
-                className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors mt-2">
+              <button onClick={() => upd("certifications", [...form.certifications, mkCert()])} className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors mt-2">
                 <Plus className="h-3.5 w-3.5" /> Add Certification
               </button>
             </Section>
@@ -710,24 +575,36 @@ export function SmartResumeBuilder() {
                   </motion.div>
                 </AnimatePresence>
               )}
-              <button onClick={async () => { setDownloading(true); try { await downloadPDF(form, selectedCompany.name); } finally { setDownloading(false); } }} disabled={downloading}
+              <button
+                onClick={async () => { setDownloading(true); try { await downloadPDFFromPreview(previewRef, pdfFilename); } finally { setDownloading(false); } }}
+                disabled={downloading}
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
                 {downloading ? <><Loader2 className="h-4 w-4 animate-spin" />Generating PDF…</> : <><Download className="h-4 w-4" />Download {selectedCompany.name}-Optimized PDF</>}
               </button>
             </div>
           </div>
 
-          {/* Live Preview */}
+          {/* ── Live Preview ── */}
           <div className="flex-1 min-w-0">
             <div className="border border-card-border rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-900 sticky top-4">
-              <div className="px-3 py-2 bg-card border-b border-card-border flex items-center gap-2">
-                <Eye className="h-3.5 w-3.5 text-foreground-muted" />
-                <span className="text-xs text-foreground-muted">Live Preview — {selectedCompany.name} Style</span>
-                <div className="ml-auto h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              {/* Preview header with template selector */}
+              <div className="px-3 py-2 bg-card border-b border-card-border flex items-center gap-2 flex-wrap">
+                <Eye className="h-3.5 w-3.5 text-foreground-muted shrink-0" />
+                <span className="text-xs text-foreground-muted">Live Preview</span>
+                <div className="flex items-center gap-1 ml-auto mr-1">
+                  {TEMPLATES.map(t => (
+                    <button key={t} onClick={() => setTemplate(t)}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all ${template === t ? "text-white shadow-sm" : "bg-slate-700/50 text-slate-400 hover:bg-slate-700"}`}
+                      style={template === t ? { backgroundColor: accentColor } : undefined}>
+                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                    </button>
+                  ))}
+                </div>
+                <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
               </div>
               <div className="overflow-auto p-4" style={{ maxHeight: "780px" }}>
-                <div className="bg-white shadow-lg mx-auto" style={{ width: "595px", minHeight: "842px", maxWidth: "100%" }}>
-                  <LivePreview form={form} company={selectedCompany.name} color={accentColor} />
+                <div ref={previewRef} className="bg-white shadow-lg mx-auto" style={{ width: "595px", minHeight: "842px", maxWidth: "100%" }}>
+                  <LivePreview form={form} template={template} company={selectedCompany.name} color={accentColor} />
                 </div>
               </div>
             </div>
@@ -754,106 +631,517 @@ function Section({ title, color, children }: { title: string; color: string; chi
   );
 }
 
-// ─── Live preview component ───────────────────────────────────────────────────
+// ─── Preview dispatcher ───────────────────────────────────────────────────────
 
-function LivePreview({ form, company, color }: { form: ResumeForm; company: string; color: string }) {
+function LivePreview({ form, template, color, company }: { form: ResumeForm; template: TemplateType; color: string; company: string }) {
+  if (template === "classic") return <ClassicPreview form={form} color={color} company={company} />;
+  if (template === "minimal") return <MinimalPreview form={form} color={color} company={company} />;
+  if (template === "sidebar") return <SidebarPreview form={form} color={color} company={company} />;
+  return <ModernPreview form={form} color={color} company={company} />;
+}
+
+// ─── Modern Template ──────────────────────────────────────────────────────────
+
+function ModernPreview({ form, color, company }: { form: ResumeForm; color: string; company: string }) {
   const contacts = [form.email, form.phone, form.location, form.linkedin, form.website].filter(Boolean).join("  ·  ");
   const jobs = form.workExperience.filter(j => j.jobTitle || j.company);
   const edus = form.education.filter(e => e.degree || e.school);
+  const projs = form.projects.filter(p => p.name);
+  const certs = form.certifications.filter(c => c.name);
+
+  function SH({ title }: { title: string }) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", margin: "14px 0 7px" }}>
+        <div style={{ width: "3px", height: "13px", backgroundColor: color, borderRadius: "2px", flexShrink: 0 }} />
+        <span style={{ fontSize: "7.5px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.14em", color: "#555" }}>{title}</span>
+        <div style={{ flex: 1, height: "0.5px", backgroundColor: "#e0e0e0" }} />
+      </div>
+    );
+  }
+
   return (
-    <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", fontSize: "10.5px", lineHeight: 1.55, color: "#111", padding: "32px 36px" }}>
-      {/* Header */}
-      <div style={{ borderBottom: `3px solid ${color}`, paddingBottom: "14px", marginBottom: "16px" }}>
-        <h1 style={{ fontSize: "22px", fontWeight: 700, margin: 0, color: "#0a0a0a" }}>{form.fullName || "Your Name"}</h1>
-        {form.jobTitle && <p style={{ fontSize: "12px", color, margin: "3px 0 0", fontWeight: 500 }}>{form.jobTitle}</p>}
-        {contacts && <p style={{ fontSize: "9.5px", color: "#666", margin: "6px 0 0" }}>{contacts}</p>}
-        <p style={{ fontSize: "8.5px", color: "#aaa", margin: "4px 0 0", fontStyle: "italic" }}>Optimized for {company}</p>
+    <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", fontSize: "10px", lineHeight: 1.55, color: "#111" }}>
+      {/* Colored header bar */}
+      <div style={{ backgroundColor: color, padding: "22px 28px 18px" }}>
+        <h1 style={{ fontSize: "22px", fontWeight: 700, margin: 0, color: "#fff", letterSpacing: "-0.02em" }}>{form.fullName || "Your Name"}</h1>
+        {form.jobTitle && <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.9)", margin: "4px 0 0", fontWeight: 500 }}>{form.jobTitle}</p>}
+        {contacts && <p style={{ fontSize: "9px", color: "rgba(255,255,255,0.75)", margin: "7px 0 0" }}>{contacts}</p>}
+      </div>
+
+      <div style={{ padding: "8px 28px 24px" }}>
+        {form.summary && (
+          <>
+            <SH title="Professional Summary" />
+            <p style={{ color: "#444", fontSize: "10px" }}>{form.summary}</p>
+          </>
+        )}
+
+        {jobs.length > 0 && (
+          <>
+            <SH title="Work Experience" />
+            {jobs.map(job => (
+              <div key={job.id} style={{ marginBottom: "10px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div><b style={{ color: "#111" }}>{job.jobTitle}</b>{job.company && <span style={{ color: "#555" }}> — {job.company}</span>}</div>
+                  <span style={{ fontSize: "8.5px", color: "#888", whiteSpace: "nowrap", marginLeft: "8px" }}>{job.startDate}{job.startDate && " – "}{job.isPresent ? "Present" : job.endDate}</span>
+                </div>
+                {job.description && (
+                  <ul style={{ margin: "3px 0 0 12px", padding: 0, color: "#444" }}>
+                    {job.description.split("\n").filter(Boolean).map((l, i) => <li key={i} style={{ listStyle: "disc", marginBottom: "1px", fontSize: "9.5px" }}>{l.replace(/^[•\-]\s*/, "")}</li>)}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </>
+        )}
+
+        {edus.length > 0 && (
+          <>
+            <SH title="Education" />
+            {edus.map(e => (
+              <div key={e.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                <div><b>{e.degree}</b>{e.school && <span style={{ color: "#555" }}> — {e.school}</span>}</div>
+                {e.graduationYear && <span style={{ fontSize: "9px", color: "#888" }}>{e.graduationYear}</span>}
+              </div>
+            ))}
+          </>
+        )}
+
+        {(form.technicalSkills.length > 0 || form.softSkills.length > 0) && (
+          <>
+            <SH title="Skills" />
+            {form.technicalSkills.length > 0 && <p style={{ marginBottom: "3px" }}><b>Technical: </b><span style={{ color: "#444" }}>{form.technicalSkills.join("  ·  ")}</span></p>}
+            {form.softSkills.length > 0 && <p><b>Soft Skills: </b><span style={{ color: "#444" }}>{form.softSkills.join("  ·  ")}</span></p>}
+          </>
+        )}
+
+        {projs.length > 0 && (
+          <>
+            <SH title="Projects" />
+            {projs.map(proj => (
+              <div key={proj.id} style={{ marginBottom: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <b style={{ color: "#111" }}>{proj.name}</b>
+                  {proj.tech && <span style={{ fontSize: "8.5px", color: "#888" }}>{proj.tech}</span>}
+                </div>
+                {proj.url && <p style={{ fontSize: "8.5px", color: "#4a90d9", margin: "1px 0" }}>{proj.url}</p>}
+                {proj.description && (
+                  <ul style={{ margin: "2px 0 0 12px", padding: 0, color: "#444" }}>
+                    {proj.description.split("\n").filter(Boolean).map((l, i) => <li key={i} style={{ listStyle: "disc", marginBottom: "1px", fontSize: "9.5px" }}>{l.replace(/^[•\-]\s*/, "")}</li>)}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </>
+        )}
+
+        {certs.length > 0 && (
+          <>
+            <SH title="Certifications & Awards" />
+            {certs.map(cert => (
+              <div key={cert.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                <div><b>{cert.name}</b>{cert.issuer && <span style={{ color: "#555" }}> — {cert.issuer}</span>}</div>
+                {cert.year && <span style={{ fontSize: "9px", color: "#888" }}>{cert.year}</span>}
+              </div>
+            ))}
+          </>
+        )}
+
+        {form.languages.length > 0 && (
+          <>
+            <SH title="Languages" />
+            <p style={{ color: "#444" }}>{form.languages.join("  ·  ")}</p>
+          </>
+        )}
+
+        <p style={{ fontSize: "7px", color: "#ccc", marginTop: "20px", textAlign: "center" }}>Optimized for {company} · ToolHive</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Classic Template ─────────────────────────────────────────────────────────
+
+function ClassicPreview({ form, color, company }: { form: ResumeForm; color: string; company: string }) {
+  const contacts = [form.email, form.phone, form.location, form.linkedin, form.website].filter(Boolean).join("  |  ");
+  const jobs = form.workExperience.filter(j => j.jobTitle || j.company);
+  const edus = form.education.filter(e => e.degree || e.school);
+  const projs = form.projects.filter(p => p.name);
+  const certs = form.certifications.filter(c => c.name);
+
+  function SH({ title }: { title: string }) {
+    return (
+      <div style={{ margin: "16px 0 8px" }}>
+        <p style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a1a1a", margin: 0, fontFamily: "Georgia, 'Times New Roman', serif" }}>{title}</p>
+        <div style={{ height: "2px", width: "36px", backgroundColor: color, marginTop: "3px" }} />
+        <div style={{ height: "0.5px", backgroundColor: "#d0d0d0", marginTop: "4px" }} />
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "10.5px", lineHeight: 1.6, color: "#1a1a1a", padding: "36px 40px" }}>
+      {/* Centered header */}
+      <div style={{ textAlign: "center", marginBottom: "16px" }}>
+        <h1 style={{ fontSize: "24px", fontWeight: 700, margin: "0 0 4px", letterSpacing: "0.04em" }}>{form.fullName || "Your Name"}</h1>
+        {form.jobTitle && <p style={{ fontSize: "12px", color: "#555", margin: "0 0 6px", fontStyle: "italic" }}>{form.jobTitle}</p>}
+        {contacts && <p style={{ fontSize: "9px", color: "#777", margin: 0 }}>{contacts}</p>}
+        <div style={{ height: "1.5px", backgroundColor: color, marginTop: "12px" }} />
       </div>
 
       {form.summary && (
-        <div style={{ marginBottom: "14px" }}>
-          <h2 style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color, marginBottom: "5px" }}>Professional Summary</h2>
-          <p style={{ color: "#444" }}>{form.summary}</p>
-        </div>
+        <>
+          <SH title="Professional Summary" />
+          <p style={{ color: "#333", textAlign: "justify" }}>{form.summary}</p>
+        </>
       )}
 
       {jobs.length > 0 && (
-        <div style={{ marginBottom: "14px" }}>
-          <h2 style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color, marginBottom: "8px" }}>Work Experience</h2>
+        <>
+          <SH title="Work Experience" />
           {jobs.map(job => (
-            <div key={job.id} style={{ marginBottom: "10px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div><b style={{ color: "#111" }}>{job.jobTitle}</b>{job.company && <span style={{ color: "#555" }}> — {job.company}</span>}</div>
-                <span style={{ fontSize: "9px", color: "#888", whiteSpace: "nowrap", marginLeft: "8px" }}>{job.startDate}{job.startDate && " – "}{job.isPresent ? "Present" : job.endDate}</span>
+            <div key={job.id} style={{ marginBottom: "11px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div>
+                  <b style={{ fontSize: "10.5px" }}>{job.jobTitle}</b>
+                  {job.company && <span style={{ color: "#555", fontStyle: "italic" }}> · {job.company}</span>}
+                </div>
+                <span style={{ fontSize: "9px", color: "#777", whiteSpace: "nowrap", marginLeft: "8px" }}>{job.startDate}{job.startDate && " – "}{job.isPresent ? "Present" : job.endDate}</span>
               </div>
               {job.description && (
-                <ul style={{ margin: "3px 0 0 12px", padding: 0, color: "#444" }}>
-                  {job.description.split("\n").filter(Boolean).map((l, i) => <li key={i} style={{ listStyle: "disc", marginBottom: "1px" }}>{l.replace(/^[•\-]\s*/, "")}</li>)}
+                <ul style={{ margin: "3px 0 0 14px", padding: 0, color: "#444" }}>
+                  {job.description.split("\n").filter(Boolean).map((l, i) => <li key={i} style={{ listStyle: "disc", marginBottom: "2px", fontSize: "10px" }}>{l.replace(/^[•\-]\s*/, "")}</li>)}
                 </ul>
               )}
             </div>
           ))}
-        </div>
+        </>
       )}
 
       {edus.length > 0 && (
-        <div style={{ marginBottom: "14px" }}>
-          <h2 style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color, marginBottom: "8px" }}>Education</h2>
+        <>
+          <SH title="Education" />
           {edus.map(e => (
             <div key={e.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-              <div><b>{e.degree}</b>{e.school && <span style={{ color: "#555" }}> — {e.school}</span>}</div>
-              {e.graduationYear && <span style={{ fontSize: "9px", color: "#888" }}>{e.graduationYear}</span>}
+              <div><b>{e.degree}</b>{e.school && <span style={{ color: "#555", fontStyle: "italic" }}> · {e.school}</span>}</div>
+              {e.graduationYear && <span style={{ fontSize: "9px", color: "#777" }}>{e.graduationYear}</span>}
             </div>
           ))}
-        </div>
+        </>
       )}
 
       {(form.technicalSkills.length > 0 || form.softSkills.length > 0) && (
-        <div style={{ marginBottom: "14px" }}>
-          <h2 style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color, marginBottom: "7px" }}>Skills</h2>
-          {form.technicalSkills.length > 0 && <p style={{ marginBottom: "4px" }}><b>Technical: </b><span style={{ color: "#444" }}>{form.technicalSkills.join("  ·  ")}</span></p>}
-          {form.softSkills.length > 0 && <p><b>Soft Skills: </b><span style={{ color: "#444" }}>{form.softSkills.join("  ·  ")}</span></p>}
-        </div>
+        <>
+          <SH title="Skills" />
+          {form.technicalSkills.length > 0 && <p style={{ marginBottom: "3px" }}><b>Technical:</b> <span style={{ color: "#555" }}>{form.technicalSkills.join(", ")}</span></p>}
+          {form.softSkills.length > 0 && <p><b>Soft Skills:</b> <span style={{ color: "#555" }}>{form.softSkills.join(", ")}</span></p>}
+        </>
       )}
 
-      {form.projects?.filter(p => p.name).length > 0 && (
-        <div style={{ marginBottom: "14px" }}>
-          <h2 style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color, marginBottom: "8px" }}>Projects</h2>
-          {form.projects.filter(p => p.name).map(proj => (
+      {projs.length > 0 && (
+        <>
+          <SH title="Projects" />
+          {projs.map(proj => (
             <div key={proj.id} style={{ marginBottom: "8px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <b style={{ color: "#111" }}>{proj.name}</b>
-                {proj.tech && <span style={{ fontSize: "8.5px", color: "#888", marginLeft: "8px" }}>{proj.tech}</span>}
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <b>{proj.name}</b>
+                {proj.tech && <span style={{ fontSize: "9px", color: "#777", fontStyle: "italic" }}>{proj.tech}</span>}
               </div>
-              {proj.url && <p style={{ fontSize: "8.5px", color: "#4a90d9", margin: "1px 0" }}>{proj.url}</p>}
+              {proj.url && <p style={{ fontSize: "8.5px", color: "#4a7db5", margin: "1px 0" }}>{proj.url}</p>}
               {proj.description && (
-                <ul style={{ margin: "2px 0 0 12px", padding: 0, color: "#444" }}>
-                  {proj.description.split("\n").filter(Boolean).map((l, i) => <li key={i} style={{ listStyle: "disc", marginBottom: "1px" }}>{l.replace(/^[•\-]\s*/, "")}</li>)}
+                <ul style={{ margin: "2px 0 0 14px", padding: 0, color: "#444" }}>
+                  {proj.description.split("\n").filter(Boolean).map((l, i) => <li key={i} style={{ listStyle: "disc", marginBottom: "1px", fontSize: "10px" }}>{l.replace(/^[•\-]\s*/, "")}</li>)}
                 </ul>
               )}
             </div>
           ))}
-        </div>
+        </>
       )}
 
-      {form.certifications?.filter(c => c.name).length > 0 && (
-        <div style={{ marginBottom: "14px" }}>
-          <h2 style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color, marginBottom: "8px" }}>Certifications & Awards</h2>
-          {form.certifications.filter(c => c.name).map(cert => (
+      {certs.length > 0 && (
+        <>
+          <SH title="Certifications & Awards" />
+          {certs.map(cert => (
             <div key={cert.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-              <div><b>{cert.name}</b>{cert.issuer && <span style={{ color: "#555" }}> — {cert.issuer}</span>}</div>
-              {cert.year && <span style={{ fontSize: "9px", color: "#888" }}>{cert.year}</span>}
+              <div><b>{cert.name}</b>{cert.issuer && <span style={{ color: "#555", fontStyle: "italic" }}> · {cert.issuer}</span>}</div>
+              {cert.year && <span style={{ fontSize: "9px", color: "#777" }}>{cert.year}</span>}
             </div>
           ))}
-        </div>
+        </>
       )}
 
-      {form.languages?.length > 0 && (
-        <div>
-          <h2 style={{ fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color, marginBottom: "5px" }}>Languages</h2>
-          <p style={{ color: "#444" }}>{form.languages.join("  ·  ")}</p>
-        </div>
+      {form.languages.length > 0 && (
+        <>
+          <SH title="Languages" />
+          <p style={{ color: "#555" }}>{form.languages.join("  ·  ")}</p>
+        </>
       )}
+
+      <p style={{ fontSize: "7px", color: "#bbb", marginTop: "24px", textAlign: "center" }}>Optimized for {company} · ToolHive</p>
+    </div>
+  );
+}
+
+// ─── Minimal Template ─────────────────────────────────────────────────────────
+
+function MinimalPreview({ form, color, company }: { form: ResumeForm; color: string; company: string }) {
+  const contacts = [form.email, form.phone, form.location, form.linkedin, form.website].filter(Boolean).join("  ·  ");
+  const jobs = form.workExperience.filter(j => j.jobTitle || j.company);
+  const edus = form.education.filter(e => e.degree || e.school);
+  const projs = form.projects.filter(p => p.name);
+  const certs = form.certifications.filter(c => c.name);
+
+  function SH({ title }: { title: string }) {
+    return (
+      <div style={{ margin: "16px 0 6px" }}>
+        <p style={{ fontSize: "7px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.2em", color: "#aaa", margin: "0 0 4px" }}>{title}</p>
+        <div style={{ height: "0.5px", backgroundColor: "#ebebeb" }} />
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", fontSize: "10px", lineHeight: 1.6, color: "#1a1a1a", padding: "36px 40px" }}>
+      {/* Clean header */}
+      <div style={{ marginBottom: "20px" }}>
+        <h1 style={{ fontSize: "28px", fontWeight: 300, margin: "0 0 4px", color: "#111", letterSpacing: "-0.01em" }}>{form.fullName || "Your Name"}</h1>
+        {form.jobTitle && <p style={{ fontSize: "13px", color: "#777", margin: "0 0 8px", fontWeight: 400 }}>{form.jobTitle}</p>}
+        {contacts && <p style={{ fontSize: "9px", color: "#999", margin: 0 }}>{contacts}</p>}
+      </div>
+
+      {form.summary && (
+        <>
+          <SH title="Summary" />
+          <p style={{ color: "#555", lineHeight: 1.65 }}>{form.summary}</p>
+        </>
+      )}
+
+      {jobs.length > 0 && (
+        <>
+          <SH title="Experience" />
+          {jobs.map(job => (
+            <div key={job.id} style={{ marginBottom: "10px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div>
+                  <span style={{ fontWeight: 600 }}>{job.jobTitle}</span>
+                  {job.company && <span style={{ color: "#888" }}> · {job.company}</span>}
+                </div>
+                <span style={{ fontSize: "8.5px", color: "#bbb", whiteSpace: "nowrap", marginLeft: "8px" }}>{job.startDate}{job.startDate && " – "}{job.isPresent ? "Present" : job.endDate}</span>
+              </div>
+              {job.description && (
+                <div style={{ marginTop: "3px", paddingLeft: "12px", color: "#666" }}>
+                  {job.description.split("\n").filter(Boolean).map((l, i) => (
+                    <p key={i} style={{ margin: "1px 0", fontSize: "9.5px" }}>– {l.replace(/^[•\-]\s*/, "")}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+
+      {edus.length > 0 && (
+        <>
+          <SH title="Education" />
+          {edus.map(e => (
+            <div key={e.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+              <div><span style={{ fontWeight: 600 }}>{e.degree}</span>{e.school && <span style={{ color: "#888" }}> · {e.school}</span>}</div>
+              {e.graduationYear && <span style={{ fontSize: "9px", color: "#bbb" }}>{e.graduationYear}</span>}
+            </div>
+          ))}
+        </>
+      )}
+
+      {(form.technicalSkills.length > 0 || form.softSkills.length > 0) && (
+        <>
+          <SH title="Skills" />
+          {form.technicalSkills.length > 0 && <p style={{ color: "#555", marginBottom: "3px" }}>{form.technicalSkills.join("  ·  ")}</p>}
+          {form.softSkills.length > 0 && <p style={{ color: "#888", fontSize: "9px" }}>{form.softSkills.join("  ·  ")}</p>}
+        </>
+      )}
+
+      {projs.length > 0 && (
+        <>
+          <SH title="Projects" />
+          {projs.map(proj => (
+            <div key={proj.id} style={{ marginBottom: "8px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ fontWeight: 600 }}>{proj.name}</span>
+                {proj.tech && <span style={{ fontSize: "8.5px", color: "#aaa" }}>{proj.tech}</span>}
+              </div>
+              {proj.url && <p style={{ fontSize: "8px", color: "#7aaedb", margin: "1px 0" }}>{proj.url}</p>}
+              {proj.description && (
+                <div style={{ marginTop: "2px", paddingLeft: "12px", color: "#666" }}>
+                  {proj.description.split("\n").filter(Boolean).map((l, i) => (
+                    <p key={i} style={{ margin: "1px 0", fontSize: "9.5px" }}>– {l.replace(/^[•\-]\s*/, "")}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+
+      {certs.length > 0 && (
+        <>
+          <SH title="Certifications" />
+          {certs.map(cert => (
+            <div key={cert.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+              <div><span style={{ fontWeight: 600 }}>{cert.name}</span>{cert.issuer && <span style={{ color: "#888" }}> · {cert.issuer}</span>}</div>
+              {cert.year && <span style={{ fontSize: "9px", color: "#bbb" }}>{cert.year}</span>}
+            </div>
+          ))}
+        </>
+      )}
+
+      {form.languages.length > 0 && (
+        <>
+          <SH title="Languages" />
+          <p style={{ color: "#666" }}>{form.languages.join("  ·  ")}</p>
+        </>
+      )}
+
+      <p style={{ fontSize: "7px", color: "#ddd", marginTop: "24px" }}>Optimized for {company} · ToolHive</p>
+    </div>
+  );
+}
+
+// ─── Sidebar Template ─────────────────────────────────────────────────────────
+
+function SidebarPreview({ form, color, company }: { form: ResumeForm; color: string; company: string }) {
+  const jobs = form.workExperience.filter(j => j.jobTitle || j.company);
+  const edus = form.education.filter(e => e.degree || e.school);
+  const projs = form.projects.filter(p => p.name);
+  const certs = form.certifications.filter(c => c.name);
+
+  const sideSecStyle: React.CSSProperties = {
+    fontSize: "7px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em",
+    color: "rgba(255,255,255,0.6)", margin: "0 0 5px", borderBottom: "1px solid rgba(255,255,255,0.2)", paddingBottom: "3px",
+  };
+
+  function RightSH({ title }: { title: string }) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: "6px", margin: "14px 0 7px" }}>
+        <div style={{ width: "16px", height: "2px", backgroundColor: color, flexShrink: 0 }} />
+        <span style={{ fontSize: "7.5px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.13em", color: color }}>{title}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", fontSize: "10px", lineHeight: 1.55, color: "#111", display: "flex", minHeight: "842px" }}>
+      {/* Left sidebar */}
+      <div style={{ width: "168px", backgroundColor: color, padding: "24px 14px", color: "#fff", flexShrink: 0 }}>
+        <h1 style={{ fontSize: "15px", fontWeight: 700, margin: "0 0 3px", color: "#fff", lineHeight: 1.2 }}>{form.fullName || "Your Name"}</h1>
+        {form.jobTitle && <p style={{ fontSize: "9.5px", color: "rgba(255,255,255,0.85)", margin: "0 0 18px", fontWeight: 500 }}>{form.jobTitle}</p>}
+
+        {/* Contact */}
+        <div style={{ marginBottom: "16px" }}>
+          <p style={sideSecStyle}>Contact</p>
+          {[form.email, form.phone, form.location, form.linkedin, form.website].filter(Boolean).map((c, i) => (
+            <p key={i} style={{ fontSize: "8.5px", color: "rgba(255,255,255,0.85)", margin: "0 0 3px", wordBreak: "break-all" }}>{c}</p>
+          ))}
+        </div>
+
+        {/* Skills */}
+        {(form.technicalSkills.length > 0 || form.softSkills.length > 0) && (
+          <div style={{ marginBottom: "16px" }}>
+            <p style={sideSecStyle}>Skills</p>
+            {form.technicalSkills.map((s, i) => <p key={i} style={{ fontSize: "8.5px", color: "rgba(255,255,255,0.85)", margin: "0 0 2px" }}>• {s}</p>)}
+            {form.softSkills.length > 0 && (
+              <>
+                <p style={{ fontSize: "7px", color: "rgba(255,255,255,0.5)", margin: "6px 0 3px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Soft</p>
+                {form.softSkills.map((s, i) => <p key={i} style={{ fontSize: "8.5px", color: "rgba(255,255,255,0.75)", margin: "0 0 2px" }}>• {s}</p>)}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Languages */}
+        {form.languages.length > 0 && (
+          <div style={{ marginBottom: "16px" }}>
+            <p style={sideSecStyle}>Languages</p>
+            {form.languages.map((l, i) => <p key={i} style={{ fontSize: "8.5px", color: "rgba(255,255,255,0.85)", margin: "0 0 2px" }}>• {l}</p>)}
+          </div>
+        )}
+
+        {/* Certifications */}
+        {certs.length > 0 && (
+          <div>
+            <p style={sideSecStyle}>Certifications</p>
+            {certs.map(cert => (
+              <div key={cert.id} style={{ marginBottom: "6px" }}>
+                <p style={{ fontSize: "8.5px", color: "rgba(255,255,255,0.9)", margin: 0, fontWeight: 600 }}>{cert.name}</p>
+                {cert.issuer && <p style={{ fontSize: "8px", color: "rgba(255,255,255,0.6)", margin: "1px 0 0" }}>{cert.issuer}</p>}
+                {cert.year && <p style={{ fontSize: "7.5px", color: "rgba(255,255,255,0.45)", margin: "1px 0 0" }}>{cert.year}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p style={{ fontSize: "6.5px", color: "rgba(255,255,255,0.3)", marginTop: "24px" }}>ToolHive · {company}</p>
+      </div>
+
+      {/* Right content */}
+      <div style={{ flex: 1, padding: "24px 20px" }}>
+        {form.summary && (
+          <>
+            <RightSH title="Professional Summary" />
+            <p style={{ color: "#444", fontSize: "10px" }}>{form.summary}</p>
+          </>
+        )}
+
+        {jobs.length > 0 && (
+          <>
+            <RightSH title="Work Experience" />
+            {jobs.map(job => (
+              <div key={job.id} style={{ marginBottom: "10px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div><b style={{ color: "#111" }}>{job.jobTitle}</b>{job.company && <span style={{ color: "#555" }}> — {job.company}</span>}</div>
+                  <span style={{ fontSize: "8.5px", color: "#888", whiteSpace: "nowrap", marginLeft: "8px" }}>{job.startDate}{job.startDate && " – "}{job.isPresent ? "Present" : job.endDate}</span>
+                </div>
+                {job.description && (
+                  <ul style={{ margin: "3px 0 0 12px", padding: 0, color: "#444" }}>
+                    {job.description.split("\n").filter(Boolean).map((l, i) => <li key={i} style={{ listStyle: "disc", marginBottom: "1px", fontSize: "9.5px" }}>{l.replace(/^[•\-]\s*/, "")}</li>)}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </>
+        )}
+
+        {projs.length > 0 && (
+          <>
+            <RightSH title="Projects" />
+            {projs.map(proj => (
+              <div key={proj.id} style={{ marginBottom: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <b style={{ color: "#111" }}>{proj.name}</b>
+                  {proj.tech && <span style={{ fontSize: "8.5px", color: "#888" }}>{proj.tech}</span>}
+                </div>
+                {proj.url && <p style={{ fontSize: "8.5px", color: "#4a90d9", margin: "1px 0" }}>{proj.url}</p>}
+                {proj.description && (
+                  <ul style={{ margin: "2px 0 0 12px", padding: 0, color: "#444" }}>
+                    {proj.description.split("\n").filter(Boolean).map((l, i) => <li key={i} style={{ listStyle: "disc", marginBottom: "1px", fontSize: "9.5px" }}>{l.replace(/^[•\-]\s*/, "")}</li>)}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </>
+        )}
+
+        {edus.length > 0 && (
+          <>
+            <RightSH title="Education" />
+            {edus.map(e => (
+              <div key={e.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                <div><b style={{ color: "#111" }}>{e.degree}</b>{e.school && <span style={{ color: "#555" }}> — {e.school}</span>}</div>
+                {e.graduationYear && <span style={{ fontSize: "9px", color: "#888" }}>{e.graduationYear}</span>}
+              </div>
+            ))}
+          </>
+        )}
+      </div>
     </div>
   );
 }

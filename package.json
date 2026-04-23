@@ -19,6 +19,8 @@
     "framer-motion": "^12.38.0",
     "geist": "^1.7.0",
     "heic2any": "^0.0.4",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
     "lucide-react": "^1.7.0",
     "nanoid": "^5.1.7",
