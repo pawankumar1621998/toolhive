@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -22,6 +22,8 @@ import {
 import { clsx } from "clsx";
 import { motion, useReducedMotion, AnimatePresence, type Variants } from "framer-motion";
 import { TOOL_CATEGORIES } from "@/config/navigation";
+import { TOOLS } from "@/config/tools";
+import type { Tool } from "@/types";
 
 // ─────────────────────────────────────────────
 // Icon map for category pills
@@ -204,109 +206,226 @@ function FloatingBadge({
 }
 
 // ─────────────────────────────────────────────
-// Search bar
-// Full-width on mobile with taller touch target
+// Search bar with live suggestions
 // ─────────────────────────────────────────────
+
+const TRENDING_SEARCHES = [
+  "PDF Compress", "Background Remover", "Video Downloader", "AI Resume", "Image Resize",
+];
+
+function scoreToolMatch(tool: Tool, q: string): number {
+  const ql = q.toLowerCase();
+  let s = 0;
+  if (tool.name.toLowerCase().includes(ql)) s += 8;
+  if (tool.shortDescription.toLowerCase().includes(ql)) s += 4;
+  if (tool.tags.some((t) => t.toLowerCase().includes(ql))) s += 3;
+  if (tool.category.toLowerCase().includes(ql)) s += 1;
+  return s;
+}
 
 function HeroSearchBar() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
+  const [suggestions, setSuggestions] = useState<Tool[]>([]);
+  const [activeIdx, setActiveIdx] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) { setSuggestions([]); setActiveIdx(-1); return; }
+    const matches = TOOLS
+      .map((t) => ({ tool: t, s: scoreToolMatch(t, q) }))
+      .filter((x) => x.s > 0)
+      .sort((a, b) => b.s - a.s)
+      .slice(0, 6)
+      .map((x) => x.tool);
+    setSuggestions(matches);
+    setActiveIdx(-1);
+  }, [query]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
+    if (activeIdx >= 0 && suggestions[activeIdx]) {
+      const t = suggestions[activeIdx];
+      router.push(`/tools/${t.category}/${t.slug}`);
+      setSuggestions([]);
+      return;
+    }
     const trimmed = query.trim();
-    if (trimmed) {
-      router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+    if (trimmed) router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+    setSuggestions([]);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIdx((i) => Math.min(i + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIdx((i) => Math.max(i - 1, -1));
+    } else if (e.key === "Escape") {
+      setSuggestions([]);
+      setActiveIdx(-1);
+      inputRef.current?.blur();
     }
   }
 
-  return (
-    <form
-      onSubmit={handleSearch}
-      role="search"
-      className={clsx(
-        "group relative flex w-full items-center",
-        "rounded-2xl border bg-card shadow-xl",
-        "transition-all duration-300",
-        isFocused
-          ? "border-primary/50 shadow-[0_0_0_4px_color-mix(in_oklch,var(--color-primary)_12%,transparent),0_20px_40px_-10px_rgb(0_0_0/0.15)]"
-          : "border-card-border hover:border-border-strong hover:shadow-2xl"
-      )}
-      aria-label="Search tools"
-    >
-      {/* Search icon */}
-      <div className="pointer-events-none pl-4 pr-3 shrink-0">
-        <Search
-          className={clsx(
-            "h-5 w-5 transition-colors duration-200",
-            isFocused ? "text-primary" : "text-foreground-subtle"
-          )}
-          aria-hidden="true"
-        />
-      </div>
+  const showTrending = isFocused && !query.trim();
+  const showSuggestions = isFocused && suggestions.length > 0;
 
-      {/* Input — h-12 on mobile for comfortable tap target, h-11 on sm+ */}
-      <input
-        ref={inputRef}
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        placeholder="Search 200+ free AI tools..."
+  return (
+    <div className="relative w-full">
+      <form
+        onSubmit={handleSearch}
+        role="search"
         className={clsx(
-          "flex-1 bg-transparent text-sm text-foreground",
-          "h-12 sm:h-11",
-          "placeholder:text-foreground-subtle",
-          "focus:outline-none",
-          "min-w-0"
+          "group relative flex w-full items-center",
+          "rounded-2xl border bg-card shadow-xl",
+          "transition-all duration-300",
+          isFocused
+            ? "border-primary/50 shadow-[0_0_0_4px_color-mix(in_oklch,var(--color-primary)_12%,transparent),0_20px_40px_-10px_rgb(0_0_0/0.15)]"
+            : "border-card-border hover:border-border-strong hover:shadow-2xl"
         )}
         aria-label="Search tools"
-        autoComplete="off"
-      />
+      >
+        {/* Search icon */}
+        <div className="pointer-events-none pl-4 pr-3 shrink-0">
+          <Search
+            className={clsx(
+              "h-5 w-5 transition-colors duration-200",
+              isFocused ? "text-primary" : "text-foreground-subtle"
+            )}
+            aria-hidden="true"
+          />
+        </div>
 
-      {/* Clear button */}
-      <AnimatePresence>
-        {query && (
-          <motion.button
-            type="button"
-            onClick={() => {
-              setQuery("");
-              inputRef.current?.focus();
-            }}
-            initial={{ opacity: 0, scale: 0.7 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.7 }}
-            transition={{ duration: 0.15 }}
-            className="mr-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-background-muted text-foreground-subtle hover:text-foreground transition-colors"
-            aria-label="Clear search"
+        {/* Input */}
+        <input
+          ref={inputRef}
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          onKeyDown={handleKeyDown}
+          placeholder="Search 200+ free AI tools..."
+          className={clsx(
+            "flex-1 bg-transparent text-sm text-foreground",
+            "h-12 sm:h-11",
+            "placeholder:text-foreground-subtle",
+            "focus:outline-none",
+            "min-w-0"
+          )}
+          aria-label="Search tools"
+          autoComplete="off"
+          aria-autocomplete="list"
+          aria-expanded={showSuggestions}
+        />
+
+        {/* Clear button */}
+        <AnimatePresence>
+          {query && (
+            <motion.button
+              type="button"
+              onClick={() => { setQuery(""); inputRef.current?.focus(); }}
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.7 }}
+              transition={{ duration: 0.15 }}
+              className="mr-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-background-muted text-foreground-subtle hover:text-foreground transition-colors"
+              aria-label="Clear search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {/* Submit button */}
+        <div className="p-1.5 shrink-0">
+          <button
+            type="submit"
+            className={clsx(
+              "flex items-center gap-1.5 rounded-xl px-4 sm:px-5",
+              "h-9 sm:h-10",
+              "bg-gradient-brand text-white text-sm font-semibold",
+              "shadow-md hover:opacity-90 hover:shadow-lg",
+              "transition-all duration-200 active:scale-95",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            )}
+            aria-label="Search"
           >
-            <X className="h-3.5 w-3.5" />
-          </motion.button>
+            <span className="hidden xs:inline">Search</span>
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        </div>
+      </form>
+
+      {/* Live suggestions / trending dropdown */}
+      <AnimatePresence>
+        {(showSuggestions || showTrending) && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-[calc(100%+6px)] left-0 right-0 z-50 rounded-2xl border border-card-border bg-card shadow-2xl overflow-hidden"
+          >
+            {/* Trending chips — shown when input is focused but empty */}
+            {showTrending && (
+              <div className="px-4 py-3">
+                <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground-subtle">
+                  <TrendingUp className="h-3 w-3" aria-hidden="true" />
+                  Trending searches
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {TRENDING_SEARCHES.map((term) => (
+                    <button
+                      key={term}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setQuery(term);
+                        router.push(`/search?q=${encodeURIComponent(term)}`);
+                      }}
+                      className="rounded-full border border-border bg-background-muted px-3 py-1 text-xs font-medium text-foreground-muted hover:border-primary/40 hover:text-primary transition-colors"
+                    >
+                      {term}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tool suggestions */}
+            {showSuggestions && suggestions.map((tool, i) => (
+              <Link
+                key={tool.id}
+                href={`/tools/${tool.category}/${tool.slug}`}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => { setSuggestions([]); setIsFocused(false); }}
+                className={clsx(
+                  "flex items-center gap-3 px-4 py-2.5 text-sm transition-colors duration-100",
+                  i === activeIdx
+                    ? "bg-primary/8 text-primary"
+                    : "text-foreground hover:bg-background-muted",
+                  i !== suggestions.length - 1 && "border-b border-border/40"
+                )}
+                role="option"
+                aria-selected={i === activeIdx}
+              >
+                <Search className="h-3.5 w-3.5 text-foreground-subtle shrink-0" aria-hidden="true" />
+                <span className="flex-1 font-medium">{tool.name}</span>
+                <span className="shrink-0 text-xs capitalize text-foreground-subtle">
+                  {tool.category.replace(/-/g, " ")}
+                </span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-foreground-subtle" aria-hidden="true" />
+              </Link>
+            ))}
+          </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Submit button */}
-      <div className="p-1.5 shrink-0">
-        <button
-          type="submit"
-          className={clsx(
-            "flex items-center gap-1.5 rounded-xl px-4 sm:px-5",
-            "h-9 sm:h-10", // matches input height on each breakpoint
-            "bg-gradient-brand text-white text-sm font-semibold",
-            "shadow-md hover:opacity-90 hover:shadow-lg",
-            "transition-all duration-200 active:scale-95",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          )}
-          aria-label="Search"
-        >
-          <span className="hidden xs:inline">Search</span>
-          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-        </button>
-      </div>
-    </form>
+    </div>
   );
 }
 

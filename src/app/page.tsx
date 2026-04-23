@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import Script from "next/script";
 import { HeroSection } from "@/components/features/home/HeroSection";
 import { CategoryGrid } from "@/components/features/home/CategoryGrid";
 import { FeaturedTools } from "@/components/features/home/FeaturedTools";
@@ -9,9 +10,31 @@ import { RecentTools } from "@/components/features/home/RecentTools";
 import { SectionSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = {
-  title: "ToolHive — AI-Powered Tools for Everyone",
+  title: "ToolHive — 200+ Free AI Tools for PDF, Image, Video & Writing",
   description:
-    "Free AI-powered tools for PDF, image, video, and writing. No signup required.",
+    "Free AI-powered tools for PDF compression, image editing, video downloading, AI writing, calculators and more. No signup needed. Works in your browser — 100% free.",
+  keywords: [
+    "free AI tools", "PDF tools", "image editor", "video downloader",
+    "AI writing", "online calculators", "background remover", "PDF compressor",
+    "image converter", "resume builder",
+  ],
+  openGraph: {
+    title: "ToolHive — 200+ Free AI Tools",
+    description:
+      "PDF, Image, Video, AI Writing & Calculator tools — all free, no account needed. Works in your browser.",
+    siteName: "ToolHive",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ToolHive — 200+ Free AI Tools",
+    description:
+      "PDF, Image, Video, AI Writing & Calculator tools — all free, no account needed.",
+  },
+  alternates: {
+    canonical: "/",
+  },
 };
 
 /**
@@ -25,9 +48,30 @@ export const metadata: Metadata = {
  * 5. StatsSection    — animated counters: files processed, tools available, users
  * 6. CtaSection      — sign up CTA with gradient background
  */
+const LD_JSON = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "ToolHive",
+  description: "200+ free AI-powered tools for PDF, image, video, and writing",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: "https://toolhive.vercel.app/search?q={search_term_string}",
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
+
 export default function HomePage() {
   return (
     <>
+      <Script
+        id="ld-website"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(LD_JSON) }}
+      />
+
       {/* Hero is above the fold — no Suspense, render immediately */}
       <HeroSection />
 

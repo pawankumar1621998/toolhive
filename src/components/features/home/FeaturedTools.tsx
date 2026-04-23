@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Users, type LucideIcon, Wrench } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import { clsx } from "clsx";
-import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
 import { Badge } from "@/components/ui/Badge";
-import { getFeaturedTools } from "@/config/tools";
+import { getFeaturedTools, TOOLS } from "@/config/tools";
 import type { Tool } from "@/types";
 
 // ─────────────────────────────────────────────
@@ -279,25 +279,47 @@ const MobileToolCard = React.memo(function MobileToolCard({ tool }: { tool: Tool
 // FeaturedTools
 // ─────────────────────────────────────────────
 
+// ─────────────────────────────────────────────
+// Category tab config
+// ─────────────────────────────────────────────
+
+const TABS = [
+  { id: "", label: "All" },
+  { id: "pdf", label: "PDF" },
+  { id: "image", label: "Image" },
+  { id: "video", label: "Video" },
+  { id: "ai-writing", label: "AI Writing" },
+  { id: "calculator", label: "Calculator" },
+  { id: "converter", label: "Converter" },
+  { id: "resume", label: "Resume" },
+] as const;
+
 /**
  * FeaturedTools — Client Component
  *
- * Mobile:   horizontal scroll row (TinyWow-style) with compact tool cards
+ * Mobile:   2-column grid with compact tool cards
  * Desktop:  4-column grid with full-featured cards
- *
- * Data source: TOOLS registry (static, replace with server fetch in production).
+ * Category tabs: filter tools by category
  */
 export function FeaturedTools() {
   const shouldReduce = useReducedMotion() ?? false;
-  const tools = useMemo(() => getFeaturedTools(12), []);
+  const [activeTab, setActiveTab] = useState("");
+
+  const tools = useMemo(() => {
+    if (!activeTab) return getFeaturedTools(12);
+    return TOOLS
+      .filter((t) => t.category === activeTab)
+      .sort((a, b) => (b.usageCount ?? 0) - (a.usageCount ?? 0))
+      .slice(0, 12);
+  }, [activeTab]);
 
   return (
     <section
       className="container mx-auto px-4 py-12 lg:py-16"
       aria-labelledby="featured-heading"
     >
-      {/* Section header — stacks on mobile, inline on sm+ */}
-      <div className="flex flex-col gap-2 mb-6 sm:flex-row sm:items-end sm:justify-between sm:mb-8">
+      {/* Section header */}
+      <div className="flex flex-col gap-2 mb-5 sm:flex-row sm:items-end sm:justify-between sm:mb-6">
         <div>
           <h2
             id="featured-heading"
@@ -309,7 +331,6 @@ export function FeaturedTools() {
             Our most-used tools, trusted by millions every day
           </p>
         </div>
-        {/* "See all" — visible on both mobile and desktop */}
         <Link
           href="/tools"
           className={clsx(
@@ -324,46 +345,84 @@ export function FeaturedTools() {
         </Link>
       </div>
 
+      {/* Category tabs */}
+      <div
+        className={clsx(
+          "flex items-center gap-2 mb-6",
+          "overflow-x-auto pb-1",
+          "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        )}
+        role="tablist"
+        aria-label="Filter tools by category"
+      >
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={clsx(
+              "shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              activeTab === tab.id
+                ? "bg-primary text-white shadow-sm"
+                : "border border-border bg-background-muted text-foreground-muted hover:border-border-strong hover:text-foreground"
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* ── Mobile: 2-column grid ── */}
-      <div className="sm:hidden">
-        <div
-          className="grid grid-cols-2 gap-3"
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={`mobile-${activeTab}`}
+          className="sm:hidden grid grid-cols-2 gap-3"
           role="list"
           aria-label="Featured tools"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.2 }}
         >
           {tools.map((tool) => (
             <div key={tool.id} role="listitem">
               <MobileToolCard tool={tool} />
             </div>
           ))}
-        </div>
-      </div>
+        </motion.div>
+      </AnimatePresence>
 
-      {/* ── Desktop: 4-column grid (unchanged) ── */}
-      <motion.div
-        className="hidden sm:grid md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
-        role="list"
-        aria-label="Featured tools"
-        variants={shouldReduce ? undefined : containerVariants}
-        initial={shouldReduce ? "visible" : "hidden"}
-        whileInView="visible"
-        viewport={{ once: true, margin: "-50px" }}
-      >
-        {tools.map((tool) => (
-          <div key={tool.id} role="listitem" className="flex">
-            <ToolCard tool={tool} shouldReduce={shouldReduce} />
-          </div>
-        ))}
-      </motion.div>
+      {/* ── Desktop: 4-column grid ── */}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={`desktop-${activeTab}`}
+          className="hidden sm:grid md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
+          role="list"
+          aria-label="Featured tools"
+          variants={shouldReduce ? undefined : containerVariants}
+          initial={shouldReduce ? "visible" : "hidden"}
+          animate="visible"
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          {tools.map((tool) => (
+            <div key={tool.id} role="listitem" className="flex">
+              <ToolCard tool={tool} shouldReduce={shouldReduce} />
+            </div>
+          ))}
+        </motion.div>
+      </AnimatePresence>
 
-      {/* Mobile "browse all" button — below the scroll row */}
+      {/* Mobile "browse all" button */}
       <div className="mt-6 flex justify-center sm:hidden">
         <Link
           href="/tools"
           className={clsx(
             "inline-flex items-center gap-2 rounded-xl",
             "border border-border bg-card px-6",
-            "min-h-[44px]", // touch-friendly
+            "min-h-[44px]",
             "text-sm font-medium text-foreground-muted hover:text-primary hover:border-primary/30",
             "transition-all duration-200"
           )}
