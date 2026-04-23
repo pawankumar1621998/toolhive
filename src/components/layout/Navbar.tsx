@@ -62,9 +62,11 @@ function NavLogo() {
   );
 }
 
-// ─── Tools Megamenu Dropdown ─────────────────────────────────────────────────
+// ─── More dropdown (Resume, Video + Quick Tools) ─────────────────────────────
 
-function ToolsDropdown({ pathname }: { pathname: string }) {
+const MORE_CATEGORIES = ["resume", "video"] as const;
+
+function MoreDropdown({ pathname }: { pathname: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -78,22 +80,20 @@ function ToolsDropdown({ pathname }: { pathname: string }) {
 
   useEffect(() => { setOpen(false); }, [pathname]);
 
-  const isToolsActive = pathname.startsWith("/tools");
+  const moreCats = TOOL_CATEGORIES.filter(c => (MORE_CATEGORIES as readonly string[]).includes(c.id));
 
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(v => !v)}
         className={clsx(
-          "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150",
-          isToolsActive
-            ? "bg-primary/10 text-primary"
-            : "text-foreground-muted hover:text-foreground hover:bg-background-subtle"
+          "flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150",
+          "text-foreground-muted hover:text-foreground hover:bg-background-subtle"
         )}
         aria-expanded={open}
         aria-haspopup="true"
       >
-        Tools
+        More
         <ChevronDown className={clsx("h-3.5 w-3.5 transition-transform duration-200", open && "rotate-180")} />
       </button>
 
@@ -104,52 +104,33 @@ function ToolsDropdown({ pathname }: { pathname: string }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className={clsx(
-              "absolute left-0 top-full mt-2 w-[480px] z-modal",
-              "glass rounded-2xl border border-border shadow-2xl",
-              "p-4"
-            )}
+            className="absolute left-0 top-full mt-2 w-72 z-modal glass rounded-2xl border border-border shadow-2xl p-4"
           >
-            {/* Categories grid */}
-            <p className="text-[10px] font-bold uppercase tracking-widest text-foreground-subtle mb-3 px-1">Tool Categories</p>
-            <div className="grid grid-cols-2 gap-1.5 mb-4">
-              {TOOL_CATEGORIES.map((cat) => {
-                const isActive = pathname.startsWith(cat.href);
-                return (
-                  <Link
-                    key={cat.id}
-                    href={cat.href}
-                    onClick={() => setOpen(false)}
-                    className={clsx(
-                      "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
-                      isActive
-                        ? "bg-primary/10 text-primary"
-                        : "hover:bg-background-subtle text-foreground"
-                    )}
-                  >
-                    <span className={clsx("flex h-7 w-7 items-center justify-center rounded-lg shrink-0", COLOR_MAP[cat.color] ?? "bg-primary/10 text-primary")}>
-                      {CAT_ICONS[cat.id]}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold leading-tight truncate">{cat.label}</p>
-                      <p className="text-[11px] text-foreground-muted">{cat.toolCount} tools</p>
-                    </div>
-                  </Link>
-                );
-              })}
+            {/* Resume + Video categories */}
+            <p className="text-[10px] font-bold uppercase tracking-widest text-foreground-subtle mb-2 px-1">More Categories</p>
+            <div className="space-y-1 mb-4">
+              {moreCats.map((cat) => (
+                <Link key={cat.id} href={cat.href} onClick={() => setOpen(false)}
+                  className={clsx("flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
+                    pathname.startsWith(cat.href) ? "bg-primary/10 text-primary" : "hover:bg-background-subtle text-foreground")}>
+                  <span className={clsx("flex h-7 w-7 items-center justify-center rounded-lg shrink-0", COLOR_MAP[cat.color] ?? "bg-primary/10 text-primary")}>
+                    {CAT_ICONS[cat.id]}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold leading-tight">{cat.label}</p>
+                    <p className="text-[11px] text-foreground-muted">{cat.toolCount} tools</p>
+                  </div>
+                </Link>
+              ))}
             </div>
 
-            {/* Quick tools */}
+            {/* Quick standalone tools */}
             <div className="border-t border-border pt-3">
               <p className="text-[10px] font-bold uppercase tracking-widest text-foreground-subtle mb-2 px-1">Quick Tools</p>
               <div className="flex flex-wrap gap-1.5">
                 {QUICK_TOOLS.map((t) => (
-                  <Link
-                    key={t.href}
-                    href={t.href}
-                    onClick={() => setOpen(false)}
-                    className="rounded-lg px-2.5 py-1.5 text-xs font-medium bg-background-subtle text-foreground-muted hover:text-foreground hover:bg-background transition-colors border border-border"
-                  >
+                  <Link key={t.href} href={t.href} onClick={() => setOpen(false)}
+                    className="rounded-lg px-2.5 py-1.5 text-xs font-medium bg-background-subtle text-foreground-muted hover:text-foreground border border-border transition-colors">
                     {t.label}
                   </Link>
                 ))}
@@ -164,19 +145,33 @@ function ToolsDropdown({ pathname }: { pathname: string }) {
 
 // ─── Desktop Nav ──────────────────────────────────────────────────────────────
 
+// Main categories shown directly; resume/video/quick tools in "More"
+const MAIN_CATS = ["pdf", "image", "ai-writing", "converter", "calculator"] as const;
+
 function DesktopNav({ pathname }: { pathname: string }) {
+  const mainCats = TOOL_CATEGORIES.filter(c => (MAIN_CATS as readonly string[]).includes(c.id));
+
   return (
-    <nav className="hidden md:flex items-center gap-0.5 ml-4" aria-label="Main navigation">
-      <ToolsDropdown pathname={pathname} />
-      <Link
-        href="/tools"
+    <nav className="hidden lg:flex items-center gap-0.5 ml-4" aria-label="Main navigation">
+      {mainCats.map((cat) => {
+        const isActive = pathname.startsWith(cat.href);
+        return (
+          <Link key={cat.id} href={cat.href}
+            className={clsx(
+              "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150 whitespace-nowrap",
+              isActive ? "bg-primary/10 text-primary" : "text-foreground-muted hover:text-foreground hover:bg-background-subtle"
+            )}>
+            <span className="hidden xl:block">{cat.icon}</span>
+            {cat.label}
+          </Link>
+        );
+      })}
+      <MoreDropdown pathname={pathname} />
+      <Link href="/tools"
         className={clsx(
-          "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150",
-          pathname === "/tools"
-            ? "bg-primary/10 text-primary"
-            : "text-foreground-muted hover:text-foreground hover:bg-background-subtle"
-        )}
-      >
+          "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150 whitespace-nowrap",
+          pathname === "/tools" ? "bg-primary/10 text-primary" : "text-foreground-muted hover:text-foreground hover:bg-background-subtle"
+        )}>
         All Tools
       </Link>
     </nav>
