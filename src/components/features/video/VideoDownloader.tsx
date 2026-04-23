@@ -7,20 +7,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import type { Tool } from "@/types";
 import {
-  Download,
-  Search,
-  AlertCircle,
-  Loader2,
-  CheckCircle2,
-  RefreshCw,
-  Music,
-  Video,
-  Play,
-  Clock,
-  Eye,
+  Download, Search, AlertCircle, Loader2, CheckCircle2,
+  RefreshCw, Music, Video, Play, Clock, Eye, Info,
 } from "lucide-react";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface VideoInfo {
   title: string;
@@ -34,93 +25,171 @@ interface VideoInfo {
 interface QualityOption {
   id: string;
   label: string;
-  format: "mp4" | "mp3" | "webm";
+  format: "mp4" | "mp3";
   badge?: string;
   badgeColor?: string;
 }
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// ─── Platform config ──────────────────────────────────────────────────────────
 
-const SUPPORTED_PLATFORMS = [
-  "YouTube", "Instagram", "TikTok", "Facebook",
-  "Twitter/X", "Vimeo", "Pinterest", "Dailymotion", "Twitch", "Reddit",
-];
-
-const QUALITY_OPTIONS: QualityOption[] = [
-  { id: "1080p", label: "1080p Full HD", format: "mp4",  badge: "Best",    badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
-  { id: "720p",  label: "720p HD",       format: "mp4",  badge: "Popular", badgeColor: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300" },
-  { id: "480p",  label: "480p",          format: "mp4" },
-  { id: "360p",  label: "360p",          format: "mp4",  badge: "Small",   badgeColor: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" },
-  { id: "mp3",   label: "MP3 Audio",     format: "mp3",  badge: "Audio",   badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
-  { id: "4k",    label: "4K Ultra HD",   format: "mp4",  badge: "4K",      badgeColor: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300" },
-];
-
-// ─── Platform detection ───────────────────────────────────────────────────────
-
-function detectPlatform(url: string): string {
-  const u = url.toLowerCase();
-  if (u.includes("youtube.com") || u.includes("youtu.be")) return "YouTube";
-  if (u.includes("instagram.com"))  return "Instagram";
-  if (u.includes("tiktok.com"))     return "TikTok";
-  if (u.includes("facebook.com") || u.includes("fb.watch")) return "Facebook";
-  if (u.includes("twitter.com") || u.includes("x.com"))     return "Twitter/X";
-  if (u.includes("vimeo.com"))      return "Vimeo";
-  if (u.includes("pinterest.com"))  return "Pinterest";
-  if (u.includes("dailymotion.com"))return "Dailymotion";
-  if (u.includes("twitch.tv"))      return "Twitch";
-  if (u.includes("reddit.com"))     return "Reddit";
-  return "";
+interface PlatformConfig {
+  name: string;
+  badgeClass: string;
+  borderClass: string;
+  btnClass: string;
+  domains: RegExp;
+  urlPlaceholder: string;
+  tips: string[];
+  qualities: QualityOption[];
+  defaultQuality: string;
 }
 
-const PLATFORM_COLORS: Record<string, string> = {
-  "YouTube":     "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
-  "Instagram":   "bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800",
-  "TikTok":      "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
-  "Facebook":    "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
-  "Twitter/X":   "bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700",
-  "Vimeo":       "bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800",
-  "Pinterest":   "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
-  "Dailymotion": "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
-  "Twitch":      "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800",
-  "Reddit":      "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800",
+const YOUTUBE_QUALITIES: QualityOption[] = [
+  { id: "4k",    label: "4K Ultra HD", format: "mp4", badge: "4K",      badgeColor: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300" },
+  { id: "1080p", label: "1080p Full HD",format: "mp4", badge: "Best",   badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
+  { id: "720p",  label: "720p HD",      format: "mp4", badge: "Popular",badgeColor: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300" },
+  { id: "480p",  label: "480p",         format: "mp4" },
+  { id: "360p",  label: "360p",         format: "mp4", badge: "Small",  badgeColor: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" },
+  { id: "mp3",   label: "MP3 Audio",    format: "mp3", badge: "Audio",  badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
+];
+
+const SOCIAL_QUALITIES: QualityOption[] = [
+  { id: "1080p", label: "1080p HD",  format: "mp4", badge: "Best",    badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
+  { id: "720p",  label: "720p",      format: "mp4", badge: "Popular", badgeColor: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300" },
+  { id: "480p",  label: "480p",      format: "mp4" },
+  { id: "360p",  label: "360p",      format: "mp4", badge: "Small",   badgeColor: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" },
+  { id: "mp3",   label: "MP3 Audio", format: "mp3", badge: "Audio",   badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
+];
+
+const VIMEO_QUALITIES: QualityOption[] = [
+  { id: "1080p", label: "1080p Full HD", format: "mp4", badge: "Best",    badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
+  { id: "720p",  label: "720p HD",       format: "mp4", badge: "Popular", badgeColor: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300" },
+  { id: "480p",  label: "480p",          format: "mp4" },
+  { id: "mp3",   label: "MP3 Audio",     format: "mp3", badge: "Audio",   badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
+];
+
+const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
+  youtube: {
+    name: "YouTube",
+    badgeClass: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
+    borderClass: "border-red-200 dark:border-red-800",
+    btnClass: "bg-red-600 hover:bg-red-700 text-white",
+    domains: /youtube\.com|youtu\.be/i,
+    urlPlaceholder: "Paste YouTube video URL — e.g. https://youtube.com/watch?v=...",
+    tips: ["Works with YouTube Shorts, regular videos, and playlists", "MP3 option extracts audio only", "4K quality needs good internet speed"],
+    qualities: YOUTUBE_QUALITIES,
+    defaultQuality: "720p",
+  },
+  instagram: {
+    name: "Instagram",
+    badgeClass: "bg-pink-100 text-pink-700 border-pink-300 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800",
+    borderClass: "border-pink-200 dark:border-pink-800",
+    btnClass: "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white",
+    domains: /instagram\.com/i,
+    urlPlaceholder: "Paste Instagram Reel or post URL — e.g. https://instagram.com/reel/...",
+    tips: ["Works with Reels, videos, and carousel posts", "Tap the 3-dot menu on Instagram → Copy Link", "Only public posts can be downloaded"],
+    qualities: SOCIAL_QUALITIES,
+    defaultQuality: "720p",
+  },
+  facebook: {
+    name: "Facebook",
+    badgeClass: "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
+    borderClass: "border-blue-200 dark:border-blue-800",
+    btnClass: "bg-blue-600 hover:bg-blue-700 text-white",
+    domains: /facebook\.com|fb\.watch/i,
+    urlPlaceholder: "Paste Facebook video URL — e.g. https://facebook.com/watch/?v=... or fb.watch/...",
+    tips: ["Works with public Facebook videos and Reels", "Also supports fb.watch short links", "Private videos cannot be downloaded"],
+    qualities: SOCIAL_QUALITIES,
+    defaultQuality: "720p",
+  },
+  tiktok: {
+    name: "TikTok",
+    badgeClass: "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600",
+    borderClass: "border-slate-200 dark:border-slate-700",
+    btnClass: "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white",
+    domains: /tiktok\.com/i,
+    urlPlaceholder: "Paste TikTok video URL — e.g. https://tiktok.com/@user/video/123...",
+    tips: ["Downloads WITHOUT TikTok watermark", "Tap Share on TikTok → Copy Link", "Works on both mobile and desktop"],
+    qualities: SOCIAL_QUALITIES,
+    defaultQuality: "720p",
+  },
+  twitter: {
+    name: "Twitter / X",
+    badgeClass: "bg-zinc-100 text-zinc-800 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-600",
+    borderClass: "border-zinc-200 dark:border-zinc-700",
+    btnClass: "bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900",
+    domains: /twitter\.com|x\.com/i,
+    urlPlaceholder: "Paste Twitter / X tweet URL — e.g. https://x.com/user/status/123...",
+    tips: ["Works with twitter.com and x.com links", "Supports videos and animated GIFs", "Get the tweet URL from the browser bar or Share → Copy link"],
+    qualities: SOCIAL_QUALITIES,
+    defaultQuality: "720p",
+  },
+  vimeo: {
+    name: "Vimeo",
+    badgeClass: "bg-teal-100 text-teal-700 border-teal-300 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800",
+    borderClass: "border-teal-200 dark:border-teal-800",
+    btnClass: "bg-teal-600 hover:bg-teal-700 text-white",
+    domains: /vimeo\.com/i,
+    urlPlaceholder: "Paste Vimeo video URL — e.g. https://vimeo.com/123456789",
+    tips: ["Only public Vimeo videos can be downloaded", "Password-protected videos are not supported", "High-quality downloads available up to 1080p"],
+    qualities: VIMEO_QUALITIES,
+    defaultQuality: "720p",
+  },
 };
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function VideoDownloader({ tool }: { tool: Tool }) {
-  const [url, setUrl]                 = useState("");
-  const [isFetching, setIsFetching]   = useState(false);
-  const [videoInfo, setVideoInfo]     = useState<VideoInfo | null>(null);
-  const [fetchError, setFetchError]   = useState<string | null>(null);
-  const [selectedQuality, setQuality] = useState("720p");
-  const [isDownloading, setDownloading] = useState(false);
-  const [downloadDone, setDownloadDone] = useState(false);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const cfg = PLATFORM_CONFIGS[tool.slug] ?? PLATFORM_CONFIGS["youtube"];
 
-  const platform = url.trim() ? detectPlatform(url) : "";
-  const selectedOpt = QUALITY_OPTIONS.find((q) => q.id === selectedQuality) ?? QUALITY_OPTIONS[1];
+  const [url, setUrl]                     = useState("");
+  const [isFetching, setIsFetching]       = useState(false);
+  const [videoInfo, setVideoInfo]         = useState<VideoInfo | null>(null);
+  const [fetchError, setFetchError]       = useState<string | null>(null);
+  const [wrongPlatform, setWrongPlatform] = useState(false);
+  const [selectedQuality, setQuality]     = useState(cfg.defaultQuality);
+  const [isDownloading, setDownloading]   = useState(false);
+  const [downloadDone, setDownloadDone]   = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const RENDER_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://toolhive-backend.onrender.com/api/v1").replace(/\/$/, "");
 
-  // Wake up Render backend on mount to avoid cold-start delay when user clicks Get Info
+  // Wake up Render backend
   useEffect(() => {
-    fetch(`${RENDER_BASE}/health`, { method: "GET" }).catch(() => {/* ignore */});
+    fetch(`${RENDER_BASE}/health`, { method: "GET" }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function buildStreamUrl(extra = "") {
+  // Reset quality when tool changes
+  useEffect(() => {
+    setQuality(cfg.defaultQuality);
+  }, [cfg.defaultQuality]);
+
+  function validateUrl(val: string): boolean {
+    if (!val.trim()) return true;
+    return cfg.domains.test(val.trim());
+  }
+
+  function handleUrlChange(val: string) {
+    setUrl(val);
+    setVideoInfo(null);
+    setFetchError(null);
+    setDownloadDone(false);
+    setDownloadError(null);
+    setWrongPlatform(val.trim() !== "" && !cfg.domains.test(val.trim()));
+  }
+
+  function buildStreamUrl() {
     return (
       `${RENDER_BASE}/video/download` +
       `?url=${encodeURIComponent(url.trim())}` +
       `&quality=${encodeURIComponent(selectedQuality)}` +
-      `&_t=${Date.now()}` +
-      extra
+      `&_t=${Date.now()}`
     );
   }
 
-  // ── Fetch video info ──────────────────────────────────────────────────────
   async function handleFetch() {
-    if (!url.trim()) return;
+    if (!url.trim() || wrongPlatform) return;
     setIsFetching(true);
     setVideoInfo(null);
     setFetchError(null);
@@ -130,11 +199,11 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30_000);
     try {
-      const res  = await fetch("/api/video/info", {
-        method:  "POST",
+      const res = await fetch("/api/video/info", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ url: url.trim() }),
-        signal:  controller.signal,
+        body: JSON.stringify({ url: url.trim() }),
+        signal: controller.signal,
       });
       const json = await res.json() as { success: boolean; message?: string; data?: VideoInfo };
       if (!res.ok || !json.success) throw new Error(json.message || "Could not fetch video info.");
@@ -143,7 +212,7 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
       const msg = (err as Error).message ?? "Failed to fetch video info.";
       setFetchError(
         msg.includes("aborted") || msg.includes("AbortError")
-          ? "Request timed out. The server may be starting up — please try again."
+          ? "Request timed out. The server may be starting up — please try again in a moment."
           : msg
       );
     } finally {
@@ -152,7 +221,6 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
     }
   }
 
-  // ── Download ──────────────────────────────────────────────────────────────
   async function handleDownload() {
     if (isDownloading || downloadDone) return;
     setDownloading(true);
@@ -162,21 +230,16 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
 
     try {
       if (isYouTube) {
-        // YouTube: yt-dlp handles it reliably — navigate directly to stream
         window.location.href = buildStreamUrl();
       } else {
-        // Non-YouTube: validate first (Cobalt parallel + yt-dlp fallback, max 45s)
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 50_000);
-        const validateRes = await fetch(buildStreamUrl("&validate=1"), { signal: controller.signal });
+        const validateRes = await fetch(buildStreamUrl() + "&validate=1", { signal: controller.signal });
         clearTimeout(timer);
-
         const data = await validateRes.json() as { success: boolean; message?: string; directUrl?: string };
         if (!data.success) throw new Error(data.message || "This video cannot be downloaded. Check the URL and try again.");
-
         window.location.href = data.directUrl ?? buildStreamUrl();
       }
-
       setTimeout(() => { setDownloading(false); setDownloadDone(true); }, 3_000);
     } catch (err: unknown) {
       const e = err as Error;
@@ -189,67 +252,69 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
     }
   }
 
-  // ── Reset ──────────────────────────────────────────────────────────────────
   function handleReset() {
     setUrl(""); setVideoInfo(null); setFetchError(null);
     setIsFetching(false); setDownloading(false);
     setDownloadDone(false); setDownloadError(null);
-    setQuality("720p");
+    setWrongPlatform(false);
+    setQuality(cfg.defaultQuality);
   }
+
+  const selectedOpt = cfg.qualities.find((q) => q.id === selectedQuality) ?? cfg.qualities[1];
+
+  // Suppress unused variable warning for validateUrl (used in handleUrlChange inline logic)
+  void validateUrl;
 
   return (
     <div className="rounded-2xl border border-card-border bg-card shadow-md overflow-hidden">
       <div className="p-6 space-y-6">
 
-        {/* ── Supported platforms ── */}
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider">Supported Platforms</p>
-          <div className="flex flex-wrap gap-1.5">
-            {SUPPORTED_PLATFORMS.map((p) => (
-              <span
-                key={p}
-                className={clsx(
-                  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
-                  PLATFORM_COLORS[p] ?? "bg-muted text-foreground-muted border-border"
-                )}
-              >{p}</span>
-            ))}
-          </div>
+        {/* Platform badge */}
+        <div className="flex items-center gap-3">
+          <span className={clsx("inline-flex items-center rounded-full border px-3 py-1 text-sm font-semibold", cfg.badgeClass)}>
+            {cfg.name} Downloader
+          </span>
+          <span className="text-xs text-foreground-muted">Free · No signup · HD quality</span>
         </div>
 
-        {/* ── URL input ── */}
-        <div className="space-y-3">
-          <label className="block text-sm font-semibold text-foreground">Video URL</label>
+        {/* URL input */}
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-foreground">{cfg.name} Video URL</label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <input
                 type="url"
                 value={url}
-                onChange={(e) => { setUrl(e.target.value); setVideoInfo(null); setFetchError(null); setDownloadDone(false); setDownloadError(null); }}
+                onChange={(e) => handleUrlChange(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleFetch()}
-                placeholder="Paste YouTube, Instagram, TikTok or any video URL…"
+                placeholder={cfg.urlPlaceholder}
                 className={clsx(
-                  "w-full rounded-xl border bg-background px-4 py-3 pr-28 text-sm text-foreground placeholder:text-foreground-subtle",
+                  "w-full rounded-xl border bg-background px-4 py-3 text-sm text-foreground placeholder:text-foreground-subtle",
                   "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-colors",
-                  fetchError ? "border-red-400 dark:border-red-600" : "border-border"
+                  wrongPlatform ? "border-amber-400 dark:border-amber-600" : fetchError ? "border-red-400 dark:border-red-600" : "border-border"
                 )}
               />
-              {platform && (
-                <span className={clsx(
-                  "absolute right-3 top-1/2 -translate-y-1/2 rounded-full border px-2 py-0.5 text-[10px] font-semibold",
-                  PLATFORM_COLORS[platform] ?? "bg-muted text-foreground-muted border-border"
-                )}>{platform}</span>
-              )}
             </div>
             <Button
               onClick={handleFetch}
-              disabled={!url.trim() || isFetching}
+              disabled={!url.trim() || isFetching || wrongPlatform}
               className="shrink-0 gap-1.5"
             >
               {isFetching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               {isFetching ? "Fetching…" : "Get Info"}
             </Button>
           </div>
+
+          {/* Wrong platform warning */}
+          {wrongPlatform && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+              className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 text-sm text-amber-700 dark:text-amber-300"
+            >
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>This doesn&apos;t look like a {cfg.name} URL. Please paste a link from {cfg.name}.</span>
+            </motion.div>
+          )}
 
           {fetchError && (
             <motion.div
@@ -262,15 +327,14 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
           )}
         </div>
 
-        {/* ── Video info card ── */}
+        {/* Video info card */}
         <AnimatePresence>
           {videoInfo && (
             <motion.div
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="rounded-2xl border border-card-border bg-background overflow-hidden"
+              className={clsx("rounded-2xl border bg-background overflow-hidden", cfg.borderClass)}
             >
               <div className="flex gap-4 p-4">
-                {/* Thumbnail */}
                 {videoInfo.thumbnail ? (
                   <div className="relative w-32 h-20 shrink-0 rounded-xl overflow-hidden bg-muted">
                     <Image src={videoInfo.thumbnail} alt={videoInfo.title} fill className="object-cover" unoptimized />
@@ -283,8 +347,6 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
                     <Video className="w-8 h-8 text-foreground-muted" />
                   </div>
                 )}
-
-                {/* Meta */}
                 <div className="flex-1 min-w-0 space-y-1">
                   <p className="font-semibold text-foreground text-sm line-clamp-2 leading-snug">{videoInfo.title}</p>
                   <p className="text-xs text-foreground-muted">{videoInfo.author}</p>
@@ -299,12 +361,9 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
                         <Eye className="w-3 h-3" /> {videoInfo.views}
                       </span>
                     )}
-                    {videoInfo.platform && (
-                      <span className={clsx(
-                        "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold",
-                        PLATFORM_COLORS[videoInfo.platform] ?? "bg-muted text-foreground-muted border-border"
-                      )}>{videoInfo.platform}</span>
-                    )}
+                    <span className={clsx("inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold", cfg.badgeClass)}>
+                      {cfg.name}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -312,11 +371,11 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
           )}
         </AnimatePresence>
 
-        {/* ── Quality selector ── */}
+        {/* Quality selector */}
         <div className="space-y-3">
           <p className="text-sm font-semibold text-foreground">Format & Quality</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {QUALITY_OPTIONS.map((opt) => (
+            {cfg.qualities.map((opt) => (
               <button
                 key={opt.id}
                 type="button"
@@ -345,7 +404,7 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
           </div>
         </div>
 
-        {/* ── Download error ── */}
+        {/* Download error */}
         <AnimatePresence>
           {downloadError && (
             <motion.div
@@ -358,7 +417,7 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
           )}
         </AnimatePresence>
 
-        {/* ── Download / Reset buttons ── */}
+        {/* Download / Reset buttons */}
         <div className="flex gap-3">
           {downloadDone ? (
             <Button onClick={handleReset} variant="secondary" className="flex-1 gap-2">
@@ -367,7 +426,7 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
           ) : (
             <Button
               onClick={handleDownload}
-              disabled={!url.trim() || isDownloading}
+              disabled={!url.trim() || wrongPlatform || isDownloading}
               className="flex-1 gap-2"
             >
               {isDownloading ? (
@@ -386,11 +445,20 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
           )}
         </div>
 
-        {/* ── Note ── */}
-        <p className="text-xs text-foreground-subtle text-center">
-          Paste any video URL and click <strong>Get Info</strong> to preview, then choose quality and download.
-          Works with YouTube, Instagram, TikTok, Facebook, Twitter/X and 100+ platforms.
-        </p>
+        {/* Platform tips */}
+        <div className="rounded-xl border border-border bg-background-subtle p-4 space-y-2">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground-muted uppercase tracking-wider">
+            <Info className="w-3.5 h-3.5" /> How to get the {cfg.name} URL
+          </div>
+          <ul className="space-y-1">
+            {cfg.tips.map((tip, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs text-foreground-muted">
+                <span className="mt-0.5 text-primary font-bold">•</span>
+                <span>{tip}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
       </div>
     </div>

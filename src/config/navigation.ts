@@ -46,13 +46,13 @@ export const TOOL_CATEGORIES = [
   {
     id: "video",
     label: "Video Downloader",
-    description: "Download videos from YouTube, Instagram, TikTok, Facebook, Twitter/X and 100+ platforms.",
+    description: "Download videos from YouTube, Instagram, TikTok, Facebook, Twitter/X, and Vimeo in HD.",
     icon: "🎬",
     iconName: "Video",
     color: "blue",
     gradient: "from-blue-500 to-cyan-400",
-    toolCount: 1,
-    href: "/tools/video/downloader",
+    toolCount: 6,
+    href: "/tools/video/youtube",
   },
   {
     id: "ai-writing",
