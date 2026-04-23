@@ -160,23 +160,10 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
   const [downloadDone, setDownloadDone]   = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
-  const RENDER_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://toolhive-backend.onrender.com/api/v1").replace(/\/$/, "");
-
-  // Wake up Render backend
-  useEffect(() => {
-    fetch(`${RENDER_BASE}/health`, { method: "GET" }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Reset quality when tool changes
   useEffect(() => {
     setQuality(cfg.defaultQuality);
   }, [cfg.defaultQuality]);
-
-  function validateUrl(val: string): boolean {
-    if (!val.trim()) return true;
-    return cfg.domains.test(val.trim());
-  }
 
   function handleUrlChange(val: string) {
     setUrl(val);
@@ -187,15 +174,6 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
     setWrongPlatform(val.trim() !== "" && !cfg.domains.test(val.trim()));
   }
 
-  function buildStreamUrl() {
-    return (
-      `${RENDER_BASE}/video/download` +
-      `?url=${encodeURIComponent(url.trim())}` +
-      `&quality=${encodeURIComponent(selectedQuality)}` +
-      `&_t=${Date.now()}`
-    );
-  }
-
   async function handleFetch() {
     if (!url.trim() || wrongPlatform) return;
     setIsFetching(true);
@@ -204,32 +182,24 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
     setDownloadDone(false);
     setDownloadError(null);
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 30_000);
     try {
       const res = await fetch("/api/video/info", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: url.trim() }),
-        signal: controller.signal,
+        signal: AbortSignal.timeout(30_000),
       });
       const json = await res.json() as { success: boolean; message?: string; data?: VideoInfo };
       if (!res.ok || !json.success) throw new Error(json.message || "Could not fetch video info.");
       setVideoInfo(json.data!);
     } catch (err: unknown) {
       const msg = (err as Error).message ?? "Failed to fetch video info.";
-      // For direct-download platforms, info preview failing is non-critical
-      if (cfg.directDownload) {
-        setFetchError("Preview unavailable — you can still click Download below.");
-      } else {
-        setFetchError(
-          msg.includes("aborted") || msg.includes("AbortError")
-            ? "Preview timed out. You can still try downloading below."
-            : msg
-        );
-      }
+      setFetchError(
+        msg.includes("aborted") || msg.includes("TimeoutError")
+          ? "Preview timed out. You can still try downloading below."
+          : msg
+      );
     } finally {
-      clearTimeout(timer);
       setIsFetching(false);
     }
   }
@@ -240,25 +210,41 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
     setDownloadError(null);
 
     try {
-      if (cfg.directDownload) {
-        // YouTube, TikTok, Vimeo: backend streams directly — just navigate
-        window.location.href = buildStreamUrl();
-      } else {
-        // Instagram, Facebook, Twitter: validate first
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 50_000);
-        const validateRes = await fetch(buildStreamUrl() + "&validate=1", { signal: controller.signal });
-        clearTimeout(timer);
-        const data = await validateRes.json() as { success: boolean; message?: string; directUrl?: string };
-        if (!data.success) throw new Error(data.message || "This video cannot be downloaded. Check the URL and try again.");
-        window.location.href = data.directUrl ?? buildStreamUrl();
+      const res = await fetch("/api/video/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url.trim(), quality: selectedQuality }),
+        signal: AbortSignal.timeout(40_000),
+      });
+      const json = await res.json() as {
+        success: boolean; message?: string; guidance?: boolean;
+        downloadUrl?: string; filename?: string;
+      };
+
+      if (!json.success) {
+        // Platform returned guidance (Instagram/Facebook)
+        throw new Error(json.message ?? "Download failed.");
       }
-      setTimeout(() => { setDownloading(false); setDownloadDone(true); }, 3_000);
+
+      if (!json.downloadUrl) throw new Error("No download URL returned.");
+
+      // Trigger browser download
+      const a = document.createElement("a");
+      a.href = json.downloadUrl;
+      a.download = json.filename ?? "video.mp4";
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      setDownloading(false);
+      setDownloadDone(true);
     } catch (err: unknown) {
       const e = err as Error;
       setDownloadError(
-        e.name === "AbortError"
-          ? "Request timed out. The server may be starting up — please try again in a moment."
+        e.name === "AbortError" || e.name === "TimeoutError"
+          ? "Request timed out. Please try again."
           : (e.message || "Download failed. Please try again.")
       );
       setDownloading(false);
@@ -274,9 +260,6 @@ export function VideoDownloader({ tool }: { tool: Tool }) {
   }
 
   const selectedOpt = cfg.qualities.find((q) => q.id === selectedQuality) ?? cfg.qualities[1];
-
-  // Suppress unused variable warning for validateUrl (used in handleUrlChange inline logic)
-  void validateUrl;
 
   return (
     <div className="rounded-2xl border border-card-border bg-card shadow-md overflow-hidden">

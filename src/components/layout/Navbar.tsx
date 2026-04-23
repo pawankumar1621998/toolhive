@@ -29,6 +29,7 @@ const AI_TOOLS = [
   { label: "Cover Letter", href: "/cover-letter", icon: "✉️" },
   { label: "Legal Analyzer", href: "/legal-analyzer", icon: "⚖️" },
   { label: "LinkedIn Optimizer", href: "/linkedin-optimizer", icon: "💼" },
+  { label: "Video Clipper", href: "/video-clipper", icon: "✂️" },
 ];
 
 const QUICK_TOOLS = [
