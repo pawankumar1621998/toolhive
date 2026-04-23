@@ -273,8 +273,10 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
   },
 };
 
-// Priority order — Groq fastest, NVIDIA GPT-120B best quality, then fallbacks
-const PROVIDER_ORDER: Provider[] = ["nvidia-gpt", "nvidia-glm", "nvidia-deepseek", "nvidia2-nemotron", "nvidia2-llama", "groq", "mistral", "openrouter", "gemini", "deepseek", "anthropic"];
+// Priority order — nvidia-gpt first (best quality), then fast reliable fallbacks
+// nvidia-glm and nvidia-deepseek removed: both hang/timeout consistently (socket hang up)
+// nvidia2-nemotron removed: returns 404 with current API key
+const PROVIDER_ORDER: Provider[] = ["nvidia-gpt", "nvidia2-llama", "groq", "mistral", "openrouter", "gemini", "deepseek", "anthropic"];
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
@@ -693,10 +695,6 @@ Provide 3-4 career paths, 4-5 skills to learn, 3 industries. Be specific and act
       const { name, position, company, lastDay, reason, tone } = params as { name?: string; position?: string; company?: string; lastDay?: string; reason?: string; tone?: string };
       return `Write a ${tone ?? "professional"} resignation letter.\nName: ${name ?? "Employee"}\nPosition: ${position ?? "current position"}\nCompany: ${company ?? "the company"}\nLast working day: ${lastDay ?? "two weeks from now"}\n${reason ? `Reason (brief): ${reason}` : ""}\n\nKeep it gracious, professional, and brief. Express gratitude, state last day clearly, offer transition help.`;
     }
-    case "interview-prep": {
-      const { role, company, type, count } = params as { role: string; company?: string; type?: string; count?: number };
-      return `Generate ${count ?? 10} interview questions with model answers for: "${role}"${company ? ` at ${company}` : ""}.\nInterview type: ${type ?? "Mixed (behavioral + technical)"}\n\nFormat each as:\nQ: [question]\nA: [strong model answer using STAR method where applicable]\n\nCover: experience-based, behavioral, situational, and role-specific technical questions. Make answers concise, impressive, and authentic.`;
-    }
     case "linkedin-post": {
       const { topic, tone: postTone, goal } = params as { topic: string; tone?: string; goal?: string };
       return `Write a viral LinkedIn post about: "${topic}"\nTone: ${postTone ?? "Authentic & professional"}\n${goal ? `Goal: ${goal}` : ""}\n\nStructure:\n1. Hook (first line that stops scrolling)\n2. Story or insight (3-5 short paragraphs, each 1-2 sentences)\n3. Key takeaway\n4. CTA (question or call to action)\n\nUse line breaks generously. No hashtag overload (max 3 relevant hashtags at the end). Sound human, not corporate.`;
@@ -744,8 +742,9 @@ export async function POST(request: NextRequest) {
           signal: AbortSignal.timeout(25000),
         });
         if (res.ok) {
-          const data = await res.json() as { result?: string; output?: string };
-          const output = (data.result ?? data.output ?? "").trim();
+          // Render backend wraps result under data.data.result (shape: { success, data: { result } })
+          const raw = await res.json() as { result?: string; output?: string; data?: { result?: string; output?: string } };
+          const output = (raw.result ?? raw.output ?? raw.data?.result ?? raw.data?.output ?? "").trim();
           if (output) return NextResponse.json({ output, provider: "ToolHive AI" });
         }
       } catch {

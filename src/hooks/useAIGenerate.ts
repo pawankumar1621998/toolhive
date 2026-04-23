@@ -107,8 +107,9 @@ export function useAIGenerate(toolSlug: string) {
             body: JSON.stringify(bodyWithLang),
           });
           if (res.ok) {
-            const data = await res.json() as { result?: string; output?: string; error?: string };
-            const out = (data.result ?? data.output ?? "").trim();
+            // Render backend wraps result under data.data.result (shape: { success, data: { result } })
+            const raw = await res.json() as { result?: string; output?: string; error?: string; data?: { result?: string; output?: string } };
+            const out = (raw.result ?? raw.output ?? raw.data?.result ?? raw.data?.output ?? "").trim();
             if (out) {
               rawOutput = out;
               providerName = "ToolHive AI";
