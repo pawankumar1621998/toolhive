@@ -1188,22 +1188,24 @@ function BodyFatCalc() {
 
 function PregnancyCalc() {
   const [lmp,setLmp]=useState("");const [result,setResult]=useState<{edd:string;weeks:number;days:number;trimester:number;daysLeft:number}|null>(null);
+  const [today,setToday]=useState("");
+  useEffect(()=>{setToday(new Date().toISOString().slice(0,10));},[]);
   function calculate(){
     if(!lmp)return;
     const lmpDate=new Date(lmp);
     const edd=new Date(lmpDate.getTime()+280*24*60*60*1000);
-    const today=new Date(); const diffMs=today.getTime()-lmpDate.getTime();
+    const now=new Date(); const diffMs=now.getTime()-lmpDate.getTime();
     const totalDaysPregnant=Math.max(0,Math.floor(diffMs/(24*60*60*1000)));
     const weeks=Math.floor(totalDaysPregnant/7); const days=totalDaysPregnant%7;
     const trimester=weeks<13?1:weeks<27?2:3;
-    const daysLeft=Math.max(0,Math.ceil((edd.getTime()-today.getTime())/(24*60*60*1000)));
+    const daysLeft=Math.max(0,Math.ceil((edd.getTime()-now.getTime())/(24*60*60*1000)));
     setResult({edd:edd.toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"}),weeks,days,trimester,daysLeft});
   }
   return (
     <div className="space-y-5">
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground block">First Day of Last Menstrual Period (LMP)</label>
-        <input type="date" className={inputClass} value={lmp} onChange={e=>{setLmp(e.target.value);setResult(null);}} max={new Date().toISOString().slice(0,10)}/>
+        <input type="date" className={inputClass} value={lmp} onChange={e=>{setLmp(e.target.value);setResult(null);}} max={today||undefined}/>
       </div>
       <button className={primaryBtn} onClick={calculate} disabled={!lmp}>Calculate Due Date</button>
       {result&&(<motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="space-y-3">
