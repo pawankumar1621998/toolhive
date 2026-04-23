@@ -7,17 +7,8 @@ import type { NavItem } from "@/types";
 export const NAV_LINKS: NavItem[] = [
   { label: "PDF Tools", href: "/tools/pdf" },
   { label: "Image Tools", href: "/tools/image" },
-  { label: "Smart Resume", href: "/smart-resume" },
-  { label: "Cover Letter", href: "/cover-letter" },
-  { label: "Legal Analyzer", href: "/legal-analyzer" },
-  { label: "QR & Barcode", href: "/qr-barcode" },
-  { label: "Invoice", href: "/invoice-generator" },
-  { label: "Pomodoro", href: "/pomodoro" },
-  { label: "Colors", href: "/color-palette" },
-  { label: "Countdown", href: "/countdown" },
-  { label: "Spin Wheel", href: "/spin-wheel" },
-  { label: "Typing Test", href: "/typing-test" },
   { label: "AI Writing", href: "/tools/ai-writing" },
+  { label: "Calculators", href: "/tools/calculator" },
   { label: "All Tools", href: "/tools" },
 ];
 
@@ -68,7 +59,7 @@ export const TOOL_CATEGORIES = [
     iconName: "Pen",
     color: "emerald",
     gradient: "from-emerald-500 to-teal-400",
-    toolCount: 32,
+    toolCount: 35,
     href: "/tools/ai-writing",
   },
   {
@@ -96,7 +87,7 @@ export const TOOL_CATEGORIES = [
   {
     id: "calculator",
     label: "Calculators",
-    description: "EMI, SIP, GST, Income Tax, FD, Scientific, Calorie, Tip, Discount — 16 practical daily-life calculators.",
+    description: "EMI, SIP, GST, Income Tax, FD, Scientific, Calorie, Tip, Discount — 28 practical calculators.",
     icon: "🧮",
     iconName: "Calculator",
     color: "orange",
