@@ -6,8 +6,6 @@ import { FeaturedTools } from "@/components/features/home/FeaturedTools";
 import { StatsSection } from "@/components/features/home/StatsSection";
 import { CtaSection } from "@/components/features/home/CtaSection";
 import { RecentTools } from "@/components/features/home/RecentTools";
-import { CodeAIBanner } from "@/components/features/home/CodeAIBanner";
-import { DeepThinkBanner } from "@/components/features/home/DeepThinkBanner";
 import { SectionSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = {
@@ -32,10 +30,6 @@ export default function HomePage() {
     <>
       {/* Hero is above the fold — no Suspense, render immediately */}
       <HeroSection />
-
-      {/* AI feature banners */}
-      <CodeAIBanner />
-      <DeepThinkBanner />
 
       {/* Category grid is static config — no fetch needed */}
       <CategoryGrid />

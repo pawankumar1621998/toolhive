@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useAIGenerate } from "@/hooks/useAIGenerate";
 import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/Badge";
@@ -539,6 +540,7 @@ function WordCounter() {
   const [text, setText] = useState("");
   const stats = countText(text);
   const keywords = text.trim() ? getTopKeywords(text) : [];
+  const { output: aiInsight, loading: aiLoading, generate: getInsight, clear: clearInsight } = useAIGenerate("text-insights");
 
   const statCards = [
     { label: "Words", value: stats.words },
@@ -577,8 +579,29 @@ function WordCounter() {
           </div>
         </div>
       )}
+      {text.split(/\s+/).filter(Boolean).length >= 30 && (
+        <div className="space-y-2">
+          {!aiInsight && (
+            <button
+              onClick={() => getInsight({ text: text.slice(0, 2000), options: { task: "Analyze this text and provide: 1) Tone & Style (formal/informal/persuasive/etc.), 2) Writing Quality (strengths and 2-3 specific improvement suggestions), 3) Clarity Score (1-10) with explanation, 4) Target Audience guess, 5) One-line summary. Be concise and actionable." } })}
+              disabled={aiLoading}
+              className="h-9 px-4 rounded-xl border border-sky-300 bg-sky-50 dark:bg-sky-950/20 text-sky-600 text-xs font-semibold hover:bg-sky-100 dark:hover:bg-sky-950/40 transition-colors disabled:opacity-50">
+              {aiLoading ? "Analyzing…" : "✨ AI Text Insights"}
+            </button>
+          )}
+          {aiInsight && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-sky-200 bg-sky-50 dark:bg-sky-950/20 p-4">
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-xs font-bold text-sky-600 uppercase tracking-wide">AI Text Insights</p>
+                <button onClick={clearInsight} className="text-xs text-foreground-muted hover:text-foreground">✕</button>
+              </div>
+              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{aiInsight}</p>
+            </motion.div>
+          )}
+        </div>
+      )}
       {text && (
-        <button onClick={() => setText("")}
+        <button onClick={() => { setText(""); clearInsight(); }}
           className="text-xs px-3 py-1.5 rounded-lg border border-border bg-background text-foreground-muted hover:text-foreground transition-colors font-medium">
           Clear
         </button>

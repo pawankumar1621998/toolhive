@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { clsx } from "clsx";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import type { Tool } from "@/types";
+import { useAIGenerate } from "@/hooks/useAIGenerate";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared styles
@@ -89,6 +90,7 @@ function BmiCalc() {
   const [heightFt, setHeightFt] = useState("");
   const [heightIn, setHeightIn] = useState("");
   const [bmi, setBmi] = useState<number | null>(null);
+  const { output: aiAdvice, loading: aiLoading, generate: getAdvice, clear: clearAdvice } = useAIGenerate("bmi-advice");
 
   function bmiCategory(b: number): { label: string; color: string } {
     if (b < 18.5) return { label: "Underweight", color: "text-blue-500" };
@@ -148,19 +150,39 @@ function BmiCalc() {
           </div>
         )}
       </div>
-      <button className={primaryBtn} onClick={calculate}>Calculate BMI</button>
+      <button className={primaryBtn} onClick={() => { calculate(); clearAdvice(); }}>Calculate BMI</button>
       {bmi && cat && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={resultCard}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-4xl font-bold text-foreground">{bmi}</p>
-              <p className={clsx("text-sm font-semibold mt-1", cat.color)}>{cat.label}</p>
-            </div>
-            <div className="text-right text-xs text-foreground-muted space-y-1">
-              <p>Underweight: &lt; 18.5</p><p>Normal: 18.5 &ndash; 24.9</p>
-              <p>Overweight: 25 &ndash; 29.9</p><p>Obese: &ge; 30</p>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          <div className={resultCard}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-4xl font-bold text-foreground">{bmi}</p>
+                <p className={clsx("text-sm font-semibold mt-1", cat.color)}>{cat.label}</p>
+              </div>
+              <div className="text-right text-xs text-foreground-muted space-y-1">
+                <p>Underweight: &lt; 18.5</p><p>Normal: 18.5 &ndash; 24.9</p>
+                <p>Overweight: 25 &ndash; 29.9</p><p>Obese: &ge; 30</p>
+              </div>
             </div>
           </div>
+          {!aiAdvice && (
+            <button onClick={() => getAdvice({ text: `BMI: ${bmi}, Category: ${cat.label}, Weight: ${weight}${unit === "metric" ? "kg" : "lbs"}, Height: ${unit === "metric" ? height + "cm" : heightFt + "ft " + heightIn + "in"}`, options: { task: "Give personalized health advice for this BMI result. Include: 1) What this BMI means for their health, 2) Diet tips (3-4 practical points), 3) Exercise recommendations (3-4 specific exercises), 4) Lifestyle changes, 5) When to consult a doctor. Be encouraging and practical. Keep it under 300 words." } })}
+              disabled={aiLoading}
+              className="w-full h-10 rounded-xl border border-orange-300 bg-orange-50 dark:bg-orange-950/20 text-orange-600 text-sm font-semibold hover:bg-orange-100 dark:hover:bg-orange-950/40 transition-colors disabled:opacity-50">
+              {aiLoading ? "Getting AI health advice…" : "✨ Get AI Health Advice"}
+            </button>
+          )}
+          <AnimatePresence>
+            {aiAdvice && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-orange-200 bg-orange-50 dark:bg-orange-950/20 p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-xs font-bold text-orange-600 uppercase tracking-wide">AI Health Advice</p>
+                  <button onClick={clearAdvice} className="text-xs text-foreground-muted hover:text-foreground">✕</button>
+                </div>
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{aiAdvice}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </div>

@@ -3152,6 +3152,272 @@ function PlagiarismCheckerTool() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// AI Math Solver (NVIDIA DeepSeek for step-by-step reasoning)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function MathSolverTool() {
+  const [problem, setProblem] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("math-solver");
+
+  async function handleSolve() {
+    if (!problem.trim()) return;
+    await generate({
+      text: problem,
+      options: {
+        task: `You are an expert math tutor. Solve this math problem step by step. Show every step clearly with explanations a student can understand. Format your response as:
+**Problem:** restate the problem
+**Step 1:** [description] — [calculation]
+**Step 2:** [description] — [calculation]
+...
+**Final Answer:** [bold the answer]
+**Verification:** briefly verify the answer is correct.`
+      }
+    });
+  }
+
+  const EXAMPLES = [
+    "Solve: 2x² + 5x - 3 = 0",
+    "What is the derivative of f(x) = 3x³ + 2x² - 5x + 1?",
+    "A train travels 360 km in 4 hours. What is its speed?",
+    "Find the area of a circle with radius 7 cm",
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">
+          Math Problem <span className="text-rose-500">*</span>
+        </label>
+        <textarea className={inputClass} rows={4}
+          placeholder="Type any math problem — algebra, calculus, geometry, word problems, equations..."
+          value={problem} onChange={(e) => setProblem(e.target.value)} maxLength={500} />
+      </div>
+      <div>
+        <p className="text-xs text-foreground-muted mb-2">Quick examples:</p>
+        <div className="flex flex-wrap gap-2">
+          {EXAMPLES.map(e => (
+            <button key={e} onClick={() => setProblem(e)}
+              className="px-3 py-1.5 rounded-lg border border-border bg-background-subtle text-xs text-foreground-muted hover:text-foreground hover:border-emerald-400 transition-colors">
+              {e}
+            </button>
+          ))}
+        </div>
+      </div>
+      <button onClick={handleSolve} disabled={!problem.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Solving step by step…</> : "🧮 Solve with AI"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Step-by-Step Solution" />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI SEO Meta Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SeoMetaTool() {
+  const [topic, setTopic] = useState("");
+  const [url, setUrl] = useState("");
+  const [keywords, setKeywords] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("seo-meta");
+
+  async function handleGenerate() {
+    if (!topic.trim()) return;
+    await generate({
+      text: topic,
+      options: {
+        url: url || undefined,
+        keywords: keywords || undefined,
+        task: `Generate complete SEO meta tags for the following. Output EXACTLY in this format:
+
+**Title Tag** (50-60 chars):
+[title here]
+
+**Meta Description** (150-160 chars):
+[description here]
+
+**Focus Keyword:**
+[main keyword]
+
+**Secondary Keywords (5):**
+[keyword1], [keyword2], [keyword3], [keyword4], [keyword5]
+
+**Open Graph Title:**
+[og title]
+
+**Open Graph Description:**
+[og description]
+
+**Twitter Card Title:**
+[twitter title]
+
+**Slug Suggestion:**
+[url-slug-here]`
+      }
+    });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">
+          Page Topic / Content Description <span className="text-rose-500">*</span>
+        </label>
+        <textarea className={inputClass} rows={3}
+          placeholder="e.g. A blog post about the best ways to lose weight naturally without going to the gym"
+          value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={400} />
+      </div>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-1.5">Target URL (optional)</label>
+          <input className={inputClass} value={url} onChange={(e) => setUrl(e.target.value)}
+            placeholder="e.g. /blog/lose-weight-naturally" />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-1.5">Target Keywords (optional)</label>
+          <input className={inputClass} value={keywords} onChange={(e) => setKeywords(e.target.value)}
+            placeholder="e.g. lose weight, diet tips, natural weight loss" />
+        </div>
+      </div>
+      <button onClick={handleGenerate} disabled={!topic.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Generating SEO meta…</> : "🔍 Generate SEO Meta Tags"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="SEO Meta Tags" />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// YouTube Description Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function YouTubeDescTool() {
+  const [title, setTitle] = useState("");
+  const [summary, setSummary] = useState("");
+  const [channel, setChannel] = useState("");
+  const { output, loading, error, generate, clear } = useAIGenerate("youtube-desc");
+
+  async function handleGenerate() {
+    if (!title.trim()) return;
+    await generate({
+      text: title,
+      options: {
+        summary: summary || undefined,
+        channel: channel || undefined,
+        task: `Write a complete YouTube video description that maximizes SEO and viewer engagement. Include:
+
+1. **Hook** (2-3 sentences) — compelling opener that hooks viewers
+2. **What You'll Learn** — bullet points of key takeaways
+3. **Chapters/Timestamps** — 5-7 suggested chapter markers (00:00 format)
+4. **About the Channel** — 2 sentences ${channel ? `about "${channel}"` : ""}
+5. **Tags Line** — 15-20 relevant hashtags
+6. **Call to Action** — subscribe, like, comment prompts
+
+Make it naturally SEO-optimized with relevant keywords throughout.`
+      }
+    });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">
+          Video Title <span className="text-rose-500">*</span>
+        </label>
+        <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g. 10 Python Tips Every Developer Should Know in 2025" maxLength={200} />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Brief Video Summary (optional)</label>
+        <textarea className={inputClass} rows={3}
+          placeholder="What topics does the video cover? Any key points to highlight?"
+          value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={400} />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Channel Name (optional)</label>
+        <input className={inputClass} value={channel} onChange={(e) => setChannel(e.target.value)}
+          placeholder="e.g. CodeWithMe" maxLength={100} />
+      </div>
+      <button onClick={handleGenerate} disabled={!title.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Writing description…</> : "▶️ Generate YouTube Description"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="YouTube Description" />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI Idea / Brainstorm Generator
+// ─────────────────────────────────────────────────────────────────────────────
+
+function BrainstormTool() {
+  const [topic, setTopic] = useState("");
+  const [context, setContext] = useState("");
+  const [count, setCount] = useState("10");
+  const { output, loading, error, generate, clear } = useAIGenerate("brainstorm");
+
+  async function handleGenerate() {
+    if (!topic.trim()) return;
+    await generate({
+      text: topic,
+      options: {
+        context: context || undefined,
+        count,
+        task: `Generate ${count} creative, unique, and actionable ideas for the topic below. For each idea:
+- Give it a bold **title**
+- Write 1-2 sentences explaining why it's valuable and how to implement it
+- Make ideas diverse — ranging from simple to ambitious
+
+Be creative and think outside the box. Avoid generic suggestions.`
+      }
+    });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">
+          Topic to Brainstorm <span className="text-rose-500">*</span>
+        </label>
+        <input className={inputClass} value={topic} onChange={(e) => setTopic(e.target.value)}
+          placeholder="e.g. side hustle ideas, blog content for a food website, startup ideas using AI" maxLength={200} />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Additional Context (optional)</label>
+        <textarea className={inputClass} rows={2}
+          placeholder="Target audience, constraints, industry, budget, etc."
+          value={context} onChange={(e) => setContext(e.target.value)} maxLength={300} />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Number of Ideas</label>
+        <div className="flex gap-2">
+          {["5", "10", "15", "20"].map(n => (
+            <button key={n} onClick={() => setCount(n)}
+              className={clsx("px-4 py-2 rounded-xl border text-sm font-semibold transition-colors",
+                count === n ? "bg-emerald-500/10 border-emerald-500 text-emerald-600" : "border-border text-foreground-muted hover:border-emerald-400")}>
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+      <button onClick={handleGenerate} disabled={!topic.trim() || loading}
+        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity">
+        {loading ? <><Spinner /> Brainstorming…</> : "💡 Generate Ideas"}
+      </button>
+      {error && <ErrorBanner message={error} />}
+      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Ideas" />}</AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Default / Fallback
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -3725,6 +3991,10 @@ const TOOL_TITLES: Record<string, string> = {
   "ai-detector": "AI Content Detector",
   "ai-humanizer": "AI Text Humanizer",
   "plagiarism-checker": "Plagiarism Checker",
+  "math-solver": "AI Math Solver",
+  "seo-meta": "AI SEO Meta Generator",
+  "youtube-desc": "YouTube Description Generator",
+  "brainstorm": "AI Idea & Brainstorm Generator",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3845,6 +4115,14 @@ export function AIWritingWorkspace({ tool }: { tool: Tool }) {
         return <AIHumanizerTool />;
       case "plagiarism-checker":
         return <PlagiarismCheckerTool />;
+      case "math-solver":
+        return <MathSolverTool />;
+      case "seo-meta":
+        return <SeoMetaTool />;
+      case "youtube-desc":
+        return <YouTubeDescTool />;
+      case "brainstorm":
+        return <BrainstormTool />;
       default:
         return <DefaultTool tool={tool} />;
     }
