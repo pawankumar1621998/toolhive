@@ -264,6 +264,7 @@ function EmiCalc() {
   const [rate, setRate] = useState("");
   const [tenure, setTenure] = useState("");
   const [result, setResult] = useState<{ emi: number; total: number; interest: number } | null>(null);
+  const { output: aiAdvice, loading: aiLoading, generate: getAdvice, clear: clearAdvice } = useAIGenerate("emi-advice");
 
   function calculate() {
     const p = parseFloat(principal), r = parseFloat(rate) / 12 / 100, n = parseFloat(tenure) * 12;
@@ -271,6 +272,7 @@ function EmiCalc() {
     const emi = (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
     const total = emi * n;
     setResult({ emi: Math.round(emi), total: Math.round(total), interest: Math.round(total - p) });
+    clearAdvice();
   }
 
   return (
@@ -289,17 +291,37 @@ function EmiCalc() {
       </div>
       <button className={primaryBtn} onClick={calculate} disabled={!principal || !rate || !tenure}>Calculate EMI</button>
       {result && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-3 gap-3">
-          {[
-            { label: "Monthly EMI", value: `\u20b9${fmt(result.emi)}`, highlight: true },
-            { label: "Total Amount", value: `\u20b9${fmt(result.total)}`, highlight: false },
-            { label: "Total Interest", value: `\u20b9${fmt(result.interest)}`, highlight: false },
-          ].map(({ label, value, highlight }) => (
-            <div key={label} className={clsx(resultCard, "text-center")}>
-              <div className={clsx("text-xl font-bold", highlight ? "text-orange-500" : "text-foreground")}>{value}</div>
-              <div className="text-xs text-foreground-muted mt-0.5">{label}</div>
-            </div>
-          ))}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: "Monthly EMI", value: `\u20b9${fmt(result.emi)}`, highlight: true },
+              { label: "Total Amount", value: `\u20b9${fmt(result.total)}`, highlight: false },
+              { label: "Total Interest", value: `\u20b9${fmt(result.interest)}`, highlight: false },
+            ].map(({ label, value, highlight }) => (
+              <div key={label} className={clsx(resultCard, "text-center")}>
+                <div className={clsx("text-xl font-bold", highlight ? "text-orange-500" : "text-foreground")}>{value}</div>
+                <div className="text-xs text-foreground-muted mt-0.5">{label}</div>
+              </div>
+            ))}
+          </div>
+          {!aiAdvice && (
+            <button onClick={() => getAdvice({ text: `Loan: ₹${principal}, Rate: ${rate}% p.a., Tenure: ${tenure} years, EMI: ₹${result.emi}/month, Total Interest: ₹${result.interest}`, options: { task: "Give practical loan repayment advice. Include: 1) Is this EMI affordable? 2) Prepayment tips to save on interest, 3) Impact of reducing tenure by 2 years, 4) Balance transfer consideration. Be concise and helpful. Under 250 words." } })}
+              disabled={aiLoading}
+              className="w-full h-10 rounded-xl border border-orange-300 bg-orange-50 dark:bg-orange-950/20 text-orange-600 text-sm font-semibold hover:bg-orange-100 dark:hover:bg-orange-950/40 transition-colors disabled:opacity-50">
+              {aiLoading ? "Getting AI loan advice…" : "✨ Get AI Loan Advice"}
+            </button>
+          )}
+          <AnimatePresence>
+            {aiAdvice && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-orange-200 bg-orange-50 dark:bg-orange-950/20 p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-xs font-bold text-orange-600 uppercase tracking-wide">AI Loan Advice</p>
+                  <button onClick={clearAdvice} className="text-xs text-foreground-muted hover:text-foreground">✕</button>
+                </div>
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{aiAdvice}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </div>
@@ -388,6 +410,7 @@ function SipCalc() {
   const [rate, setRate] = useState("");
   const [years, setYears] = useState("");
   const [result, setResult] = useState<{ maturity: number; invested: number; gained: number } | null>(null);
+  const { output: aiAdvice, loading: aiLoading, generate: getAdvice, clear: clearAdvice } = useAIGenerate("sip-advice");
 
   function calculate() {
     const p = parseFloat(monthly), r = parseFloat(rate) / 12 / 100, n = parseFloat(years) * 12;
@@ -395,6 +418,7 @@ function SipCalc() {
     const maturity = p * ((Math.pow(1 + r, n) - 1) / r) * (1 + r);
     const invested = p * n;
     setResult({ maturity: Math.round(maturity), invested: Math.round(invested), gained: Math.round(maturity - invested) });
+    clearAdvice();
   }
 
   return (
@@ -432,6 +456,24 @@ function SipCalc() {
               Returns of <span className="font-bold text-orange-500">{((result.gained / result.invested) * 100).toFixed(1)}%</span> on your total investment
             </p>
           </div>
+          {!aiAdvice && (
+            <button onClick={() => getAdvice({ text: `Monthly SIP: ₹${monthly}, Expected Rate: ${rate}% p.a., Period: ${years} years, Maturity: ₹${result.maturity}, Invested: ₹${result.invested}, Wealth Gained: ₹${result.gained}`, options: { task: "Give SIP investment advice. Include: 1) Is this return expectation realistic? 2) Best mutual fund categories for this goal (ELSS, Large-cap, Flexi-cap), 3) Step-up SIP tip (increase 10% annually), 4) LTCG tax note. Be concise and practical. Under 250 words." } })}
+              disabled={aiLoading}
+              className="w-full h-10 rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 text-sm font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-950/40 transition-colors disabled:opacity-50">
+              {aiLoading ? "Getting AI investment advice…" : "✨ Get AI Investment Advice"}
+            </button>
+          )}
+          <AnimatePresence>
+            {aiAdvice && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-xs font-bold text-emerald-700 uppercase tracking-wide">AI Investment Advice</p>
+                  <button onClick={clearAdvice} className="text-xs text-foreground-muted hover:text-foreground">✕</button>
+                </div>
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{aiAdvice}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </div>
@@ -522,6 +564,7 @@ function IncomeTaxCalc() {
   const [deductions80D, setDeductions80D] = useState("");
   const [hra, setHra] = useState("");
   const [result, setResult] = useState<{ oldTax: number; newTax: number; oldTakeHome: number; newTakeHome: number } | null>(null);
+  const { output: aiAdvice, loading: aiLoading, generate: getAdvice, clear: clearAdvice } = useAIGenerate("tax-advice");
 
   function calcNewRegimeTax(taxable: number): number {
     if (taxable <= 400000) return 0;
@@ -566,6 +609,7 @@ function IncomeTaxCalc() {
     const oldTax = calcOldRegimeTax(oldTaxable);
 
     setResult({ oldTax, newTax, oldTakeHome: Math.round(grossIncome - oldTax), newTakeHome: Math.round(grossIncome - newTax) });
+    clearAdvice();
   }
 
   const better = result ? (result.newTax <= result.oldTax ? "new" : "old") : null;
@@ -615,6 +659,24 @@ function IncomeTaxCalc() {
               <span className="font-bold text-emerald-500">\u20b9{fmt(Math.abs(result.oldTax - result.newTax))}</span> in taxes this year
             </p>
           </div>
+          {!aiAdvice && (
+            <button onClick={() => getAdvice({ text: `Annual Income: ₹${income}, Better regime: ${better} regime, Old Tax: ₹${result.oldTax}, New Tax: ₹${result.newTax}, 80C invested: ₹${deductions80C || 0}, 80D: ₹${deductions80D || 0}`, options: { task: "Give practical Indian income tax saving tips. Include: 1) Best 80C investments (ELSS, PPF, NPS) with amounts, 2) 80D health insurance benefit, 3) Whether to switch tax regimes, 4) One more deduction they may have missed. Be specific and actionable. Under 250 words." } })}
+              disabled={aiLoading}
+              className="w-full h-10 rounded-xl border border-blue-300 bg-blue-50 dark:bg-blue-950/20 text-blue-700 text-sm font-semibold hover:bg-blue-100 dark:hover:bg-blue-950/40 transition-colors disabled:opacity-50">
+              {aiLoading ? "Getting AI tax tips…" : "✨ Get AI Tax Saving Tips"}
+            </button>
+          )}
+          <AnimatePresence>
+            {aiAdvice && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">AI Tax Saving Tips</p>
+                  <button onClick={clearAdvice} className="text-xs text-foreground-muted hover:text-foreground">✕</button>
+                </div>
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{aiAdvice}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </div>
@@ -1521,6 +1583,7 @@ function CalorieCalc() {
   const [height, setHeight] = useState("");
   const [activity, setActivity] = useState(1.55);
   const [result, setResult] = useState<{ bmr: number; tdee: number } | null>(null);
+  const { output: aiAdvice, loading: aiLoading, generate: getAdvice, clear: clearAdvice } = useAIGenerate("calorie-advice");
 
   const activityLevels = [
     { label: "Sedentary (office job, no exercise)", value: 1.2 },
@@ -1537,6 +1600,7 @@ function CalorieCalc() {
       ? 10 * w + 6.25 * h - 5 * a + 5
       : 10 * w + 6.25 * h - 5 * a - 161;
     setResult({ bmr: Math.round(bmr), tdee: Math.round(bmr * activity) });
+    clearAdvice();
   }
 
   return (
@@ -1599,6 +1663,24 @@ function CalorieCalc() {
               ))}
             </div>
           </div>
+          {!aiAdvice && (
+            <button onClick={() => getAdvice({ text: `TDEE: ${result.tdee} kcal/day, BMR: ${result.bmr} kcal/day, Gender: ${gender}, Age: ${age}, Weight: ${weight}kg, Height: ${height}cm, Activity: ${activityLevels.find(a => a.value === activity)?.label}`, options: { task: "Create a brief personalized diet and fitness plan. Include: 1) Recommended macro split (protein/carbs/fats in grams), 2) 3-4 healthy meal ideas suited to their calorie target, 3) Exercise recommendation based on their activity level, 4) One practical tip for staying consistent. Keep it under 250 words." } })}
+              disabled={aiLoading}
+              className="w-full h-10 rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/20 text-rose-700 text-sm font-semibold hover:bg-rose-100 dark:hover:bg-rose-950/40 transition-colors disabled:opacity-50">
+              {aiLoading ? "Getting AI diet plan…" : "✨ Get AI Diet & Fitness Plan"}
+            </button>
+          )}
+          <AnimatePresence>
+            {aiAdvice && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-rose-200 bg-rose-50 dark:bg-rose-950/20 p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-xs font-bold text-rose-700 uppercase tracking-wide">AI Diet & Fitness Plan</p>
+                  <button onClick={clearAdvice} className="text-xs text-foreground-muted hover:text-foreground">✕</button>
+                </div>
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{aiAdvice}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </div>

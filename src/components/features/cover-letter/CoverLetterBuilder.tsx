@@ -451,7 +451,10 @@ function FormSection({ title, color, children }: { title: string; color: string;
 function LetterPreview({ form, letter, company, role, color }: {
   form: LetterForm; letter: string; company: string; role: string; color: string;
 }) {
-  const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const [today, setToday] = useState("");
+  useEffect(() => {
+    setToday(new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }));
+  }, []);
   const contacts = [form.email, form.phone, form.location, form.linkedin].filter(Boolean).join("  ·  ");
 
   return (

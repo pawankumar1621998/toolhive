@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 // Provider definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Provider = "gemini" | "groq" | "deepseek" | "anthropic" | "mistral" | "openrouter" | "nvidia-gpt" | "nvidia-glm" | "nvidia-deepseek" | "nvidia2-nemotron" | "nvidia2-llama";
+type Provider = "gemini" | "groq" | "deepseek" | "anthropic" | "mistral" | "openrouter" | "nvidia-gpt" | "nvidia-glm" | "nvidia-deepseek" | "nvidia2-nemotron" | "nvidia2-llama" | "nvidia-mixtral";
 
 interface ProviderConfig {
   name: string;
@@ -246,6 +246,28 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
     },
   },
 
+  "nvidia-mixtral": {
+    name: "NVIDIA Mixtral",
+    envKey: "NVIDIA_API_KEY",
+    call: async (apiKey, prompt) => {
+      const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "mistralai/mixtral-8x7b-instruct-v0.1",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 1024,
+          temperature: 0.5,
+          top_p: 1,
+          stream: false,
+        }),
+      });
+      if (!res.ok) throw new Error(`NVIDIA Mixtral ${res.status}`);
+      const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+      return data.choices?.[0]?.message?.content ?? "";
+    },
+  },
+
   openrouter: {
     name: "OpenRouter",
     envKey: "OPENROUTER_API_KEY",
@@ -276,7 +298,7 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
 // Priority order — nvidia-gpt first (best quality), then fast reliable fallbacks
 // nvidia-glm and nvidia-deepseek removed: both hang/timeout consistently (socket hang up)
 // nvidia2-nemotron removed: returns 404 with current API key
-const PROVIDER_ORDER: Provider[] = ["nvidia-gpt", "nvidia2-llama", "groq", "mistral", "openrouter", "gemini", "deepseek", "anthropic"];
+const PROVIDER_ORDER: Provider[] = ["nvidia-gpt", "nvidia-mixtral", "nvidia2-llama", "groq", "mistral", "openrouter", "gemini", "deepseek", "anthropic"];
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([

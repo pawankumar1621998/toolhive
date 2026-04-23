@@ -39,6 +39,11 @@ const QUICK_TOOLS = [
   { label: "Typing Test", href: "/typing-test" },
   { label: "Countdown", href: "/countdown" },
   { label: "Spin Wheel", href: "/spin-wheel" },
+  { label: "Password Generator", href: "/password-generator" },
+  { label: "Stopwatch", href: "/stopwatch" },
+  { label: "Name Picker", href: "/name-picker" },
+  { label: "Budget Planner", href: "/budget-planner" },
+  { label: "Flashcard AI", href: "/flashcard" },
 ];
 
 const COLOR_MAP: Record<string, string> = {

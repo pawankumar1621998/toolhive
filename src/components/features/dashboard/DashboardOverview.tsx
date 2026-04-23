@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -321,8 +321,11 @@ export function DashboardOverview() {
   const { user }                    = useAuth();
   const { data, loading }           = useDashboard();
 
-  const hour      = new Date().getHours();
-  const greeting  = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const [greeting, setGreeting] = useState("Good morning");
+  useEffect(() => {
+    const hour = new Date().getHours();
+    setGreeting(hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening");
+  }, []);
   const firstName = user?.name?.split(" ")[0] ?? "Explorer";
 
   const dailyUsed    = data?.usage.daily.used    ?? 0;

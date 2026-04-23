@@ -3995,6 +3995,23 @@ const TOOL_TITLES: Record<string, string> = {
   "seo-meta": "AI SEO Meta Generator",
   "youtube-desc": "YouTube Description Generator",
   "brainstorm": "AI Idea & Brainstorm Generator",
+  // Extended tools
+  "code-generator": "Code Generator",
+  "code-debugger": "Code Debugger",
+  "essay-writer": "Essay Writer",
+  "business-plan": "Business Plan Writer",
+  "news-article": "News Article Writer",
+  "legal-summarizer": "Legal Document Summarizer",
+  "paragraph-expander": "Paragraph Expander",
+  "product-review": "Product Review Writer",
+  "faq-generator": "FAQ Generator",
+  "cover-letter-gen": "Cover Letter Generator",
+  "resignation-letter": "Resignation Letter Writer",
+  "interview-prep": "AI Interview Prep",
+  "linkedin-post": "LinkedIn Post Writer",
+  "youtube-script": "YouTube Script Writer",
+  "twitter-thread": "Twitter Thread Writer",
+  "bio-writer": "AI Bio Writer",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

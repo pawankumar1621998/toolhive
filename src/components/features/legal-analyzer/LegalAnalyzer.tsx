@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Scale, Sparkles, ChevronRight, AlertTriangle, CheckCircle2,
   XCircle, Clock, DollarSign, HelpCircle, Loader2, ArrowLeft,
   FileText, Shield, ShieldAlert, ShieldCheck, Copy, Check, Download,
-  RefreshCw, Info,
+  RefreshCw, Info, Upload,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -100,7 +100,20 @@ export function LegalAnalyzer() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<TabId>("summary");
   const [downloading, setDownloading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const readFile = useCallback((file: File) => {
+    if (!file.name.match(/\.(txt|text)$/i)) {
+      setError("Only .txt files are supported. For PDF/DOCX, please copy-paste the text.");
+      return;
+    }
+    setDocName(file.name.replace(/\.\w+$/, ""));
+    const reader = new FileReader();
+    reader.onload = ev => { setDocText((ev.target?.result as string) ?? ""); setError(""); };
+    reader.readAsText(file);
+  }, []);
 
   const wordCount = docText.trim().split(/\s+/).filter(Boolean).length;
 
@@ -166,6 +179,27 @@ export function LegalAnalyzer() {
           <label className="block text-sm font-medium text-foreground mb-1.5">Document Name <span className="text-foreground-muted">(optional)</span></label>
           <input value={docName} onChange={e => setDocName(e.target.value)} placeholder="e.g. Apartment Rental Agreement — Jan 2025"
             className="w-full border border-border rounded-xl px-4 py-2.5 text-sm bg-background text-foreground placeholder:text-foreground-muted/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-colors" />
+        </div>
+
+        {/* File Upload */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            Upload File <span className="text-foreground-muted text-xs">(optional — .txt files only)</span>
+          </label>
+          <input ref={fileInputRef} type="file" accept=".txt,.text" className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) readFile(f); if (fileInputRef.current) fileInputRef.current.value = ""; }} />
+          <div
+            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files?.[0]; if (f) readFile(f); }}
+            onClick={() => fileInputRef.current?.click()}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-dashed cursor-pointer transition-all ${dragOver ? "border-violet-500 bg-violet-500/10" : "border-border hover:border-violet-500/50 hover:bg-violet-500/5"}`}>
+            <Upload className="h-5 w-5 text-violet-400 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-foreground">Upload .txt file or drag & drop here</p>
+              <p className="text-xs text-foreground-muted mt-0.5">For PDF/DOCX: open the file, select all text, and paste below</p>
+            </div>
+          </div>
         </div>
 
         {/* Document text */}

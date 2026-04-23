@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+
 /**
  * useDashboard — returns local mock data.
  * No auth / API required — all tools are free.
@@ -35,22 +37,31 @@ export interface DashboardData {
   plan:           string;
 }
 
-const MONTH = new Date().toLocaleString("default", { month: "long" });
-
 const DEFAULT_DATA: DashboardData = {
   stats: { totalFiles: 0, processedFiles: 0, pendingFiles: 0 },
   recentActivity: [],
   usage: {
     daily:   { used: 0, limit: 999, remaining: null },
-    monthly: { used: 0, limit: 999, remaining: null, month: MONTH },
+    monthly: { used: 0, limit: 999, remaining: null, month: "" },
     isUnlimited: true,
   },
   plan: "free",
 };
 
 export function useDashboard() {
+  const data = useMemo<DashboardData>(() => ({
+    ...DEFAULT_DATA,
+    usage: {
+      ...DEFAULT_DATA.usage,
+      monthly: {
+        ...DEFAULT_DATA.usage.monthly,
+        month: new Date().toLocaleString("default", { month: "long" }),
+      },
+    },
+  }), []);
+
   return {
-    data:    DEFAULT_DATA,
+    data,
     loading: false,
     error:   null,
     refresh: () => {},
