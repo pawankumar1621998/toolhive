@@ -30,6 +30,8 @@ const AI_TOOLS = [
   { label: "Legal Analyzer", href: "/legal-analyzer", icon: "⚖️" },
   { label: "LinkedIn Optimizer", href: "/linkedin-optimizer", icon: "💼" },
   { label: "Video Clipper", href: "/video-clipper", icon: "✂️" },
+  { label: "AI Image Generator", href: "/text-to-image", icon: "🎨" },
+  { label: "Text to Audio", href: "/text-to-audio", icon: "🔊" },
 ];
 
 const QUICK_TOOLS = [
