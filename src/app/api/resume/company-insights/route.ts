@@ -51,26 +51,26 @@ export async function POST(req: NextRequest) {
     };
 
     if (action === "insights") {
-      const prompt = `You are a senior recruiter and resume expert with deep knowledge of hiring at top companies.
+      const prompt = `You are a senior recruiter and resume expert with deep knowledge of hiring across industries.
 
-Provide detailed, specific insights about what makes resumes get SELECTED at ${company} for a ${role || "software engineering"} role.
+Provide detailed, specific insights about what makes resumes get SELECTED for a ${role || 'professional'} position in the ${company} field/industry.
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
   "pageLength": "1 page" or "2 pages",
   "format": "brief description of preferred layout (e.g. clean single-column, two-column with sidebar)",
   "bulletStyle": "how to write bullet points (e.g. STAR format, PAR format, XYZ formula)",
-  "keyPrinciples": ["3-4 core values ${company} looks for in resumes"],
-  "mustHaveKeywords": ["8-10 keywords/skills that appear in selected resumes at ${company}"],
-  "mustHaveSections": ["sections that are required or strongly preferred at ${company}"],
-  "avoid": ["3-4 things that get resumes rejected at ${company}"],
+  "keyPrinciples": ["3-4 core values that ${company} field hiring managers look for in resumes"],
+  "mustHaveKeywords": ["8-10 keywords/skills that appear in selected resumes in the ${company} field"],
+  "mustHaveSections": ["sections that are required or strongly preferred in the ${company} field"],
+  "avoid": ["3-4 things that get resumes rejected in the ${company} field"],
   "bulletExample": {
-    "bad": "one example of a weak bullet point",
-    "good": "same bullet rewritten the way ${company} likes it"
+    "bad": "one example of a weak bullet point for a ${company} role",
+    "good": "same bullet rewritten the way ${company} hiring managers prefer"
   },
-  "insiderTip": "one specific insider tip from someone who has seen ${company} resumes get selected",
-  "atsScore": "how strict is ${company} ATS scanning (Low/Medium/High)",
-  "hiringVolume": "how competitive is hiring at ${company}"
+  "insiderTip": "one specific insider tip from someone who has reviewed resumes in the ${company} field",
+  "atsScore": "how strict is ATS scanning in the ${company} field (Low/Medium/High)",
+  "hiringVolume": "how competitive is hiring in the ${company} field"
 }`;
 
       const raw = await callAI(prompt);
@@ -81,33 +81,33 @@ Return ONLY valid JSON (no markdown, no explanation):
     }
 
     if (action === "optimize") {
-      const prompt = `You are a professional resume writer who specializes in writing resumes that get selected at ${company}.
+      const prompt = `You are a professional resume writer who specializes in writing resumes that get selected in the ${company} field/industry.
 
-The candidate is applying for: ${role || "a software engineering role"} at ${company}.
+The candidate is applying for: ${role || "a professional role"} in the ${company} field/industry.
 
 Their current resume data:
 ${JSON.stringify(resumeData, null, 2)}
 
-Rewrite and optimize this resume specifically for ${company}. Apply ${company}'s preferred:
-- Bullet point style and format
-- Keywords and terminology used internally at ${company}
-- Quantification and impact metrics
-- Cultural alignment language
+Rewrite and optimize this resume specifically for the ${company} field/industry. Apply the preferred style for ${company}:
+- Bullet point style and format used in the ${company} field
+- Keywords and terminology relevant to the ${company} field
+- Quantification and impact metrics appropriate for ${company} roles
+- Industry-aligned language and framing
 
 Return ONLY valid JSON:
 {
-  "summary": "optimized 2-3 sentence professional summary tailored for ${company}",
+  "summary": "optimized 2-3 sentence professional summary tailored for the ${company} field/industry",
   "workExperience": [
     {
       "id": "same id as input",
-      "description": "rewritten bullet points optimized for ${company} (newline separated, start each with •)"
+      "description": "rewritten bullet points optimized for the ${company} field (newline separated, start each with •)"
     }
   ],
   "skills": {
-    "technical": ["optimized technical skills list with ${company}-relevant skills added"],
-    "soft": ["optimized soft skills aligned with ${company} values"]
+    "technical": ["optimized skills list with ${company}-field-relevant skills added"],
+    "soft": ["optimized soft skills aligned with ${company} field values"]
   },
-  "optimizationNotes": ["3-4 specific changes made and why they help at ${company}"]
+  "optimizationNotes": ["3-4 specific changes made and why they help for the ${company} field/industry"]
 }`;
 
       const raw = await callAI(prompt);

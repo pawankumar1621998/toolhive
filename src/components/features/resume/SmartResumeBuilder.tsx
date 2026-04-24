@@ -9,53 +9,86 @@ import {
   TrendingUp, ShieldCheck, FileText, Loader2,
 } from "lucide-react";
 
-// ─── Company data ─────────────────────────────────────────────────────────────
+// ─── Field data ───────────────────────────────────────────────────────────────
 
-const COMPANIES = [
-  { id: "google",     name: "Google",         logo: "G",  color: "#4285F4", bg: "#EEF3FF", industry: "Tech",       tier: "FAANG" },
-  { id: "amazon",     name: "Amazon",         logo: "A",  color: "#FF9900", bg: "#FFF7ED", industry: "Tech",       tier: "FAANG" },
-  { id: "microsoft",  name: "Microsoft",      logo: "M",  color: "#00A4EF", bg: "#EFF9FF", industry: "Tech",       tier: "FAANG" },
-  { id: "meta",       name: "Meta",           logo: "f",  color: "#0866FF", bg: "#EEF3FF", industry: "Tech",       tier: "FAANG" },
-  { id: "apple",      name: "Apple",          logo: "",  color: "#000000", bg: "#F3F3F3", industry: "Tech",       tier: "FAANG" },
-  { id: "netflix",    name: "Netflix",        logo: "N",  color: "#E50914", bg: "#FFF0F0", industry: "Tech",       tier: "Top-10" },
-  { id: "uber",       name: "Uber",           logo: "U",  color: "#000000", bg: "#F3F3F3", industry: "Tech",       tier: "Top-10" },
-  { id: "airbnb",     name: "Airbnb",         logo: "A",  color: "#FF5A5F", bg: "#FFF0F0", industry: "Tech",       tier: "Top-10" },
-  { id: "linkedin",   name: "LinkedIn",       logo: "in", color: "#0077B5", bg: "#EEF6FF", industry: "Tech",       tier: "Top-10" },
-  { id: "salesforce", name: "Salesforce",     logo: "S",  color: "#00A1E0", bg: "#EFF9FF", industry: "Tech",       tier: "Top-10" },
-  { id: "goldman",    name: "Goldman Sachs",  logo: "GS", color: "#1B5299", bg: "#EEF2FF", industry: "Finance",    tier: "Top-10" },
-  { id: "jpmorgan",   name: "JP Morgan",      logo: "JP", color: "#003087", bg: "#EEF2FF", industry: "Finance",    tier: "Top-10" },
-  { id: "mckinsey",   name: "McKinsey",       logo: "Mc", color: "#1B1B1B", bg: "#F5F5F5", industry: "Consulting", tier: "Top-10" },
-  { id: "bcg",        name: "BCG",            logo: "B",  color: "#009F6B", bg: "#EEFBF5", industry: "Consulting", tier: "Top-10" },
-  { id: "deloitte",   name: "Deloitte",       logo: "D",  color: "#86BC25", bg: "#F4FAEE", industry: "Consulting", tier: "Big-4" },
-  { id: "tcs",        name: "TCS",            logo: "T",  color: "#1C4F9C", bg: "#EEF2FF", industry: "IT",         tier: "India" },
-  { id: "infosys",    name: "Infosys",        logo: "i",  color: "#007CC3", bg: "#EEF7FF", industry: "IT",         tier: "India" },
-  { id: "wipro",      name: "Wipro",          logo: "W",  color: "#341F6A", bg: "#F2EEFF", industry: "IT",         tier: "India" },
-  { id: "accenture",  name: "Accenture",      logo: ">",  color: "#A100FF", bg: "#F7EEFF", industry: "Consulting", tier: "Global" },
-  { id: "ibm",        name: "IBM",            logo: "I",  color: "#0530AD", bg: "#EEF2FF", industry: "Tech",       tier: "Global" },
-  { id: "adobe",      name: "Adobe",          logo: "Ai", color: "#FF0000", bg: "#FFF0F0", industry: "Tech",       tier: "Top-25" },
-  { id: "twitter",    name: "X (Twitter)",    logo: "X",  color: "#000000", bg: "#F3F3F3", industry: "Tech",       tier: "Top-25" },
-];
+const FIELDS = [
+  { id: "technology",   name: "Technology",          icon: "💻", color: "#4285F4", bg: "#EEF3FF", category: "Tech",     desc: "Software, IT, AI & Data Science" },
+  { id: "healthcare",   name: "Healthcare",           icon: "🏥", color: "#E53E3E", bg: "#FFF5F5", category: "Health",   desc: "Doctors, Nurses, Medical Staff" },
+  { id: "finance",      name: "Finance & Banking",    icon: "💳", color: "#1B5299", bg: "#EEF2FF", category: "Finance",  desc: "Banking, Investment, Accounting" },
+  { id: "education",    name: "Education",            icon: "🎓", color: "#38A169", bg: "#F0FFF4", category: "Social",   desc: "Teachers, Professors, Trainers" },
+  { id: "legal",        name: "Legal",                icon: "⚖️", color: "#744210", bg: "#FFFAF0", category: "Services", desc: "Lawyers, Legal Advisors, Paralegal" },
+  { id: "marketing",    name: "Marketing & PR",       icon: "📣", color: "#D53F8C", bg: "#FFF5F7", category: "Business", desc: "Digital Marketing, Brand, SEO" },
+  { id: "design",       name: "Design & Creative",    icon: "🎨", color: "#805AD5", bg: "#FAF5FF", category: "Creative", desc: "UI/UX, Graphic, Industrial Design" },
+  { id: "engineering",  name: "Engineering",          icon: "⚙️", color: "#C05621", bg: "#FFF8F0", category: "Tech",     desc: "Civil, Mechanical, Electrical Eng." },
+  { id: "sales",        name: "Sales & Business Dev", icon: "📈", color: "#2B6CB0", bg: "#EBF8FF", category: "Business", desc: "Sales, BD, Account Management" },
+  { id: "hospitality",  name: "Hospitality & Food",   icon: "🍽️", color: "#B7791F", bg: "#FFFFF0", category: "Services", desc: "Hotels, Restaurants, Tourism" },
+  { id: "media",        name: "Media & Journalism",   icon: "📰", color: "#C53030", bg: "#FFF5F5", category: "Creative", desc: "Journalism, Content, Broadcasting" },
+  { id: "government",   name: "Government & Civil",   icon: "🏛️", color: "#2C5282", bg: "#EBF4FF", category: "Social",   desc: "Civil Services, Public Sector, IAS" },
+  { id: "science",      name: "Science & Research",   icon: "🔬", color: "#285E61", bg: "#E6FFFA", category: "Health",   desc: "Research, Pharma, Biotech, Lab" },
+  { id: "hr",           name: "Human Resources",      icon: "👥", color: "#553C9A", bg: "#FAF5FF", category: "Business", desc: "HR, Recruitment, L&D, Payroll" },
+  { id: "real-estate",  name: "Real Estate",          icon: "🏠", color: "#276749", bg: "#F0FFF4", category: "Finance",  desc: "Property, Construction, Architecture" },
+  { id: "logistics",    name: "Logistics & Supply",   icon: "📦", color: "#744210", bg: "#FFF8F0", category: "Business", desc: "Supply Chain, Logistics, Operations" },
+  { id: "arts",         name: "Arts & Entertainment", icon: "🎭", color: "#97266D", bg: "#FFF5F7", category: "Creative", desc: "Performing Arts, Film, Music" },
+  { id: "agriculture",  name: "Agriculture",          icon: "🌾", color: "#2F855A", bg: "#F0FFF4", category: "Services", desc: "Farming, Agri-business, Veterinary" },
+] as const;
 
-const INDUSTRIES = ["All", "Tech", "Finance", "Consulting", "IT"];
-const TIERS = ["All", "FAANG", "Top-10", "India", "Global", "Big-4", "Top-25"];
+const FIELD_CATEGORIES = ["All", "Tech", "Health", "Finance", "Business", "Creative", "Social", "Services"];
+
+const FIELD_TEMPLATE: Record<string, "modern" | "classic" | "minimal" | "sidebar"> = {
+  technology: "modern",  healthcare: "classic",  finance: "classic",
+  education: "classic",  legal: "classic",       marketing: "modern",
+  design: "sidebar",     engineering: "modern",  sales: "modern",
+  hospitality: "minimal",media: "modern",        government: "classic",
+  science: "classic",    hr: "modern",           "real-estate": "minimal",
+  logistics: "modern",   arts: "sidebar",        agriculture: "minimal",
+};
+
+interface FieldConfig {
+  skillsLabel: string;
+  skillsPlaceholder: string;
+  softLabel: string;
+  projectsLabel: string;
+  showProjects: boolean;
+}
+
+const FIELD_CONFIG: Record<string, FieldConfig> = {
+  technology:   { skillsLabel: "Technical Skills",     skillsPlaceholder: "React, Python, AWS, Docker, Git...",                softLabel: "Soft Skills",          projectsLabel: "Projects",                   showProjects: true  },
+  healthcare:   { skillsLabel: "Clinical Skills",      skillsPlaceholder: "Patient Care, Diagnosis, EMR, BLS, Pharmacology...", softLabel: "Professional Skills",  projectsLabel: "Research / Publications",    showProjects: false },
+  finance:      { skillsLabel: "Finance Skills",       skillsPlaceholder: "Financial Modeling, Excel, Bloomberg, CFA, SAP...", softLabel: "Soft Skills",          projectsLabel: "Key Transactions / Deals",   showProjects: false },
+  education:    { skillsLabel: "Teaching Skills",      skillsPlaceholder: "Lesson Planning, Curriculum, E-learning, LMS...",  softLabel: "Competencies",         projectsLabel: "Research / Publications",    showProjects: false },
+  legal:        { skillsLabel: "Practice Areas",       skillsPlaceholder: "Corporate Law, Litigation, Contract Drafting...",  softLabel: "Professional Skills",  projectsLabel: "Notable Cases / Matters",    showProjects: false },
+  marketing:    { skillsLabel: "Marketing Skills",     skillsPlaceholder: "SEO, Google Analytics, Meta Ads, Copywriting...",  softLabel: "Soft Skills",          projectsLabel: "Campaigns & Projects",       showProjects: true  },
+  design:       { skillsLabel: "Design Tools",         skillsPlaceholder: "Figma, Adobe XD, Photoshop, Illustrator, CSS...",  softLabel: "Creative Skills",      projectsLabel: "Portfolio Projects",         showProjects: true  },
+  engineering:  { skillsLabel: "Engineering Skills",   skillsPlaceholder: "AutoCAD, MATLAB, SolidWorks, PLC, ANSYS...",       softLabel: "Soft Skills",          projectsLabel: "Engineering Projects",       showProjects: true  },
+  sales:        { skillsLabel: "Sales Skills",         skillsPlaceholder: "CRM, Lead Gen, Negotiation, Salesforce, B2B...",  softLabel: "Interpersonal Skills", projectsLabel: "Key Achievements",           showProjects: false },
+  hospitality:  { skillsLabel: "Hospitality Skills",   skillsPlaceholder: "Guest Relations, PMS, Food Safety, HACCP...",      softLabel: "Service Skills",       projectsLabel: "Special Events / Projects",  showProjects: false },
+  media:        { skillsLabel: "Media Skills",         skillsPlaceholder: "Writing, Editing, Premiere, Final Cut, SEO...",    softLabel: "Journalism Skills",    projectsLabel: "Published Works / Projects", showProjects: true  },
+  government:   { skillsLabel: "Core Competencies",    skillsPlaceholder: "Policy Analysis, Public Admin, Research, RTI...",  softLabel: "Leadership Skills",    projectsLabel: "Key Initiatives",            showProjects: false },
+  science:      { skillsLabel: "Research Skills",      skillsPlaceholder: "Lab Techniques, Data Analysis, Python, SPSS...",   softLabel: "Scientific Skills",    projectsLabel: "Research / Publications",    showProjects: true  },
+  hr:           { skillsLabel: "HR Skills",            skillsPlaceholder: "HRIS, ATS, Payroll, Talent Acquisition, L&D...",   softLabel: "People Skills",        projectsLabel: "Key HR Initiatives",         showProjects: false },
+  "real-estate":{ skillsLabel: "Real Estate Skills",   skillsPlaceholder: "Property Valuation, MLS, CRM, Negotiation...",     softLabel: "Client Skills",        projectsLabel: "Key Transactions",           showProjects: false },
+  logistics:    { skillsLabel: "Logistics Skills",     skillsPlaceholder: "SAP, Supply Chain, ERP, Inventory, WMS...",        softLabel: "Operations Skills",    projectsLabel: "Key Projects",               showProjects: false },
+  arts:         { skillsLabel: "Creative Skills",      skillsPlaceholder: "Performance, Direction, Editing, Production...",   softLabel: "Professional Skills",  projectsLabel: "Notable Works / Productions", showProjects: true  },
+  agriculture:  { skillsLabel: "Agricultural Skills",  skillsPlaceholder: "Crop Management, Irrigation, GIS, Livestock...",   softLabel: "Field Skills",         projectsLabel: "Agricultural Projects",      showProjects: false },
+};
+
+const DEFAULT_FIELD_CONFIG: FieldConfig = {
+  skillsLabel: "Skills", skillsPlaceholder: "Add your skills...",
+  softLabel: "Soft Skills", projectsLabel: "Projects", showProjects: true,
+};
+
+function getFieldConf(id: string): FieldConfig {
+  return FIELD_CONFIG[id] ?? DEFAULT_FIELD_CONFIG;
+}
 
 // ─── Template types ───────────────────────────────────────────────────────────
 
 type TemplateType = "modern" | "classic" | "minimal" | "sidebar";
 const TEMPLATES: TemplateType[] = ["modern", "classic", "minimal", "sidebar"];
 
-const COMPANY_TEMPLATE: Record<string, TemplateType> = {
-  google: "modern", amazon: "sidebar", microsoft: "minimal", meta: "modern",
-  apple: "minimal", netflix: "modern", uber: "modern", airbnb: "modern",
-  linkedin: "modern", salesforce: "minimal", goldman: "classic", jpmorgan: "classic",
-  mckinsey: "classic", bcg: "classic", deloitte: "classic", tcs: "sidebar",
-  infosys: "sidebar", wipro: "sidebar", accenture: "classic", ibm: "minimal",
-  adobe: "modern", twitter: "modern",
-};
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface CompanyInsights {
+interface FieldInsights {
   pageLength: string; format: string; bulletStyle: string;
   keyPrinciples: string[]; mustHaveKeywords: string[]; mustHaveSections: string[];
   avoid: string[]; bulletExample: { bad: string; good: string };
@@ -138,9 +171,9 @@ async function downloadPDFFromPreview(ref: { current: HTMLDivElement | null }, f
 
 export function SmartResumeBuilder() {
   const [phase, setPhase] = useState<"select" | "insights" | "build">("select");
-  const [selectedCompany, setSelectedCompany] = useState<typeof COMPANIES[0] | null>(null);
+  const [selectedField, setSelectedField] = useState<typeof FIELDS[number] | null>(null);
   const [role, setRole] = useState("");
-  const [insights, setInsights] = useState<CompanyInsights | null>(null);
+  const [insights, setInsights] = useState<FieldInsights | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [insightsError, setInsightsError] = useState("");
   const [form, setForm] = useState<ResumeForm>(BLANK);
@@ -151,33 +184,32 @@ export function SmartResumeBuilder() {
   const [softInput, setSoftInput] = useState("");
   const [langInput, setLangInput] = useState("");
   const [search, setSearch] = useState("");
-  const [filterIndustry, setFilterIndustry] = useState("All");
-  const [filterTier, setFilterTier] = useState("All");
+  const [filterCategory, setFilterCategory] = useState("All");
   const [template, setTemplate] = useState<TemplateType>("modern");
   const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (selectedCompany) setTemplate(COMPANY_TEMPLATE[selectedCompany.id] ?? "modern");
-  }, [selectedCompany]);
+    if (selectedField) setTemplate(FIELD_TEMPLATE[selectedField.id] ?? "modern");
+  }, [selectedField]);
 
-  const filteredCompanies = COMPANIES.filter(c => {
-    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase());
-    const matchIndustry = filterIndustry === "All" || c.industry === filterIndustry;
-    const matchTier = filterTier === "All" || c.tier === filterTier;
-    return matchSearch && matchIndustry && matchTier;
+  const filteredFields = FIELDS.filter(f => {
+    const matchSearch = f.name.toLowerCase().includes(search.toLowerCase()) ||
+      f.desc.toLowerCase().includes(search.toLowerCase());
+    const matchCategory = filterCategory === "All" || f.category === filterCategory;
+    return matchSearch && matchCategory;
   });
 
   async function loadInsights() {
-    if (!selectedCompany) return;
+    if (!selectedField) return;
     setInsightsLoading(true);
     setInsightsError("");
     try {
       const res = await fetch("/api/resume/company-insights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ company: selectedCompany.name, role, action: "insights" }),
+        body: JSON.stringify({ company: selectedField.name, role, action: "insights" }),
       });
-      const d = await res.json() as { insights?: CompanyInsights; error?: string };
+      const d = await res.json() as { insights?: FieldInsights; error?: string };
       if (d.error) throw new Error(d.error);
       setInsights(d.insights!);
       setPhase("insights");
@@ -189,18 +221,18 @@ export function SmartResumeBuilder() {
   }
 
   async function optimizeResume() {
-    if (!selectedCompany) return;
+    if (!selectedField) return;
     setOptimizing(true);
     try {
       const res = await fetch("/api/resume/company-insights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          company: selectedCompany.name, role, action: "optimize",
+          company: selectedField.name, role, action: "optimize",
           resumeData: { workExperience: form.workExperience, summary: form.summary, technicalSkills: form.technicalSkills, softSkills: form.softSkills },
         }),
       });
-      const d = await res.json() as { optimized?: { summary: string; workExperience: Array<{id:string;description:string}>; skills: {technical:string[];soft:string[]}; optimizationNotes: string[] }; error?: string };
+      const d = await res.json() as { optimized?: { summary: string; workExperience: Array<{ id: string; description: string }>; skills: { technical: string[]; soft: string[] }; optimizationNotes: string[] }; error?: string };
       if (d.error) throw new Error(d.error);
       const opt = d.optimized!;
       setForm(prev => ({
@@ -235,57 +267,55 @@ export function SmartResumeBuilder() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Smart Resume Builder</h1>
-              <p className="text-sm text-foreground-muted">AI analyzes selected resumes at top companies — then builds yours the same way</p>
+              <p className="text-sm text-foreground-muted">AI generates field-specific resume tips — then builds yours the right way</p>
             </div>
           </div>
         </div>
 
         <div className="mb-5 max-w-md">
           <label className="block text-sm font-medium text-foreground mb-1.5">What role are you applying for?</label>
-          <input value={role} onChange={e => setRole(e.target.value)} placeholder="e.g. Software Engineer, Data Scientist, Product Manager…"
+          <input value={role} onChange={e => setRole(e.target.value)} placeholder="e.g. Software Engineer, Doctor, Marketing Manager…"
             className="w-full border border-border rounded-xl px-4 py-2.5 text-sm bg-background text-foreground placeholder:text-foreground-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-colors" />
         </div>
 
         <div className="flex flex-wrap gap-2 mb-4">
           <div className="relative flex-1 min-w-[180px] max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground-muted" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search company…"
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search field…"
               className="w-full pl-9 pr-3 py-2 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-foreground-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
           </div>
-          <select value={filterIndustry} onChange={e => setFilterIndustry(e.target.value)} className="border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
-            {INDUSTRIES.map(i => <option key={i}>{i}</option>)}
-          </select>
-          <select value={filterTier} onChange={e => setFilterTier(e.target.value)} className="border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
-            {TIERS.map(t => <option key={t}>{t}</option>)}
+          <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
+            {FIELD_CATEGORIES.map(c => <option key={c}>{c}</option>)}
           </select>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 mb-6">
-          {filteredCompanies.map(company => (
-            <motion.button key={company.id} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              onClick={() => setSelectedCompany(company)}
-              className={`relative flex flex-col items-center gap-2.5 p-4 rounded-2xl border-2 transition-all ${selectedCompany?.id === company.id ? "border-indigo-500 bg-indigo-500/10 shadow-lg shadow-indigo-500/10" : "border-border bg-card hover:border-foreground-muted/30 hover:shadow-md"}`}>
-              {selectedCompany?.id === company.id && (
+          {filteredFields.map(field => (
+            <motion.button key={field.id} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={() => setSelectedField(field)}
+              className={`relative flex flex-col items-center gap-2.5 p-4 rounded-2xl border-2 transition-all ${selectedField?.id === field.id ? "border-indigo-500 bg-indigo-500/10 shadow-lg shadow-indigo-500/10" : "border-border bg-card hover:border-foreground-muted/30 hover:shadow-md"}`}>
+              {selectedField?.id === field.id && (
                 <div className="absolute top-2 right-2 h-4 w-4 rounded-full bg-indigo-500 flex items-center justify-center">
                   <CheckCircle2 className="h-3 w-3 text-white" />
                 </div>
               )}
-              <div className="h-12 w-12 rounded-xl flex items-center justify-center text-lg font-bold shadow-sm" style={{ backgroundColor: company.bg, color: company.color }}>
-                {company.logo}
+              <div className="h-12 w-12 rounded-xl flex items-center justify-center text-2xl shadow-sm" style={{ backgroundColor: field.bg }}>
+                {field.icon}
               </div>
               <div className="text-center">
-                <p className="text-xs font-semibold text-foreground leading-tight">{company.name}</p>
-                <span className="text-[10px] text-foreground-muted">{company.industry}</span>
+                <p className="text-xs font-semibold text-foreground leading-tight">{field.name}</p>
+                <span className="text-[10px] text-foreground-muted leading-tight">{field.desc}</span>
               </div>
-              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold" style={{ backgroundColor: `${company.color}15`, color: company.color }}>{company.tier}</span>
             </motion.button>
           ))}
         </div>
 
         <div className="flex justify-center">
-          <button onClick={loadInsights} disabled={!selectedCompany || insightsLoading}
+          <button onClick={loadInsights} disabled={!selectedField || insightsLoading}
             className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none shadow-xl shadow-indigo-500/20">
-            {insightsLoading ? <><Loader2 className="h-4 w-4 animate-spin" />Analyzing {selectedCompany?.name} resumes…</> : <><Sparkles className="h-4 w-4" />{selectedCompany ? `Analyze ${selectedCompany.name} Resumes` : "Select a Company First"}<ChevronRight className="h-4 w-4" /></>}
+            {insightsLoading
+              ? <><Loader2 className="h-4 w-4 animate-spin" />Analyzing {selectedField?.name} resumes…</>
+              : <><Sparkles className="h-4 w-4" />{selectedField ? `Get Field Resume Tips →` : "Select a Field First"}<ChevronRight className="h-4 w-4" /></>}
           </button>
         </div>
         {insightsError && <p className="text-center text-red-400 text-sm mt-3">{insightsError}</p>}
@@ -295,20 +325,20 @@ export function SmartResumeBuilder() {
 
   // ── Phase: Insights ────────────────────────────────────────────────────────
 
-  if (phase === "insights" && insights && selectedCompany) {
+  if (phase === "insights" && insights && selectedField) {
     return (
       <div className="w-full">
         <button onClick={() => setPhase("select")} className="flex items-center gap-1.5 text-sm text-foreground-muted hover:text-foreground mb-5 transition-colors">
-          <ChevronLeft className="h-4 w-4" /> Back to Companies
+          <ChevronLeft className="h-4 w-4" /> Back to Fields
         </button>
 
         <div className="flex items-center gap-4 mb-6 p-5 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-2xl">
-          <div className="h-16 w-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg" style={{ backgroundColor: selectedCompany.bg, color: selectedCompany.color }}>
-            {selectedCompany.logo}
+          <div className="h-16 w-16 rounded-2xl flex items-center justify-center text-3xl shadow-lg shrink-0" style={{ backgroundColor: selectedField.bg }}>
+            {selectedField.icon}
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">{selectedCompany.name} Resume Intelligence</h2>
-            <p className="text-sm text-foreground-muted">AI analyzed hundreds of accepted resumes at {selectedCompany.name}</p>
+            <h2 className="text-xl font-bold text-foreground">{selectedField.name} Resume Intelligence</h2>
+            <p className="text-sm text-foreground-muted">AI analyzed top resume patterns in the {selectedField.name} field</p>
             <div className="flex gap-2 mt-1.5">
               <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-500 text-xs font-medium">ATS: {insights.atsScore}</span>
               <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-xs font-medium">{insights.pageLength}</span>
@@ -319,11 +349,11 @@ export function SmartResumeBuilder() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="border border-card-border bg-card rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-3"><Target className="h-4 w-4 text-indigo-500" /><h3 className="font-semibold text-sm text-foreground">What {selectedCompany.name} Looks For</h3></div>
+            <div className="flex items-center gap-2 mb-3"><Target className="h-4 w-4 text-indigo-500" /><h3 className="font-semibold text-sm text-foreground">What {selectedField.name} Hiring Looks For</h3></div>
             <ul className="space-y-2">
               {insights.keyPrinciples.map((p, i) => (
                 <li key={i} className="flex items-start gap-2.5">
-                  <span className="h-5 w-5 rounded-full bg-indigo-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i+1}</span>
+                  <span className="h-5 w-5 rounded-full bg-indigo-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
                   <span className="text-sm text-foreground">{p}</span>
                 </li>
               ))}
@@ -368,7 +398,7 @@ export function SmartResumeBuilder() {
         </div>
 
         <div className="border border-card-border bg-card rounded-2xl p-5 mb-6">
-          <div className="flex items-center gap-2 mb-3"><ShieldCheck className="h-4 w-4 text-indigo-500" /><h3 className="font-semibold text-sm text-foreground">Required Sections for {selectedCompany.name}</h3></div>
+          <div className="flex items-center gap-2 mb-3"><ShieldCheck className="h-4 w-4 text-indigo-500" /><h3 className="font-semibold text-sm text-foreground">Required Sections for {selectedField.name}</h3></div>
           <div className="flex flex-wrap gap-2">
             {insights.mustHaveSections.map(s => (
               <span key={s} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-500 text-xs font-medium">
@@ -381,7 +411,7 @@ export function SmartResumeBuilder() {
         <div className="flex justify-center">
           <button onClick={() => setPhase("build")}
             className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-sm hover:opacity-90 active:scale-95 transition-all shadow-xl shadow-indigo-500/20">
-            <FileText className="h-4 w-4" /> Build My {selectedCompany.name}-Optimized Resume <ChevronRight className="h-4 w-4" />
+            <FileText className="h-4 w-4" /> Build My {selectedField.name}-Optimized Resume <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -390,9 +420,10 @@ export function SmartResumeBuilder() {
 
   // ── Phase: Build ───────────────────────────────────────────────────────────
 
-  if (phase === "build" && selectedCompany) {
-    const accentColor = selectedCompany.color;
-    const pdfFilename = `${(form.fullName || "resume").replace(/\s+/g, "_")}_${selectedCompany.name}_Resume.pdf`;
+  if (phase === "build" && selectedField) {
+    const accentColor = selectedField.color;
+    const fieldConf = getFieldConf(selectedField.id);
+    const pdfFilename = `${(form.fullName || "resume").replace(/\s+/g, "_")}_${selectedField.name}_Resume.pdf`;
 
     return (
       <div className="w-full">
@@ -400,8 +431,8 @@ export function SmartResumeBuilder() {
           <button onClick={() => setPhase("insights")} className="flex items-center gap-1.5 text-sm text-foreground-muted hover:text-foreground transition-colors">
             <ChevronLeft className="h-4 w-4" /> Back
           </button>
-          <div className="h-8 w-8 rounded-lg flex items-center justify-center text-sm font-bold" style={{ backgroundColor: selectedCompany.bg, color: selectedCompany.color }}>{selectedCompany.logo}</div>
-          <h2 className="text-base font-bold text-foreground">{selectedCompany.name}-Optimized Resume</h2>
+          <div className="h-8 w-8 rounded-lg flex items-center justify-center text-lg" style={{ backgroundColor: selectedField.bg }}>{selectedField.icon}</div>
+          <h2 className="text-base font-bold text-foreground">{selectedField.name}-Optimized Resume</h2>
           <span className="text-xs text-foreground-muted">· {role || "General"}</span>
         </div>
 
@@ -411,7 +442,7 @@ export function SmartResumeBuilder() {
             <Section title="Personal Info" color={accentColor}>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Full Name" value={form.fullName} onChange={v => upd("fullName", v)} placeholder="Jane Smith" />
-                <Field label="Job Title" value={form.jobTitle} onChange={v => upd("jobTitle", v)} placeholder="Software Engineer" />
+                <Field label="Job Title" value={form.jobTitle} onChange={v => upd("jobTitle", v)} placeholder="Your role / designation" />
                 <Field label="Email" type="email" value={form.email} onChange={v => upd("email", v)} placeholder="jane@example.com" />
                 <Field label="Phone" value={form.phone} onChange={v => upd("phone", v)} placeholder="+1 555 000 0000" />
                 <Field label="Location" value={form.location} onChange={v => upd("location", v)} placeholder="New York, NY" />
@@ -421,7 +452,7 @@ export function SmartResumeBuilder() {
             </Section>
 
             <Section title="Professional Summary" color={accentColor}>
-              <TA label="Summary" value={form.summary} onChange={v => upd("summary", v)} placeholder="Results-driven engineer with 5+ years building scalable systems…" rows={4} />
+              <TA label="Summary" value={form.summary} onChange={v => upd("summary", v)} placeholder="Results-driven professional with 5+ years of experience…" rows={4} />
               {insights && <p className="text-[11px] text-foreground-muted mt-1.5">💡 {insights.insiderTip.slice(0, 100)}…</p>}
             </Section>
 
@@ -434,12 +465,12 @@ export function SmartResumeBuilder() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <Field label="Job Title" value={job.jobTitle} onChange={v => updJob(job.id, "jobTitle", v)} placeholder="Sr. Engineer" />
-                    <Field label="Company" value={job.company} onChange={v => updJob(job.id, "company", v)} placeholder="Acme Inc." />
+                    <Field label="Company / Organization" value={job.company} onChange={v => updJob(job.id, "company", v)} placeholder="Company Name" />
                     <Field label="Start" value={job.startDate} onChange={v => updJob(job.id, "startDate", v)} placeholder="Jan 2022" />
                     <Field label="End" value={job.isPresent ? "Present" : job.endDate} onChange={v => updJob(job.id, "endDate", v)} placeholder="Dec 2024" />
                   </div>
                   <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="accent-indigo-500" checked={job.isPresent} onChange={e => updJob(job.id, "isPresent", e.target.checked)} /><span className="text-xs text-slate-400">Currently working here</span></label>
-                  <TA label="Description (use • for bullets)" value={job.description} onChange={v => updJob(job.id, "description", v)} placeholder={"• Developed...\n• Improved..."} rows={4} />
+                  <TA label="Description (use • for bullets)" value={job.description} onChange={v => updJob(job.id, "description", v)} placeholder={"• Achieved...\n• Improved..."} rows={4} />
                 </div>
               ))}
               <button onClick={() => upd("workExperience", [...form.workExperience, mkJob()])} className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
@@ -456,7 +487,7 @@ export function SmartResumeBuilder() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <Field label="Degree" value={edu.degree} onChange={v => updEdu(edu.id, "degree", v)} placeholder="B.S. Computer Science" />
-                    <Field label="School" value={edu.school} onChange={v => updEdu(edu.id, "school", v)} placeholder="MIT" />
+                    <Field label="School / Institution" value={edu.school} onChange={v => updEdu(edu.id, "school", v)} placeholder="University Name" />
                     <Field label="Year" value={edu.graduationYear} onChange={v => updEdu(edu.id, "graduationYear", v)} placeholder="2022" />
                   </div>
                 </div>
@@ -469,7 +500,7 @@ export function SmartResumeBuilder() {
             <Section title="Skills" color={accentColor}>
               {insights && (
                 <div className="mb-3 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-                  <p className="text-[11px] text-amber-500 font-semibold mb-1.5">⚡ Add These for {selectedCompany.name}:</p>
+                  <p className="text-[11px] text-amber-500 font-semibold mb-1.5">⚡ Recommended for {selectedField.name}:</p>
                   <div className="flex flex-wrap gap-1">
                     {insights.mustHaveKeywords.filter(k => !form.technicalSkills.includes(k)).slice(0, 6).map(kw => (
                       <button key={kw} onClick={() => upd("technicalSkills", [...form.technicalSkills, kw])} className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[11px] hover:bg-amber-500/20 transition-colors">+ {kw}</button>
@@ -477,10 +508,12 @@ export function SmartResumeBuilder() {
                   </div>
                 </div>
               )}
+              <p className="text-[11px] text-slate-400 mb-1">{fieldConf.skillsLabel}</p>
               <div className="flex gap-2 mb-2">
                 <input value={skillInput} onChange={e => setSkillInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && skillInput.trim()) { upd("technicalSkills", [...form.technicalSkills, skillInput.trim()]); setSkillInput(""); }}}
-                  placeholder="Add technical skill (Enter)" className="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" />
+                  onKeyDown={e => { if (e.key === "Enter" && skillInput.trim()) { upd("technicalSkills", [...form.technicalSkills, skillInput.trim()]); setSkillInput(""); } }}
+                  placeholder={fieldConf.skillsPlaceholder}
+                  className="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" />
               </div>
               {form.technicalSkills.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-3">
@@ -491,9 +524,10 @@ export function SmartResumeBuilder() {
                   ))}
                 </div>
               )}
+              <p className="text-[11px] text-slate-400 mb-1">{fieldConf.softLabel}</p>
               <div className="flex gap-2">
                 <input value={softInput} onChange={e => setSoftInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && softInput.trim()) { upd("softSkills", [...form.softSkills, softInput.trim()]); setSoftInput(""); }}}
+                  onKeyDown={e => { if (e.key === "Enter" && softInput.trim()) { upd("softSkills", [...form.softSkills, softInput.trim()]); setSoftInput(""); } }}
                   placeholder="Add soft skill (Enter)" className="flex-1 bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" />
               </div>
               {form.softSkills.length > 0 && (
@@ -508,7 +542,7 @@ export function SmartResumeBuilder() {
               <div className="mt-3">
                 <p className="text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wide">Languages</p>
                 <input value={langInput} onChange={e => setLangInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && langInput.trim()) { upd("languages", [...form.languages, langInput.trim()]); setLangInput(""); }}}
+                  onKeyDown={e => { if (e.key === "Enter" && langInput.trim()) { upd("languages", [...form.languages, langInput.trim()]); setLangInput(""); } }}
                   placeholder="Add language (Enter)" className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" />
                 {form.languages.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-2">
@@ -522,25 +556,27 @@ export function SmartResumeBuilder() {
               </div>
             </Section>
 
-            <Section title="Projects" color={accentColor}>
-              {form.projects.map((proj, idx) => (
-                <div key={proj.id} className="mb-4 p-3.5 bg-slate-800/40 rounded-xl border border-slate-700 space-y-2.5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Project {idx + 1}</span>
-                    <button onClick={() => upd("projects", form.projects.filter(p => p.id !== proj.id))} className="text-slate-500 hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
+            {fieldConf.showProjects && (
+              <Section title={fieldConf.projectsLabel} color={accentColor}>
+                {form.projects.map((proj, idx) => (
+                  <div key={proj.id} className="mb-4 p-3.5 bg-slate-800/40 rounded-xl border border-slate-700 space-y-2.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Entry {idx + 1}</span>
+                      <button onClick={() => upd("projects", form.projects.filter(p => p.id !== proj.id))} className="text-slate-500 hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Field label="Title" value={proj.name} onChange={v => updProject(proj.id, "name", v)} placeholder="Project / Work Name" />
+                      <Field label="Tech / Tools" value={proj.tech} onChange={v => updProject(proj.id, "tech", v)} placeholder="Tools used" />
+                    </div>
+                    <Field label="URL / Link" value={proj.url} onChange={v => updProject(proj.id, "url", v)} placeholder="github.com/user/project" />
+                    <TA label="Description" value={proj.description} onChange={v => updProject(proj.id, "description", v)} placeholder="Built / achieved…" rows={2} />
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Field label="Project Name" value={proj.name} onChange={v => updProject(proj.id, "name", v)} placeholder="E-Commerce Platform" />
-                    <Field label="Tech Stack" value={proj.tech} onChange={v => updProject(proj.id, "tech", v)} placeholder="React, Node.js" />
-                  </div>
-                  <Field label="Live URL / GitHub" value={proj.url} onChange={v => updProject(proj.id, "url", v)} placeholder="github.com/user/project" />
-                  <TA label="Description" value={proj.description} onChange={v => updProject(proj.id, "description", v)} placeholder="Built a full-stack app that..." rows={2} />
-                </div>
-              ))}
-              <button onClick={() => upd("projects", [...form.projects, mkProject()])} className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-                <Plus className="h-3.5 w-3.5" /> Add Project
-              </button>
-            </Section>
+                ))}
+                <button onClick={() => upd("projects", [...form.projects, mkProject()])} className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                  <Plus className="h-3.5 w-3.5" /> Add Entry
+                </button>
+              </Section>
+            )}
 
             <Section title="Certifications & Awards" color={accentColor}>
               {form.certifications.map((cert, idx) => (
@@ -551,7 +587,7 @@ export function SmartResumeBuilder() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <Field label="Certificate Name" value={cert.name} onChange={v => updCert(cert.id, "name", v)} placeholder="AWS Solutions Architect" />
-                    <Field label="Issuer" value={cert.issuer} onChange={v => updCert(cert.id, "issuer", v)} placeholder="Amazon Web Services" />
+                    <Field label="Issuer" value={cert.issuer} onChange={v => updCert(cert.id, "issuer", v)} placeholder="Issuing Organization" />
                   </div>
                   <Field label="Year" value={cert.year} onChange={v => updCert(cert.id, "year", v)} placeholder="2024" />
                 </div>
@@ -565,7 +601,7 @@ export function SmartResumeBuilder() {
             <div className="flex flex-col gap-3">
               <button onClick={optimizeResume} disabled={optimizing}
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-bold text-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-indigo-500/20">
-                {optimizing ? <><Loader2 className="h-4 w-4 animate-spin" />AI is optimizing for {selectedCompany.name}…</> : <><Sparkles className="h-4 w-4" />AI Optimize for {selectedCompany.name}</>}
+                {optimizing ? <><Loader2 className="h-4 w-4 animate-spin" />AI is optimizing for {selectedField.name}…</> : <><Sparkles className="h-4 w-4" />AI Optimize for {selectedField.name}</>}
               </button>
               {optimizationNotes.length > 0 && (
                 <AnimatePresence>
@@ -579,7 +615,7 @@ export function SmartResumeBuilder() {
                 onClick={async () => { setDownloading(true); try { await downloadPDFFromPreview(previewRef, pdfFilename); } finally { setDownloading(false); } }}
                 disabled={downloading}
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
-                {downloading ? <><Loader2 className="h-4 w-4 animate-spin" />Generating PDF…</> : <><Download className="h-4 w-4" />Download {selectedCompany.name}-Optimized PDF</>}
+                {downloading ? <><Loader2 className="h-4 w-4 animate-spin" />Generating PDF…</> : <><Download className="h-4 w-4" />Download {selectedField.name}-Optimized PDF</>}
               </button>
             </div>
           </div>
@@ -604,7 +640,7 @@ export function SmartResumeBuilder() {
               </div>
               <div className="overflow-auto p-4" style={{ maxHeight: "780px" }}>
                 <div ref={previewRef} className="bg-white shadow-lg mx-auto" style={{ width: "595px", minHeight: "842px", maxWidth: "100%" }}>
-                  <LivePreview form={form} template={template} company={selectedCompany.name} color={accentColor} />
+                  <LivePreview form={form} template={template} company={selectedField.name} color={accentColor} />
                 </div>
               </div>
             </div>
