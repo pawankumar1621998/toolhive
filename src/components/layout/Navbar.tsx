@@ -32,6 +32,7 @@ const AI_TOOLS = [
   { label: "Video Clipper", href: "/video-clipper", icon: "✂️" },
   { label: "AI Image Generator", href: "/text-to-image", icon: "🎨" },
   { label: "Text to Audio", href: "/text-to-audio", icon: "🔊" },
+  { label: "Audio Transcriber", href: "/audio-transcriber", icon: "🎙️" },
 ];
 
 const QUICK_TOOLS = [
