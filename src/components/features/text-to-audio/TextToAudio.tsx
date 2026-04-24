@@ -53,7 +53,7 @@ type Mode = "nvidia" | "browser";
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function TextToAudio() {
-  const [mode, setMode]               = useState<Mode>("nvidia");
+  const [mode, setMode]               = useState<Mode>("browser");
   const [text, setText]               = useState("");
   const [speed, setSpeed]             = useState(1.0);
 
@@ -133,6 +133,8 @@ export function TextToAudio() {
       setTimeout(() => audioRef.current?.play(), 100);
     } catch (err: unknown) {
       setNvidiaError((err as Error).message ?? "Generation failed");
+      // Auto-switch to browser mode after a short delay
+      setTimeout(() => setMode("browser"), 2000);
     } finally {
       setNvidiaLoading(false);
     }
@@ -222,23 +224,30 @@ export function TextToAudio() {
 
       {/* Mode tabs */}
       <div className="mb-5 flex rounded-2xl border border-card-border bg-card p-1.5 gap-1.5">
-        {(["nvidia", "browser"] as Mode[]).map((m) => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            className={clsx(
-              "flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all duration-200",
-              mode === m
-                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm"
-                : "text-foreground-muted hover:text-foreground"
-            )}
-          >
-            {m === "nvidia"
-              ? <><Sparkles className="h-4 w-4" /> NVIDIA AI <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px]">Downloadable</span></>
-              : <><Volume2 className="h-4 w-4" /> Browser TTS <span className="rounded-full bg-foreground/10 px-1.5 py-0.5 text-[10px]">Free</span></>
-            }
-          </button>
-        ))}
+        <button
+          onClick={() => setMode("browser")}
+          className={clsx(
+            "flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all duration-200",
+            mode === "browser"
+              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm"
+              : "text-foreground-muted hover:text-foreground"
+          )}
+        >
+          <Volume2 className="h-4 w-4" /> Browser TTS
+          <span className={clsx("rounded-full px-1.5 py-0.5 text-[10px]", mode === "browser" ? "bg-white/20" : "bg-foreground/10")}>Free · Always Works</span>
+        </button>
+        <button
+          onClick={() => setMode("nvidia")}
+          className={clsx(
+            "flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all duration-200",
+            mode === "nvidia"
+              ? "bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-sm"
+              : "text-foreground-subtle hover:text-foreground-muted"
+          )}
+        >
+          <Sparkles className="h-4 w-4" /> NVIDIA AI
+          <span className={clsx("rounded-full px-1.5 py-0.5 text-[10px]", mode === "nvidia" ? "bg-white/20" : "bg-foreground/10")}>Unavailable</span>
+        </button>
       </div>
 
       <div className="flex flex-col gap-5">
@@ -356,12 +365,14 @@ export function TextToAudio() {
                     )}
                     {nvidiaError && (
                       <div className="p-5 flex items-start gap-3">
-                        <AlertCircle className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
+                        <AlertCircle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" />
                         <div>
-                          <p className="text-sm font-semibold text-foreground">Generation failed</p>
-                          <p className="mt-0.5 text-xs text-foreground-muted">{nvidiaError}</p>
-                          <p className="mt-2 text-xs text-foreground-subtle">
-                            NVIDIA Magpie TTS may not support HTTP REST from this region. Try the <button onClick={() => setMode("browser")} className="text-primary underline underline-offset-2">Browser TTS</button> as a fallback.
+                          <p className="text-sm font-semibold text-foreground">NVIDIA TTS not available</p>
+                          <p className="mt-0.5 text-xs text-foreground-muted">
+                            NVIDIA Magpie TTS uses gRPC (not HTTP REST) and is currently unavailable via web API.
+                          </p>
+                          <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                            Switching to Browser TTS automatically...
                           </p>
                         </div>
                       </div>
@@ -370,11 +381,11 @@ export function TextToAudio() {
                 )}
               </AnimatePresence>
 
-              <div className="rounded-2xl border border-card-border bg-card/50 p-4">
+              <div className="rounded-2xl border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/10 p-4">
                 <p className="flex items-start gap-2 text-xs text-foreground-subtle">
-                  <Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0 text-emerald-500" />
-                  Powered by <strong>NVIDIA Magpie TTS Multilingual</strong> — 12 languages, 5 voice styles.
-                  Audio is generated server-side and downloadable as WAV.
+                  <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-500" />
+                  <strong>NVIDIA Magpie TTS</strong> is currently unavailable via web (gRPC-only).
+                  Please use <button onClick={() => setMode("browser")} className="text-emerald-600 dark:text-emerald-400 font-semibold underline underline-offset-2">Browser TTS</button> — it works instantly with no limitations.
                 </p>
               </div>
             </motion.div>
