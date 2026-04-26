@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// NVIDIA Parakeet ASR — English speech-to-text via OpenAI-compatible endpoint
-export async function POST(req: NextRequest) {
-  const apiKey = process.env.NVIDIA_AUDIO_KEY || process.env.NVIDIA_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "NVIDIA_AUDIO_KEY not configured" }, { status: 500 });
-  }
+// Hugging Face Whisper — free speech-to-text, no key needed for basic use
+// Supports MP3, WAV, M4A, OGG, FLAC, WebM up to 25 MB
 
+export async function POST(req: NextRequest) {
   let formData: FormData;
   try {
     formData = await req.formData();
@@ -19,36 +16,52 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
   }
 
-  // Max 25 MB
   if (file.size > 25 * 1024 * 1024) {
     return NextResponse.json({ error: "File too large (max 25 MB)" }, { status: 400 });
   }
 
-  // Forward to NVIDIA Parakeet via OpenAI-compatible transcriptions endpoint
-  const upstream = new FormData();
-  upstream.append("file", file, file.name);
-  upstream.append("model", "nvidia/parakeet-tdt-0.6b-v2");
+  const fileBuffer = Buffer.from(await file.arrayBuffer());
+  const hfToken = process.env.HF_TOKEN;
 
-  const language = (formData.get("language") as string) || "en";
-  upstream.append("language", language);
+  const headers: Record<string, string> = {
+    "Content-Type": "application/octet-stream",
+  };
+  if (hfToken) headers["Authorization"] = `Bearer ${hfToken}`;
 
   try {
-    const res = await fetch("https://integrate.api.nvidia.com/v1/audio/transcriptions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: upstream,
-      signal: AbortSignal.timeout(60_000),
-    });
+    const res = await fetch(
+      "https://api-inference.huggingface.co/models/openai/whisper-small",
+      {
+        method: "POST",
+        headers,
+        body: fileBuffer,
+        signal: AbortSignal.timeout(120_000),
+      }
+    );
 
-    if (!res.ok) {
-      const errText = await res.text();
+    const data = (await res.json()) as {
+      text?: string;
+      error?: string;
+      estimated_time?: number;
+    };
+
+    if (!res.ok || data.error) {
+      const errLower = (data.error ?? "").toLowerCase();
+      if (errLower.includes("loading") || errLower.includes("currently loading")) {
+        const wait = Math.ceil(data.estimated_time ?? 30);
+        return NextResponse.json(
+          {
+            error: `AI model is warming up — please wait ${wait} seconds and try again.`,
+          },
+          { status: 503 }
+        );
+      }
       return NextResponse.json(
-        { error: errText || `Transcription API error ${res.status}` },
-        { status: res.status }
+        { error: data.error ?? `Transcription failed (${res.status})` },
+        { status: res.status >= 400 ? res.status : 502 }
       );
     }
 
-    const data = await res.json() as { text?: string; error?: string };
     return NextResponse.json({ text: data.text ?? "", segments: [] });
   } catch (err: unknown) {
     return NextResponse.json(

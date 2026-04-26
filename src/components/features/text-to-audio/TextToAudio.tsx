@@ -8,24 +8,23 @@ import {
   AlertCircle, CheckCircle, Volume2, Loader2, Sparkles,
 } from "lucide-react";
 
-// ─── AI TTS voices (StreamElements — free, no API key) ───────────────────────
+// ─── AI TTS languages (Google Translate TTS — free, no API key) ──────────────
 
 const AI_VOICES = [
-  { id: "Brian",    label: "Brian — English UK · Male"    },
-  { id: "Amy",      label: "Amy — English UK · Female"    },
-  { id: "Emma",     label: "Emma — English UK · Female"   },
-  { id: "Joanna",   label: "Joanna — English US · Female" },
-  { id: "Joey",     label: "Joey — English US · Male"     },
-  { id: "Matthew",  label: "Matthew — English US · Male"  },
-  { id: "Salli",    label: "Salli — English US · Female"  },
-  { id: "Kendra",   label: "Kendra — English US · Female" },
-  { id: "Justin",   label: "Justin — English US · Male"   },
-  { id: "Nicole",   label: "Nicole — Australian · Female" },
-  { id: "Russell",  label: "Russell — Australian · Male"  },
-  { id: "Conchita", label: "Conchita — Spanish · Female"  },
-  { id: "Celine",   label: "Céline — French · Female"     },
-  { id: "Marlene",  label: "Marlene — German · Female"    },
-  { id: "Carla",    label: "Carla — Italian · Female"     },
+  { id: "en",    label: "English"                 },
+  { id: "hi",    label: "Hindi (हिन्दी)"            },
+  { id: "fr",    label: "French (Français)"        },
+  { id: "de",    label: "German (Deutsch)"         },
+  { id: "es",    label: "Spanish (Español)"        },
+  { id: "it",    label: "Italian (Italiano)"       },
+  { id: "pt",    label: "Portuguese (Português)"   },
+  { id: "ja",    label: "Japanese (日本語)"          },
+  { id: "ko",    label: "Korean (한국어)"            },
+  { id: "zh-CN", label: "Chinese (中文)"            },
+  { id: "ar",    label: "Arabic (العربية)"          },
+  { id: "ru",    label: "Russian (Русский)"         },
+  { id: "nl",    label: "Dutch (Nederlands)"       },
+  { id: "tr",    label: "Turkish (Türkçe)"         },
 ];
 
 const BROWSER_LANGUAGES = [
@@ -50,7 +49,8 @@ const SAMPLE_TEXTS = [
   "Technology is best when it brings people together.",
 ] as const;
 
-const MAX_CHARS = 3000;
+const MAX_CHARS = 5000;
+const AI_MAX_CHARS = 1000;
 type Mode = "nvidia" | "browser";
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -207,8 +207,9 @@ export function TextToAudio() {
   // ─── Shared ────────────────────────────────────────────────────────────────
 
   const charCount = text.length;
-  const isOverLimit = charCount > MAX_CHARS;
-  const charPercent = Math.min((charCount / MAX_CHARS) * 100, 100);
+  const activeMax = mode === "nvidia" ? AI_MAX_CHARS : MAX_CHARS;
+  const isOverLimit = charCount > activeMax;
+  const charPercent = Math.min((charCount / activeMax) * 100, 100);
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -279,10 +280,14 @@ export function TextToAudio() {
               />
             </div>
             <span className={clsx("shrink-0 text-xs font-medium tabular-nums", isOverLimit ? "text-red-500" : "text-foreground-subtle")}>
-              {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
+              {charCount.toLocaleString()} / {activeMax.toLocaleString()}
             </span>
           </div>
-          {isOverLimit && <p className="mt-1 text-xs text-red-500">Text too long. Max {MAX_CHARS.toLocaleString()} characters.</p>}
+          {isOverLimit && (
+            <p className="mt-1 text-xs text-red-500">
+              Text too long. Max {activeMax.toLocaleString()} characters{mode === "nvidia" ? " for AI Voice (use Browser TTS for longer text)" : ""}.
+            </p>
+          )}
 
           <div className="mt-3 flex flex-wrap gap-1.5">
             {SAMPLE_TEXTS.map((s) => (
@@ -302,10 +307,10 @@ export function TextToAudio() {
 
               <div className="rounded-2xl border border-card-border bg-card p-5">
                 <p className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                  <Settings2 className="h-4 w-4 text-emerald-500" /> Choose Voice
+                  <Settings2 className="h-4 w-4 text-emerald-500" /> Choose Language
                 </p>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-foreground-muted">Voice & Language</label>
+                  <label className="mb-1.5 block text-xs font-medium text-foreground-muted">Language (14 supported)</label>
                   <select value={nvidiaVoice} onChange={(e) => setNvidiaVoice(e.target.value)}
                     className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-400/40">
                     {AI_VOICES.map((v) => (
@@ -313,6 +318,7 @@ export function TextToAudio() {
                     ))}
                   </select>
                 </div>
+                <p className="mt-2 text-xs text-foreground-subtle">Max 1,000 characters · Downloadable as MP3</p>
               </div>
 
               {/* Generate button */}
@@ -369,8 +375,8 @@ export function TextToAudio() {
               <div className="rounded-2xl border border-card-border bg-card/50 p-4">
                 <p className="flex items-start gap-2 text-xs text-foreground-subtle">
                   <Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0 text-emerald-500" />
-                  15 natural voices across English, Spanish, French, German & Italian.
-                  Audio generated as downloadable <strong>MP3</strong>.
+                  14 languages — English, Hindi, French, German, Spanish, Italian, Japanese, Korean, Chinese, Arabic, Russian &amp; more.
+                  Audio is generated as downloadable <strong>MP3</strong>.
                 </p>
               </div>
             </motion.div>

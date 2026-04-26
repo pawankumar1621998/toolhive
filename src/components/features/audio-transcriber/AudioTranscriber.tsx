@@ -135,7 +135,7 @@ export function AudioTranscriber() {
       <div className="mb-8 text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 px-4 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 mb-3">
           <Sparkles className="h-3.5 w-3.5" />
-          NVIDIA Parakeet ASR
+          Whisper AI — Speech to Text
         </div>
         <h1 className="text-3xl sm:text-4xl font-bold text-foreground">Audio Transcriber</h1>
         <p className="mt-2 text-foreground-muted">Convert speech to text instantly — upload audio or record live</p>
@@ -299,8 +299,9 @@ export function AudioTranscriber() {
         <div className="rounded-2xl border border-card-border bg-card/50 p-4">
           <p className="flex items-start gap-2 text-xs text-foreground-subtle">
             <Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0 text-blue-500" />
-            Powered by <strong>NVIDIA Parakeet TDT 0.6B v2</strong> — fast, accurate English ASR model.
+            Powered by <strong>OpenAI Whisper</strong> (via Hugging Face) — multilingual speech-to-text.
             Supports MP3, WAV, M4A, OGG, FLAC, WebM up to {MAX_MB} MB.
+            First request may take 20–30s to warm up the model.
           </p>
         </div>
       </div>
