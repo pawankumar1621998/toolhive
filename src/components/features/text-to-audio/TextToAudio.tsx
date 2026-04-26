@@ -8,22 +8,25 @@ import {
   AlertCircle, CheckCircle, Volume2, Loader2, Sparkles,
 } from "lucide-react";
 
-// ─── NVIDIA Magpie voices ─────────────────────────────────────────────────────
+// ─── AI TTS voices (StreamElements — free, no API key) ───────────────────────
 
-const NVIDIA_VOICES = [
-  { id: "Magpie-Multilingual.EN-US.Aria",  label: "Aria — English (US) · Female"  },
-  { id: "Magpie-Multilingual.EN-US.Jason", label: "Jason — English (US) · Male"   },
-  { id: "Magpie-Multilingual.EN-US.Leo",   label: "Leo — English (US) · Male"     },
-  { id: "Magpie-Multilingual.EN-US.Sofia", label: "Sofia — English (US) · Female" },
-  { id: "Magpie-Multilingual.EN-US.John",  label: "John — English (US) · Male"    },
-  { id: "Magpie-Multilingual.HI-IN.Aria",  label: "Aria — Hindi · Female"         },
-  { id: "Magpie-Multilingual.DE-DE.Aria",  label: "Aria — German · Female"        },
-  { id: "Magpie-Multilingual.FR-FR.Aria",  label: "Aria — French · Female"        },
-  { id: "Magpie-Multilingual.ES-US.Aria",  label: "Aria — Spanish · Female"       },
-  { id: "Magpie-Multilingual.ZH-CN.Aria",  label: "Aria — Chinese · Female"       },
-  { id: "Magpie-Multilingual.JA-JP.Aria",  label: "Aria — Japanese · Female"      },
-  { id: "Magpie-Multilingual.IT-IT.Aria",  label: "Aria — Italian · Female"       },
-] as const;
+const AI_VOICES = [
+  { id: "Brian",    label: "Brian — English UK · Male"    },
+  { id: "Amy",      label: "Amy — English UK · Female"    },
+  { id: "Emma",     label: "Emma — English UK · Female"   },
+  { id: "Joanna",   label: "Joanna — English US · Female" },
+  { id: "Joey",     label: "Joey — English US · Male"     },
+  { id: "Matthew",  label: "Matthew — English US · Male"  },
+  { id: "Salli",    label: "Salli — English US · Female"  },
+  { id: "Kendra",   label: "Kendra — English US · Female" },
+  { id: "Justin",   label: "Justin — English US · Male"   },
+  { id: "Nicole",   label: "Nicole — Australian · Female" },
+  { id: "Russell",  label: "Russell — Australian · Male"  },
+  { id: "Conchita", label: "Conchita — Spanish · Female"  },
+  { id: "Celine",   label: "Céline — French · Female"     },
+  { id: "Marlene",  label: "Marlene — German · Female"    },
+  { id: "Carla",    label: "Carla — Italian · Female"     },
+];
 
 const BROWSER_LANGUAGES = [
   { code: "en-US", label: "English (US)" },
@@ -47,18 +50,18 @@ const SAMPLE_TEXTS = [
   "Technology is best when it brings people together.",
 ] as const;
 
-const MAX_CHARS = 5000;
+const MAX_CHARS = 3000;
 type Mode = "nvidia" | "browser";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function TextToAudio() {
-  const [mode, setMode]               = useState<Mode>("browser");
+  const [mode, setMode]               = useState<Mode>("nvidia");
   const [text, setText]               = useState("");
   const [speed, setSpeed]             = useState(1.0);
 
-  // NVIDIA mode state
-  const [nvidiaVoice, setNvidiaVoice] = useState<string>(NVIDIA_VOICES[0].id);
+  // AI TTS mode state
+  const [nvidiaVoice, setNvidiaVoice] = useState<string>(AI_VOICES[0].id);
   const [nvidiaLoading, setNvidiaLoading] = useState(false);
   const [nvidiaError, setNvidiaError] = useState("");
   const [audioUrl, setAudioUrl]       = useState("");
@@ -117,7 +120,7 @@ export function TextToAudio() {
       const res = await fetch("/api/ai/nvidia-tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text.trim(), voice: nvidiaVoice, speed }),
+        body: JSON.stringify({ text: text.trim(), voice: nvidiaVoice }),
       });
 
       if (!res.ok) {
@@ -133,8 +136,6 @@ export function TextToAudio() {
       setTimeout(() => audioRef.current?.play(), 100);
     } catch (err: unknown) {
       setNvidiaError((err as Error).message ?? "Generation failed");
-      // Auto-switch to browser mode after a short delay
-      setTimeout(() => setMode("browser"), 2000);
     } finally {
       setNvidiaLoading(false);
     }
@@ -142,10 +143,9 @@ export function TextToAudio() {
 
   function handleDownload() {
     if (!audioUrl) return;
-    const voiceLabel = nvidiaVoice.split(".").pop() ?? "voice";
     const a = document.createElement("a");
     a.href = audioUrl;
-    a.download = `toolhive-tts-${voiceLabel}-${Date.now()}.wav`;
+    a.download = `toolhive-tts-${nvidiaVoice}-${Date.now()}.mp3`;
     a.click();
   }
 
@@ -225,28 +225,28 @@ export function TextToAudio() {
       {/* Mode tabs */}
       <div className="mb-5 flex rounded-2xl border border-card-border bg-card p-1.5 gap-1.5">
         <button
-          onClick={() => setMode("browser")}
-          className={clsx(
-            "flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all duration-200",
-            mode === "browser"
-              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm"
-              : "text-foreground-muted hover:text-foreground"
-          )}
-        >
-          <Volume2 className="h-4 w-4" /> Browser TTS
-          <span className={clsx("rounded-full px-1.5 py-0.5 text-[10px]", mode === "browser" ? "bg-white/20" : "bg-foreground/10")}>Free · Always Works</span>
-        </button>
-        <button
           onClick={() => setMode("nvidia")}
           className={clsx(
             "flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all duration-200",
             mode === "nvidia"
-              ? "bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-sm"
-              : "text-foreground-subtle hover:text-foreground-muted"
+              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm"
+              : "text-foreground-muted hover:text-foreground"
           )}
         >
-          <Sparkles className="h-4 w-4" /> NVIDIA AI
-          <span className={clsx("rounded-full px-1.5 py-0.5 text-[10px]", mode === "nvidia" ? "bg-white/20" : "bg-foreground/10")}>Unavailable</span>
+          <Sparkles className="h-4 w-4" /> AI Voice
+          <span className={clsx("rounded-full px-1.5 py-0.5 text-[10px]", mode === "nvidia" ? "bg-white/20" : "bg-foreground/10")}>Downloadable</span>
+        </button>
+        <button
+          onClick={() => setMode("browser")}
+          className={clsx(
+            "flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all duration-200",
+            mode === "browser"
+              ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-sm"
+              : "text-foreground-muted hover:text-foreground"
+          )}
+        >
+          <Volume2 className="h-4 w-4" /> Browser TTS
+          <span className={clsx("rounded-full px-1.5 py-0.5 text-[10px]", mode === "browser" ? "bg-white/20" : "bg-foreground/10")}>Free</span>
         </button>
       </div>
 
@@ -302,29 +302,16 @@ export function TextToAudio() {
 
               <div className="rounded-2xl border border-card-border bg-card p-5">
                 <p className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                  <Settings2 className="h-4 w-4 text-emerald-500" /> NVIDIA Magpie Voice
+                  <Settings2 className="h-4 w-4 text-emerald-500" /> Choose Voice
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-foreground-muted">Voice & Language</label>
-                    <select value={nvidiaVoice} onChange={(e) => setNvidiaVoice(e.target.value)}
-                      className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-400/40">
-                      {NVIDIA_VOICES.map((v) => (
-                        <option key={v.id} value={v.id}>{v.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-foreground-muted">
-                      Speed <span className="font-semibold text-foreground">{speed.toFixed(1)}x</span>
-                    </label>
-                    <input type="range" min={0.5} max={2.0} step={0.1} value={speed}
-                      onChange={(e) => setSpeed(parseFloat(e.target.value))}
-                      className="w-full accent-emerald-500 mt-2" />
-                    <div className="mt-0.5 flex justify-between text-[10px] text-foreground-subtle">
-                      <span>0.5x</span><span>2.0x</span>
-                    </div>
-                  </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-foreground-muted">Voice & Language</label>
+                  <select value={nvidiaVoice} onChange={(e) => setNvidiaVoice(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-400/40">
+                    {AI_VOICES.map((v) => (
+                      <option key={v.id} value={v.id}>{v.label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -339,7 +326,7 @@ export function TextToAudio() {
                 )}>
                 {nvidiaLoading
                   ? <><Loader2 className="h-5 w-5 animate-spin" /> Generating audio...</>
-                  : <><Sparkles className="h-5 w-5" /> Generate with NVIDIA AI</>
+                  : <><Sparkles className="h-5 w-5" /> Generate Audio</>
                 }
               </button>
 
@@ -359,20 +346,18 @@ export function TextToAudio() {
                         <button onClick={handleDownload}
                           className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 py-3 text-sm font-semibold text-white hover:opacity-90 shadow-sm">
                           <Download className="h-4 w-4" />
-                          Download WAV
+                          Download MP3
                         </button>
                       </div>
                     )}
                     {nvidiaError && (
                       <div className="p-5 flex items-start gap-3">
-                        <AlertCircle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" />
+                        <AlertCircle className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
                         <div>
-                          <p className="text-sm font-semibold text-foreground">NVIDIA TTS not available</p>
-                          <p className="mt-0.5 text-xs text-foreground-muted">
-                            NVIDIA Magpie TTS uses gRPC (not HTTP REST) and is currently unavailable via web API.
-                          </p>
-                          <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                            Switching to Browser TTS automatically...
+                          <p className="text-sm font-semibold text-foreground">Generation failed</p>
+                          <p className="mt-0.5 text-xs text-foreground-muted">{nvidiaError}</p>
+                          <p className="mt-2 text-xs text-foreground-subtle">
+                            Try <button onClick={() => setMode("browser")} className="text-primary underline underline-offset-2">Browser TTS</button> as an alternative.
                           </p>
                         </div>
                       </div>
@@ -381,11 +366,11 @@ export function TextToAudio() {
                 )}
               </AnimatePresence>
 
-              <div className="rounded-2xl border border-amber-200 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/10 p-4">
+              <div className="rounded-2xl border border-card-border bg-card/50 p-4">
                 <p className="flex items-start gap-2 text-xs text-foreground-subtle">
-                  <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-500" />
-                  <strong>NVIDIA Magpie TTS</strong> is currently unavailable via web (gRPC-only).
-                  Please use <button onClick={() => setMode("browser")} className="text-emerald-600 dark:text-emerald-400 font-semibold underline underline-offset-2">Browser TTS</button> — it works instantly with no limitations.
+                  <Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0 text-emerald-500" />
+                  15 natural voices across English, Spanish, French, German & Italian.
+                  Audio generated as downloadable <strong>MP3</strong>.
                 </p>
               </div>
             </motion.div>

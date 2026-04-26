@@ -4,6 +4,8 @@ import Script from "next/script";
 import { HeroSection } from "@/components/features/home/HeroSection";
 import { CategoryGrid } from "@/components/features/home/CategoryGrid";
 import { FeaturedTools } from "@/components/features/home/FeaturedTools";
+import { AIAssistantsSection } from "@/components/features/home/AIAssistantsSection";
+import { QuickToolsSection } from "@/components/features/home/QuickToolsSection";
 import { StatsSection } from "@/components/features/home/StatsSection";
 import { CtaSection } from "@/components/features/home/CtaSection";
 import { RecentTools } from "@/components/features/home/RecentTools";
@@ -82,6 +84,12 @@ export default function HomePage() {
       <Suspense fallback={<SectionSkeleton rows={2} />}>
         <FeaturedTools />
       </Suspense>
+
+      {/* AI Assistants — tools from navbar "More" dropdown */}
+      <AIAssistantsSection />
+
+      {/* Quick Tools — utilities from navbar "More" dropdown */}
+      <QuickToolsSection />
 
       {/* RecentTools is a client component — no server data */}
       <RecentTools />
