@@ -128,8 +128,9 @@ export function TextToAudio() {
         throw new Error(errData.error ?? `Request failed (${res.status})`);
       }
 
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const rawBlob = await res.blob();
+      const mp3Blob = new Blob([rawBlob], { type: "audio/mpeg" });
+      const url = URL.createObjectURL(mp3Blob);
       setAudioUrl(url);
       setAudioDone(true);
       // Auto-play
@@ -146,7 +147,10 @@ export function TextToAudio() {
     const a = document.createElement("a");
     a.href = audioUrl;
     a.download = `toolhive-tts-${nvidiaVoice}-${Date.now()}.mp3`;
+    a.style.display = "none";
+    document.body.appendChild(a);
     a.click();
+    setTimeout(() => document.body.removeChild(a), 200);
   }
 
   // ─── Browser TTS ───────────────────────────────────────────────────────────
