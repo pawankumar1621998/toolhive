@@ -5,7 +5,7 @@ import { clsx } from "clsx";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, Mic, Square, FileAudio, Loader2, Copy, Check,
-  Download, Trash2, AlertCircle, CheckCircle, Sparkles, Radio,
+  Download, Trash2, AlertCircle, CheckCircle, Sparkles, Radio, Key, ExternalLink,
 } from "lucide-react";
 
 const ACCEPT = ".mp3,.wav,.m4a,.ogg,.webm,.flac,.mp4";
@@ -361,18 +361,64 @@ export function AudioTranscriber() {
 
         {/* Error */}
         {error && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="flex items-start gap-3 rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 p-4">
-            <AlertCircle className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-foreground">Error</p>
-              <p className="mt-0.5 text-xs text-foreground-muted">{error}</p>
-              {mode === "file" && (
-                <p className="mt-1.5 text-xs text-foreground-subtle">
-                  Try <button onClick={() => switchMode("mic")} className="text-primary underline underline-offset-2">Live Mic mode</button> — it works instantly without any server.
-                </p>
-              )}
-            </div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            {error === "NEEDS_API_KEY" ? (
+              /* ── API key setup card ── */
+              <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 p-5">
+                <div className="flex items-start gap-3 mb-4">
+                  <Key className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-foreground">Free API key needed for file transcription</p>
+                    <p className="mt-0.5 text-xs text-foreground-muted">
+                      The free transcription service is rate-limited on shared servers. Add a free <strong>Groq API key</strong> to fix this instantly.
+                    </p>
+                  </div>
+                </div>
+                <ol className="space-y-2 text-xs text-foreground-muted mb-4 ml-2">
+                  <li className="flex items-start gap-2">
+                    <span className="rounded-full bg-amber-200 dark:bg-amber-800 text-amber-700 dark:text-amber-300 text-[10px] font-bold px-1.5 py-0.5 shrink-0 mt-0.5">1</span>
+                    Sign up free at{" "}
+                    <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer"
+                      className="text-primary underline underline-offset-2 inline-flex items-center gap-0.5">
+                      console.groq.com <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="rounded-full bg-amber-200 dark:bg-amber-800 text-amber-700 dark:text-amber-300 text-[10px] font-bold px-1.5 py-0.5 shrink-0 mt-0.5">2</span>
+                    Create a new API key in the dashboard
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="rounded-full bg-amber-200 dark:bg-amber-800 text-amber-700 dark:text-amber-300 text-[10px] font-bold px-1.5 py-0.5 shrink-0 mt-0.5">3</span>
+                    Add <code className="bg-amber-100 dark:bg-amber-900/40 rounded px-1">GROQ_API_KEY</code> to Vercel → Settings → Environment Variables
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="rounded-full bg-amber-200 dark:bg-amber-800 text-amber-700 dark:text-amber-300 text-[10px] font-bold px-1.5 py-0.5 shrink-0 mt-0.5">4</span>
+                    Redeploy the project — done! (Free tier: 7,200 audio sec/day)
+                  </li>
+                </ol>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => switchMode("mic")}
+                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 px-4 py-2 text-xs font-semibold text-white hover:opacity-90">
+                    <Mic className="h-3.5 w-3.5" /> Use Live Mic instead
+                  </button>
+                  <p className="text-xs text-foreground-subtle">Works instantly, no key needed</p>
+                </div>
+              </div>
+            ) : (
+              /* ── Regular error ── */
+              <div className="flex items-start gap-3 rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 p-4">
+                <AlertCircle className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Error</p>
+                  <p className="mt-0.5 text-xs text-foreground-muted">{error}</p>
+                  {mode === "file" && (
+                    <p className="mt-1.5 text-xs text-foreground-subtle">
+                      Try <button onClick={() => switchMode("mic")} className="text-primary underline underline-offset-2">Live Mic mode</button> — it works instantly without any server.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
 

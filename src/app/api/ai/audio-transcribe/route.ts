@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// OpenAI Whisper via Hugging Face Inference API
-// Uses res.text() → JSON.parse() so HTML error pages never crash the route
+// Primary:  Groq Whisper (free, fast, reliable — needs GROQ_API_KEY env var)
+// Fallback: HuggingFace Whisper (free but rate-limits Vercel IPs without HF_TOKEN)
+
+const GROQ_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
+const HF_URL   = "https://api-inference.huggingface.co/models/openai/whisper-small";
 
 export async function POST(req: NextRequest) {
-  // ── Parse form data ────────────────────────────────────────────────────────
   let formData: FormData;
   try {
     formData = await req.formData();
@@ -13,39 +15,30 @@ export async function POST(req: NextRequest) {
   }
 
   const file = formData.get("file") as File | null;
-  if (!file) {
-    return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
-  }
-  if (file.size > 25 * 1024 * 1024) {
+  if (!file) return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
+  if (file.size > 25 * 1024 * 1024)
     return NextResponse.json({ error: "File too large (max 25 MB)" }, { status: 400 });
-  }
 
-  // ── Convert to bytes ───────────────────────────────────────────────────────
-  let audioBuffer: ArrayBuffer;
+  const groqKey = process.env.GROQ_API_KEY;
+  if (groqKey) return transcribeGroq(file, groqKey);
+  return transcribeHF(file);
+}
+
+// ── Groq (primary) ─────────────────────────────────────────────────────────────
+
+async function transcribeGroq(file: File, key: string) {
+  const body = new FormData();
+  body.append("file", file, file.name);
+  body.append("model", "whisper-large-v3-turbo");
+
+  let res: Response;
   try {
-    audioBuffer = await file.arrayBuffer();
-  } catch {
-    return NextResponse.json({ error: "Failed to read audio file" }, { status: 400 });
-  }
-
-  // ── Call HuggingFace Whisper ───────────────────────────────────────────────
-  const hfToken = process.env.HF_TOKEN;
-  const reqHeaders: Record<string, string> = {
-    "Content-Type": "application/octet-stream",
-  };
-  if (hfToken) reqHeaders["Authorization"] = `Bearer ${hfToken}`;
-
-  let hfRes: Response;
-  try {
-    hfRes = await fetch(
-      "https://api-inference.huggingface.co/models/openai/whisper-small",
-      {
-        method: "POST",
-        headers: reqHeaders,
-        body: audioBuffer,
-        signal: AbortSignal.timeout(120_000),
-      }
-    );
+    res = await fetch(GROQ_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}` },
+      body,
+      signal: AbortSignal.timeout(60_000),
+    });
   } catch (err: unknown) {
     return NextResponse.json(
       { error: `Network error: ${(err as Error).message ?? "request failed"}` },
@@ -53,27 +46,66 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Parse response safely (never call .json() directly — HF can return HTML) ─
-  const rawText = await hfRes.text();
-
-  let data: { text?: string; error?: string; estimated_time?: number };
+  const raw = await res.text();
+  let data: { text?: string; error?: { message?: string } | string };
   try {
-    data = JSON.parse(rawText) as typeof data;
+    data = JSON.parse(raw) as typeof data;
   } catch {
-    // HuggingFace returned HTML (rate-limit page, maintenance, etc.)
-    if (rawText.includes("<!DOCTYPE") || rawText.includes("<html")) {
-      return NextResponse.json(
-        { error: "Transcription service is temporarily unavailable. Please try again in a moment." },
-        { status: 503 }
-      );
-    }
+    return NextResponse.json({ error: "Unexpected response from Groq" }, { status: 502 });
+  }
+
+  if (!res.ok) {
+    const msg =
+      typeof data.error === "object"
+        ? (data.error as { message?: string }).message ?? `Groq error ${res.status}`
+        : (data.error as string) ?? `Groq error ${res.status}`;
+    return NextResponse.json({ error: msg }, { status: res.status >= 400 ? res.status : 502 });
+  }
+
+  return NextResponse.json({ text: data.text ?? "" });
+}
+
+// ── HuggingFace (fallback) ──────────────────────────────────────────────────────
+
+async function transcribeHF(file: File) {
+  let audioBuffer: ArrayBuffer;
+  try {
+    audioBuffer = await file.arrayBuffer();
+  } catch {
+    return NextResponse.json({ error: "Failed to read audio file" }, { status: 400 });
+  }
+
+  const hfToken = process.env.HF_TOKEN;
+  const headers: Record<string, string> = { "Content-Type": "application/octet-stream" };
+  if (hfToken) headers["Authorization"] = `Bearer ${hfToken}`;
+
+  let hfRes: Response;
+  try {
+    hfRes = await fetch(HF_URL, {
+      method: "POST",
+      headers,
+      body: audioBuffer,
+      signal: AbortSignal.timeout(120_000),
+    });
+  } catch (err: unknown) {
     return NextResponse.json(
-      { error: "Unexpected response from transcription service." },
+      { error: `Network error: ${(err as Error).message ?? "request failed"}` },
       { status: 502 }
     );
   }
 
-  // ── Handle model-loading state ─────────────────────────────────────────────
+  const rawText = await hfRes.text();
+  let data: { text?: string; error?: string; estimated_time?: number };
+  try {
+    data = JSON.parse(rawText) as typeof data;
+  } catch {
+    if (rawText.includes("<!DOCTYPE") || rawText.includes("<html")) {
+      // HuggingFace rate-limiting Vercel IPs — signal the client to show setup instructions
+      return NextResponse.json({ error: "NEEDS_API_KEY" }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Unexpected response from transcription service." }, { status: 502 });
+  }
+
   if (!hfRes.ok || data.error) {
     const errLower = (data.error ?? "").toLowerCase();
     if (errLower.includes("loading") || errLower.includes("currently loading")) {
