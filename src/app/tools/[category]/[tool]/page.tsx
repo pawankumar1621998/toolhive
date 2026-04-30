@@ -13,6 +13,7 @@ import { ConverterTextWorkspace } from "@/components/features/converter/Converte
 import { CalcWorkspace } from "@/components/features/calculator/CalcWorkspace";
 import { ImageToolWorkspace } from "@/components/features/image/ImageToolWorkspace";
 import { TranslatePdfWorkspace } from "@/components/features/tool/TranslatePdfWorkspace";
+import { ContactCreatorWorkspace } from "@/components/features/contact/ContactCreatorWorkspace";
 import { RelatedTools } from "@/components/features/tool/RelatedTools";
 import { ToolInfoPanel } from "@/components/features/tool/ToolInfoPanel";
 import { ToolPageSidebar } from "@/components/features/tool/ToolPageSidebar";
@@ -198,6 +199,14 @@ export default async function ToolPage({
           ) : tool.category === "calculator" ? (
             <div className="py-8 sm:py-10 max-w-4xl">
               <CalcWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+          ) : tool.category === "contact-creator" ? (
+            <div className="py-8 sm:py-10 max-w-3xl">
+              <ContactCreatorWorkspace tool={tool} />
               <ToolInfoPanel tool={tool} />
               <Suspense fallback={<SectionSkeleton rows={1} />}>
                 <RelatedTools category={tool.category} currentToolId={tool.id} />

@@ -95,6 +95,17 @@ export const TOOL_CATEGORIES = [
     toolCount: 28,
     href: "/tools/calculator",
   },
+  {
+    id: "contact-creator",
+    label: "Contact & Creator",
+    description: "Link in bio, social bios, auto-reply templates, email signatures, WhatsApp links, vCards and more.",
+    icon: "📱",
+    iconName: "Smartphone",
+    color: "pink",
+    gradient: "from-pink-500 to-rose-400",
+    toolCount: 12,
+    href: "/tools/contact-creator",
+  },
 ] as const;
 
 export type ToolCategoryConfig = (typeof TOOL_CATEGORIES)[number];
