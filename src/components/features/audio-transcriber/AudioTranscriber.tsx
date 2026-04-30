@@ -155,11 +155,31 @@ export function AudioTranscriber() {
     form.append("file", file, file.name);
     try {
       const res = await fetch("/api/ai/audio-transcribe", { method: "POST", body: form });
-      const data = await res.json() as { text?: string; error?: string };
-      if (!res.ok || data.error) throw new Error(data.error ?? `Error ${res.status}`);
+      const data = await res.json() as {
+        text?: string;
+        error?: string;
+        suggestion?: string;
+        fixUrl?: string;
+        fixAvailable?: boolean;
+        retryAfter?: number;
+      };
+
+      if (!res.ok || data.error) {
+        // Smart error with suggestion from agent
+        const errMsg = data.error ?? `Error ${res.status}`;
+        const suggestion = data.suggestion ?? (data.error === "NEEDS_API_KEY"
+          ? "Add a free Groq API key in Vercel → Settings → Environment Variables for reliable transcription."
+          : data.error === "SERVICE_DEGRADED"
+          ? "Server transcription is down. Use Live Mic tab — it works instantly without any API."
+          : null);
+        throw new Error(suggestion ? `${errMsg}|${suggestion}` : errMsg);
+      }
+
       setTranscript(data.text ?? "");
     } catch (err: unknown) {
-      setError((err as Error).message ?? "Transcription failed");
+      const msg = (err as Error).message ?? "Transcription failed";
+      const [errorText, suggestion] = msg.split("|");
+      setError(suggestion ? `TRANSCRIPTION_FAILED|${suggestion}` : errorText);
     } finally {
       setTranscribing(false);
     }
@@ -402,6 +422,30 @@ export function AudioTranscriber() {
                     <Mic className="h-3.5 w-3.5" /> Use Live Mic instead
                   </button>
                   <p className="text-xs text-foreground-subtle">Works instantly, no key needed</p>
+                </div>
+              </div>
+            ) : error.startsWith("TRANSCRIPTION_FAILED|") ? (
+              /* ── Agent suggestion card ── */
+              <div className="rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 p-5">
+                <div className="flex items-start gap-3 mb-3">
+                  <AlertCircle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-foreground">Transcription failed</p>
+                    <p className="mt-0.5 text-xs text-foreground-muted">{error.split("|")[0]}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-foreground-muted mb-4 pl-8">{error.split("|")[1]}</p>
+                <div className="flex items-center gap-2 pl-8">
+                  <button onClick={() => switchMode("mic")}
+                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 px-4 py-2 text-xs font-semibold text-white hover:opacity-90">
+                    <Mic className="h-3.5 w-3.5" /> Use Live Mic
+                  </button>
+                  {error.includes("GROQ_API_KEY") && (
+                    <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-700 px-4 py-2 text-xs font-medium text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/30">
+                      <Key className="h-3.5 w-3.5" /> Add Groq Key
+                    </a>
+                  )}
                 </div>
               </div>
             ) : (
