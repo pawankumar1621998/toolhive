@@ -27,6 +27,19 @@ const SUB_CATEGORIES: Record<ToolCategory, string[]> = {
   resume: ["Builder", "Templates", "Analyzer", "Skills", "Cover Letter", "ATS"],
   calculator: ["Finance", "Health", "Math", "Date", "Shopping"],
   "contact-creator": ["Bio", "Links", "Templates", "DM", "Card"],
+  "social-media": ["Hashtag", "Bio", "Caption", "Post", "Schedule", "Meme"],
+  generators: ["Random", "Name", "Code", "Color", "Password", "QR Code"],
+  "text-writing": ["Counter", "Case", "Diff", "Grammar", "Summarize", "Paraphrase"],
+  utilities: ["Timer", "Lookup", "URL", "Color", "QR", "Hash"],
+  device: ["Network", "IP", "DNS", "Domain", "Ping", "Trace"],
+  finance: ["Invoice", "ROI", "GST", "Tax", "Margin", "Valuation"],
+  productivity: ["Planner", "Checklist", "Calendar", "Minutes", "Packing"],
+  code: ["CSS", "JSON", "HTML", "SQL", "Regex", "Base64"],
+  seo: ["Meta", "Schema", "Sitemap", "Robot", "Open Graph", "Keywords"],
+  education: ["Flashcard", "Quiz", "Vocabulary", "Study", "Timeline"],
+  health: ["BMI", "Calories", "Pregnancy", "Heart Rate", "VO2 Max"],
+  travel: ["Distance", "Timezone", "Currency", "Packing", "Insurance"],
+  entertainment: ["Meme", "Wheel", "Trivia", "D&D", "Fortune", "Names"],
 };
 
 // ─────────────────────────────────────────────────────────────────

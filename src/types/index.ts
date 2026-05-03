@@ -12,7 +12,20 @@ export type ToolCategory =
   | "converter"
   | "resume"
   | "calculator"
-  | "contact-creator";
+  | "contact-creator"
+  | "social-media"
+  | "generators"
+  | "text-writing"
+  | "utilities"
+  | "device"
+  | "finance"
+  | "productivity"
+  | "code"
+  | "seo"
+  | "education"
+  | "health"
+  | "travel"
+  | "entertainment";
 
 export type ToolStatus = "idle" | "uploading" | "processing" | "done" | "error";
 
