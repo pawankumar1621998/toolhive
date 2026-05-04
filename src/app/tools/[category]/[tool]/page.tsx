@@ -14,6 +14,19 @@ import { CalcWorkspace } from "@/components/features/calculator/CalcWorkspace";
 import { ImageToolWorkspace } from "@/components/features/image/ImageToolWorkspace";
 import { TranslatePdfWorkspace } from "@/components/features/tool/TranslatePdfWorkspace";
 import { ContactCreatorWorkspace } from "@/components/features/contact/ContactCreatorWorkspace";
+import { SocialMediaWorkspace } from "@/components/features/social/SocialMediaWorkspace";
+import GeneratorWorkspace from "@/components/features/generators/GeneratorWorkspace";
+import TextWritingWorkspace from "@/components/features/text-writing/TextWritingWorkspace";
+import CodeWorkspace from "@/components/features/code/CodeWorkspace";
+import HealthWorkspace from "@/components/features/health/HealthWorkspace";
+import EducationWorkspace from "@/components/features/education/EducationWorkspace";
+import FinanceWorkspace from "@/components/features/finance/FinanceWorkspace";
+import UtilitiesWorkspace from "@/components/features/utilities/UtilitiesWorkspace";
+import DeviceWorkspace from "@/components/features/device/DeviceWorkspace";
+import TravelWorkspace from "@/components/features/travel/TravelWorkspace";
+import SEOWorkspace from "@/components/features/seo/SEOWorkspace";
+import ProductivityWorkspace from "@/components/features/productivity/ProductivityWorkspace";
+import EntertainmentWorkspace from "@/components/features/entertainment/EntertainmentWorkspace";
 import { RelatedTools } from "@/components/features/tool/RelatedTools";
 import { ToolInfoPanel } from "@/components/features/tool/ToolInfoPanel";
 import { ToolPageSidebar } from "@/components/features/tool/ToolPageSidebar";
@@ -224,6 +237,123 @@ export default async function ToolPage({
           ) : tool.category === "image" ? (
             <div className="py-6 sm:py-8 max-w-2xl">
               <ImageToolWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : tool.category === "social-media" ? (
+            <div className="py-8 sm:py-10 max-w-5xl">
+              <SocialMediaWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : tool.category === "generators" ? (
+            <div className="py-8 sm:py-10 max-w-4xl">
+              <GeneratorWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : tool.category === "text-writing" ? (
+            <div className="py-8 sm:py-10 max-w-4xl">
+              <TextWritingWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : tool.category === "code" ? (
+            <div className="py-8 sm:py-10 max-w-5xl">
+              <CodeWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : tool.category === "health" ? (
+            <div className="py-8 sm:py-10 max-w-4xl">
+              <HealthWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : tool.category === "education" ? (
+            <div className="py-8 sm:py-10 max-w-5xl">
+              <EducationWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : tool.category === "finance" ? (
+            <div className="py-8 sm:py-10 max-w-4xl">
+              <FinanceWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : tool.category === "utilities" ? (
+            <div className="py-8 sm:py-10 max-w-4xl">
+              <UtilitiesWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : tool.category === "device" ? (
+            <div className="py-8 sm:py-10 max-w-4xl">
+              <DeviceWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : tool.category === "travel" ? (
+            <div className="py-8 sm:py-10 max-w-4xl">
+              <TravelWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : tool.category === "seo" ? (
+            <div className="py-8 sm:py-10 max-w-5xl">
+              <SEOWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : tool.category === "productivity" ? (
+            <div className="py-8 sm:py-10 max-w-5xl">
+              <ProductivityWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : tool.category === "entertainment" ? (
+            <div className="py-8 sm:py-10 max-w-5xl">
+              <EntertainmentWorkspace tool={tool} />
               <ToolInfoPanel tool={tool} />
               <Suspense fallback={<SectionSkeleton rows={1} />}>
                 <RelatedTools category={tool.category} currentToolId={tool.id} />
