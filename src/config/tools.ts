@@ -111,7 +111,7 @@ export const TOOLS: Tool[] = [
   // ── Image Tools ─────────────────────────────
   {
     id: "image-compress",
-    slug: "compress",
+    slug: "img-compress",
     name: "Compress Image",
     description: "Compress JPEG, PNG, WebP images up to 90% smaller with no visible quality loss using smart AI compression.",
     shortDescription: "Compress images without visible quality loss.",
@@ -484,7 +484,7 @@ export const TOOLS: Tool[] = [
   // ── More Image Tools ─────────────────────────
   {
     id: "image-watermark",
-    slug: "watermark",
+    slug: "img-watermark",
     name: "Image Watermark",
     description: "Add text or logo watermarks to images. Customize opacity, position, size, and font. Batch process multiple images.",
     shortDescription: "Add text or logo watermark to images.",
@@ -581,7 +581,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "image-rotate",
-    slug: "rotate",
+    slug: "img-rotate",
     name: "Rotate Image",
     shortDescription: "Rotate images 90°, 180°, or any custom angle.",
     description: "Rotate images clockwise or counter-clockwise by 90°, 180°, 270°, or any custom angle.",
@@ -2977,7 +2977,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "resignation-letter",
-    slug: "resignation-letter",
+    slug: "resign-letter",
     name: "Resignation Letter Writer",
     description: "Write a graceful, professional resignation letter in seconds. Enter your details and get a ready-to-send letter that maintains relationships and burns no bridges.",
     shortDescription: "Write a professional resignation letter instantly.",
@@ -2992,8 +2992,8 @@ export const TOOLS: Tool[] = [
     isPremium: false,
   },
   {
-    id: "interview-prep",
-    slug: "interview-prep",
+    id: "interview-prep-ai",
+    slug: "interview-prep-ai",
     name: "AI Interview Prep",
     description: "Generate role-specific interview questions with model answers. Covers behavioral, technical, and situational questions. Prepare for any job interview in minutes.",
     shortDescription: "Generate interview Q&A for any role instantly.",
@@ -3300,8 +3300,8 @@ export const TOOLS: Tool[] = [
     maxFileSizeMB: 0,
   },
   {
-    id: "cold-dm",
-    slug: "cold-dm",
+    id: "cold-dm-outreach",
+    slug: "outreach-dm",
     name: "Cold DM Generator",
     description: "Generate personalized cold outreach DMs for Instagram and LinkedIn. Enter your product and target audience — get creative, non-spammy messages that get responses.",
     shortDescription: "Generate personalized cold DM templates for outreach.",
@@ -3579,7 +3579,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "gen-random-number",
-    slug: "random-number",
+    slug: "random-num-gen",
     name: "Random Number Generator",
     description: "Generate random numbers within a specified range. Perfect for lotteries, raffles, games, picks, and statistical sampling.",
     shortDescription: "Generate random numbers in any range.",
@@ -3886,7 +3886,7 @@ export const TOOLS: Tool[] = [
   // ── Text & Writing Tools ──────────────────────────────────────────────────────
   {
     id: "text-word-counter",
-    slug: "word-counter",
+    slug: "text-word-count",
     name: "Word Counter",
     description: "Count words, characters, sentences, and paragraphs in any text. Also shows reading time and keyword density. Essential for writers and students.",
     shortDescription: "Count words, characters, sentences in text.",
@@ -3901,9 +3901,9 @@ export const TOOLS: Tool[] = [
     maxFileSizeMB: 0,
   },
   {
-    id: "text-case-converter",
-    slug: "case-converter",
-    name: "Case Converter",
+    id: "text-case-format",
+    slug: "text-case-format",
+    name: "Text Case Formatter",
     description: "Convert text between different cases — lowercase, UPPERCASE, Title Case, Sentence case, camelCase, snake_case, kebab-case, and more.",
     shortDescription: "Convert text between 10+ case formats instantly.",
     category: "text-writing",
@@ -3919,7 +3919,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "text-lorem-ipsum",
-    slug: "lorem-ipsum",
+    slug: "text-lorem",
     name: "Lorem Ipsum Generator",
     description: "Generate placeholder lorem ipsum text in paragraphs, sentences, or words. Choose from classic, fish, zombie, and bacon ipsum varieties.",
     shortDescription: "Generate lorem ipsum placeholder text instantly.",
@@ -3934,8 +3934,8 @@ export const TOOLS: Tool[] = [
     maxFileSizeMB: 0,
   },
   {
-    id: "text-diff-checker",
-    slug: "text-diff",
+    id: "text-diff-check",
+    slug: "text-diff-check",
     name: "Text Diff Checker",
     description: "Compare two texts and highlight all differences — additions in green, deletions in red. Perfect for code review, document comparison, and editing.",
     shortDescription: "Compare two texts and see differences highlighted.",
@@ -3951,7 +3951,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "text-emojify",
-    slug: "text-to-emoji",
+    slug: "text-emojify",
     name: "Text to Emoji Converter",
     description: "Convert text to emoji-style representation. Replace words with relevant emojis for fun social media posts, messages, and stories.",
     shortDescription: "Convert text to emoji-style instantly.",
@@ -4030,8 +4030,8 @@ export const TOOLS: Tool[] = [
     maxFileSizeMB: 0,
   },
   {
-    id: "text-plagiarism-checker",
-    slug: "plagiarism-checker",
+    id: "text-plagiarism",
+    slug: "text-plagiarism",
     name: "Plagiarism Checker",
     description: "Check your text for plagiarism and duplicate content. Get an originality score and identify sections that need citation.",
     shortDescription: "Check text originality and plagiarism instantly.",
@@ -4359,7 +4359,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "finance-profit-margin",
-    slug: "profit-margin",
+    slug: "biz-profit-margin",
     name: "Profit Margin Calculator",
     description: "Calculate gross, operating, and net profit margins. Enter revenue and costs to see your exact profit margins as percentages.",
     shortDescription: "Calculate profit margins for your business instantly.",
@@ -4507,7 +4507,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "code-json-formatter",
-    slug: "json-formatter",
+    slug: "json-beautify",
     name: "JSON Formatter",
     description: "Format, minify, validate, and beautify JSON data. Fix indentation, detect errors, and get tree-view for large JSON files.",
     shortDescription: "Format, minify, and validate JSON instantly.",
@@ -4571,7 +4571,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "code-regex-tester",
-    slug: "regex-tester",
+    slug: "regex-test",
     name: "Regex Tester",
     description: "Test and debug regular expressions with real-time matching. See all matches, groups, and captures highlighted in your test string.",
     shortDescription: "Test regex patterns with real-time match highlighting.",
@@ -4918,7 +4918,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "travel-timezone",
-    slug: "timezone-converter",
+    slug: "world-timezone",
     name: "World Timezone Converter",
     description: "Convert times between cities and timezones worldwide. See current time in 100+ cities. Perfect for international calls and travel planning.",
     shortDescription: "Convert times between world cities and timezones.",
@@ -4951,7 +4951,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "travel-currency",
-    slug: "currency-converter",
+    slug: "travel-currency",
     name: "Currency Converter",
     description: "Convert between 30+ world currencies with live exchange rates. USD, EUR, GBP, INR, JPY, AED, CNY and more. Updated in real time.",
     shortDescription: "Convert between 30+ currencies with live rates.",
@@ -4970,7 +4970,7 @@ export const TOOLS: Tool[] = [
   // ── Entertainment & Fun ───────────────────────────────────────────────────
   {
     id: "ent-meme-generator",
-    slug: "meme-generator",
+    slug: "fun-meme-gen",
     name: "Meme Generator",
     description: "Create memes with popular templates. Add top text, bottom text, and download instantly. Choose from trending meme formats.",
     shortDescription: "Create memes with popular templates instantly.",
@@ -5066,7 +5066,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "ent-fortune-cookie",
-    slug: "fortune-cookie",
+    slug: "fortune-wisdom",
     name: "Fortune Cookie",
     description: "Break open a digital fortune cookie for random wisdom, predictions, and lucky numbers. Fun for parties and get-togethers.",
     shortDescription: "Break a fortune cookie for random wisdom and numbers.",
