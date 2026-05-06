@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { clsx } from "clsx";
 import { motion } from "framer-motion";
 import type { Tool } from "@/types";
@@ -616,20 +616,29 @@ function InvoiceGenerator() {
     companyAddress: "",
     clientName: "",
     clientAddress: "",
-    invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+    invoiceNumber: `INV-000001`,
     date: new Date().toISOString().split("T")[0],
     dueDate: "",
-    items: [{ id: crypto.randomUUID(), description: "", qty: "1", rate: "" }],
+    items: [{ id: "item-1", description: "", qty: "1", rate: "" }],
     taxRate: "18",
     notes: "",
   });
 
   const [showPreview, setShowPreview] = useState(false);
 
+  // Set unique invoice number on mount
+  useEffect(() => {
+    setInv((prev) => ({
+      ...prev,
+      invoiceNumber: `INV-${Math.floor(Math.random() * 900000 + 100000).toString()}`,
+      items: prev.items.map((item) => ({ ...item, id: Math.random().toString(36).slice(2) })),
+    }));
+  }, []);
+
   function addItem() {
     setInv((prev) => ({
       ...prev,
-      items: [...prev.items, { id: crypto.randomUUID(), description: "", qty: "1", rate: "" }],
+      items: [...prev.items, { id: Math.random().toString(36).slice(2), description: "", qty: "1", rate: "" }],
     }));
   }
 
