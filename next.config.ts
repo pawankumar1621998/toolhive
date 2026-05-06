@@ -9,17 +9,7 @@ const nextConfig: NextConfig = {
     instantNavigationDevToolsToggle: true,
   },
 
-  webpack: (config, { isServer }) => {
-    // Handle pdfjs-dist for client-side only
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        canvas: false,
-        fs: false,
-      };
-    }
-    return config;
-  },
+  turbopack: {},
 
   /**
    * Images: allow external avatar URLs (extend as needed).
