@@ -12,10 +12,6 @@ import {
 } from "lucide-react";
 import type { Tool } from "@/types";
 import { PDFDocument, rgb, StandardFonts, degrees } from "pdf-lib";
-import * as pdfjsLib from "pdfjs-dist";
-
-// Set worker path
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const cardClass = "rounded-xl border border-card-border bg-background-subtle p-4";
 const primaryBtn = "h-11 px-6 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed";
@@ -1051,6 +1047,10 @@ export default function PDFEditorWorkspace({ tool }: { tool: Tool }) {
 
   async function handleFileUpload(file: File) {
     setPdfFile(file);
+
+    // Dynamic import to avoid SSR issues
+    const pdfjsLib = await import("pdfjs-dist");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
