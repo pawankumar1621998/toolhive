@@ -27,6 +27,7 @@ import TravelWorkspace from "@/components/features/travel/TravelWorkspace";
 import SEOWorkspace from "@/components/features/seo/SEOWorkspace";
 import ProductivityWorkspace from "@/components/features/productivity/ProductivityWorkspace";
 import EntertainmentWorkspace from "@/components/features/entertainment/EntertainmentWorkspace";
+import PDFEditorWorkspace from "@/components/features/pdf-editor/PDFEditorWorkspace";
 import { RelatedTools } from "@/components/features/tool/RelatedTools";
 import { ToolInfoPanel } from "@/components/features/tool/ToolInfoPanel";
 import { ToolPageSidebar } from "@/components/features/tool/ToolPageSidebar";
@@ -354,6 +355,15 @@ export default async function ToolPage({
           ) : tool.category === "entertainment" ? (
             <div className="py-8 sm:py-10 max-w-5xl">
               <EntertainmentWorkspace tool={tool} />
+              <ToolInfoPanel tool={tool} />
+              <Suspense fallback={<SectionSkeleton rows={1} />}>
+                <RelatedTools category={tool.category} currentToolId={tool.id} />
+              </Suspense>
+            </div>
+
+          ) : tool.category === "pdf" ? (
+            <div className="py-8 sm:py-10 max-w-6xl">
+              <PDFEditorWorkspace tool={tool} />
               <ToolInfoPanel tool={tool} />
               <Suspense fallback={<SectionSkeleton rows={1} />}>
                 <RelatedTools category={tool.category} currentToolId={tool.id} />
