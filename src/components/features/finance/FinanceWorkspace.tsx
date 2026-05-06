@@ -616,8 +616,8 @@ function InvoiceGenerator() {
     companyAddress: "",
     clientName: "",
     clientAddress: "",
-    invoiceNumber: `INV-000001`,
-    date: new Date().toISOString().split("T")[0],
+    invoiceNumber: "INV-000001",
+    date: "",
     dueDate: "",
     items: [{ id: "item-1", description: "", qty: "1", rate: "" }],
     taxRate: "18",
@@ -626,10 +626,12 @@ function InvoiceGenerator() {
 
   const [showPreview, setShowPreview] = useState(false);
 
-  // Set unique invoice number on mount
+  // Set dynamic values on mount
   useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
     setInv((prev) => ({
       ...prev,
+      date: today,
       invoiceNumber: `INV-${Math.floor(Math.random() * 900000 + 100000).toString()}`,
       items: prev.items.map((item) => ({ ...item, id: Math.random().toString(36).slice(2) })),
     }));
