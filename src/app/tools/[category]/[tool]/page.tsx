@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import dynamic from "next/dynamic";
 import { ToolHero } from "@/components/features/tool/ToolHero";
 import { ToolWorkspace } from "@/components/features/tool/ToolWorkspace";
 import { ThumbnailCreator } from "@/components/features/tool/ThumbnailCreator";
@@ -28,8 +27,7 @@ import TravelWorkspace from "@/components/features/travel/TravelWorkspace";
 import SEOWorkspace from "@/components/features/seo/SEOWorkspace";
 import ProductivityWorkspace from "@/components/features/productivity/ProductivityWorkspace";
 import EntertainmentWorkspace from "@/components/features/entertainment/EntertainmentWorkspace";
-import PDFEditorWorkspace from "@/components/features/pdf-editor/PDFEditorWorkspace";
-const PDFEditorWorkspaceClient = dynamic(() => import("@/components/features/pdf-editor/PDFEditorWorkspace"), { ssr: false });
+import { PDFEditorWrapper } from "@/components/features/pdf-editor/PDFEditorWrapper";
 import { RelatedTools } from "@/components/features/tool/RelatedTools";
 import { ToolInfoPanel } from "@/components/features/tool/ToolInfoPanel";
 import { ToolPageSidebar } from "@/components/features/tool/ToolPageSidebar";
@@ -365,7 +363,7 @@ export default async function ToolPage({
 
           ) : tool.category === "pdf" ? (
             <div className="py-8 sm:py-10 max-w-6xl">
-              <PDFEditorWorkspaceClient tool={tool} />
+              <PDFEditorWrapper tool={tool} />
               <ToolInfoPanel tool={tool} />
               <Suspense fallback={<SectionSkeleton rows={1} />}>
                 <RelatedTools category={tool.category} currentToolId={tool.id} />
