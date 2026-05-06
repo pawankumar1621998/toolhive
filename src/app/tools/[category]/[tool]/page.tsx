@@ -29,7 +29,7 @@ import SEOWorkspace from "@/components/features/seo/SEOWorkspace";
 import ProductivityWorkspace from "@/components/features/productivity/ProductivityWorkspace";
 import EntertainmentWorkspace from "@/components/features/entertainment/EntertainmentWorkspace";
 import PDFEditorWorkspace from "@/components/features/pdf-editor/PDFEditorWorkspace";
-const PDFEditorWorkspaceClient = dynamic(() => import("@/components/features/pdf-editor/PDFEditorWorkspace").then(mod => mod.default), { ssr: false });
+const PDFEditorWorkspaceClient = dynamic(() => import("@/components/features/pdf-editor/PDFEditorWorkspace"), { ssr: false });
 import { RelatedTools } from "@/components/features/tool/RelatedTools";
 import { ToolInfoPanel } from "@/components/features/tool/ToolInfoPanel";
 import { ToolPageSidebar } from "@/components/features/tool/ToolPageSidebar";
