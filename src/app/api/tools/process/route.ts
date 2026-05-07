@@ -1123,7 +1123,7 @@ export async function POST(request: NextRequest) {
     const isPDF = firstExt === "pdf" || toolSlug.startsWith("pdf-") || toolSlug === "merge" || toolSlug === "split" || toolSlug === "rotate" && firstExt === "pdf" || toolSlug === "watermark" && firstExt === "pdf" || ["compress", "unlock", "protect", "page-numbers", "jpg-to-pdf", "organize-pdf", "reorder", "crop-pdf", "pdf-to-pdfa", "scan-to-pdf", "repair-pdf"].includes(toolSlug);
 
     const isImageInput = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "avif"].includes(firstExt);
-    const isPDFSlug = ["compress-pdf", "merge", "split", "rotate", "page-numbers", "jpg-to-pdf", "organize-pdf", "crop-pdf", "pdf-to-pdfa", "scan-to-pdf", "repair-pdf", "excel-to-pdf", "redact-pdf", "compare-pdf", "sign", "summarize-pdf", "translate-pdf", "pdf-to-text", "header-footer", "edit-pdf", "html-to-pdf"].includes(toolSlug) || firstExt === "pdf";
+    const isPDFSlug = ["compress", "compress-pdf", "merge", "split", "rotate", "page-numbers", "jpg-to-pdf", "organize-pdf", "crop-pdf", "pdf-to-pdfa", "scan-to-pdf", "repair-pdf", "excel-to-pdf", "redact-pdf", "compare-pdf", "sign", "summarize-pdf", "translate-pdf", "pdf-to-text", "header-footer", "edit-pdf", "html-to-pdf", "pdf-to-word", "pdf-to-excel", "pdf-to-jpg", "pdf-to-jpeg", "pdf-to-png", "pdf-to-image", "unlock", "protect", "watermark", "pdf-to-word", "pdf-to-docx", "pdf-to-xlsx", "ocr"].includes(toolSlug) || firstExt === "pdf";
 
     if (isPDFSlug || firstExt === "pdf") {
       const results = await processPDF(bufs, filenames, toolSlug, opts);
