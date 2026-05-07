@@ -27,8 +27,6 @@ import TravelWorkspace from "@/components/features/travel/TravelWorkspace";
 import SEOWorkspace from "@/components/features/seo/SEOWorkspace";
 import ProductivityWorkspace from "@/components/features/productivity/ProductivityWorkspace";
 import EntertainmentWorkspace from "@/components/features/entertainment/EntertainmentWorkspace";
-import { PDFEditorWrapper } from "@/components/features/pdf-editor/PDFEditorWrapper";
-import { ScreenshotEditorWrapper } from "@/components/features/screenshot-editor/ScreenshotEditorWrapper";
 import { RelatedTools } from "@/components/features/tool/RelatedTools";
 import { ToolInfoPanel } from "@/components/features/tool/ToolInfoPanel";
 import { ToolPageSidebar } from "@/components/features/tool/ToolPageSidebar";
@@ -236,15 +234,6 @@ export default async function ToolPage({
               </Suspense>
             </div>
 
-          ) : tool.slug === "screenshot-editor" ? (
-            <div className="py-6 sm:py-8 max-w-4xl">
-              <ScreenshotEditorWrapper tool={tool} />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
           ) : tool.category === "image" ? (
             <div className="py-6 sm:py-8 max-w-2xl">
               <ImageToolWorkspace tool={tool} />
@@ -372,8 +361,8 @@ export default async function ToolPage({
             </div>
 
           ) : tool.category === "pdf" ? (
-            <div className="py-8 sm:py-10 max-w-6xl">
-              <PDFEditorWrapper tool={tool} />
+            <div className="py-8 sm:py-10 max-w-4xl">
+              <ToolWorkspace tool={tool} />
               <ToolInfoPanel tool={tool} />
               <Suspense fallback={<SectionSkeleton rows={1} />}>
                 <RelatedTools category={tool.category} currentToolId={tool.id} />
