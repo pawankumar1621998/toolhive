@@ -41,7 +41,7 @@ async function callLocalAI(prompt: string): Promise<string> {
     const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${k}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], max_tokens: 2048, temperature: 0.5, stream: false }),
+      body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], max_tokens: 32000, temperature: 0.5, stream: false }),
       signal: AbortSignal.timeout(25000),
     });
     if (!res.ok) throw new Error(`NVIDIA ${res.status}`);
@@ -58,7 +58,7 @@ async function callLocalAI(prompt: string): Promise<string> {
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${k}`,
           { method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 2048 } }) }
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 32000 } }) }
         );
         if (!res.ok) throw new Error(`Gemini ${res.status}`);
         const d = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
@@ -71,7 +71,7 @@ async function callLocalAI(prompt: string): Promise<string> {
         const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST",
           headers: { Authorization: `Bearer ${k}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], max_tokens: 2048 }),
+          body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], max_tokens: 32000 }),
         });
         if (!res.ok) throw new Error(`Groq ${res.status}`);
         const d = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
@@ -84,7 +84,7 @@ async function callLocalAI(prompt: string): Promise<string> {
         const res = await fetch("https://api.deepseek.com/chat/completions", {
           method: "POST",
           headers: { Authorization: `Bearer ${k}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }], max_tokens: 2048 }),
+          body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: prompt }], max_tokens: 32000 }),
         });
         if (!res.ok) throw new Error(`DeepSeek ${res.status}`);
         const d = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
@@ -895,7 +895,7 @@ async function processPDF(
             const row = rows[ri];
             const isHeader = ri === 0;
             for (let ci = 0; ci < colCount; ci++) {
-              const cell = (row[ci] ?? "").slice(0, 30);
+              const cell = (row[ci] ?? "").toString();
               const x = MARGIN + ci * colW;
               page.drawText(cell, { x, y, size: FONT_SIZE, font: isHeader ? boldFont : font, color: rgb(0, 0, 0), maxWidth: colW - 4 });
             }
@@ -1066,7 +1066,7 @@ async function processPDF(
         pdfDoc.getPages().forEach((page) => {
           const { width, height } = page.getSize();
           page.drawRectangle({ x: 0, y: height - 30, width, height: 30, color: rgb(1, 1, 0.7), opacity: 0.85 });
-          page.drawText(noteText.slice(0, 120), { x: 8, y: height - 19, size: 10, font, color: rgb(0.1, 0.1, 0.1), maxWidth: width - 16 });
+          page.drawText(noteText, { x: 8, y: height - 19, size: 10, font, color: rgb(0.1, 0.1, 0.1), maxWidth: width - 16 });
         });
         const saved = await pdfDoc.save();
         results.push({ name: `${baseName(filenames[fi])}_annotated.pdf`, data: Buffer.from(saved).toString("base64"), type: mime });
@@ -1251,7 +1251,7 @@ export async function POST(request: NextRequest) {
                 { type: "text", text: prompt },
               ],
             }],
-            max_tokens: 512,
+            max_tokens: 4096,
             temperature: 0.3,
             stream: false,
           }),

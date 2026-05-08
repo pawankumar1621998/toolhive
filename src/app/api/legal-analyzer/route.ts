@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Document text is too short. Please paste the full document." }, { status: 400 });
     }
 
-    const truncated = documentText.slice(0, 6000);
+    const truncated = documentText;
 
     const prompt = `You are an expert legal analyst. Analyze this ${documentType} document and provide a comprehensive breakdown in simple, plain language that a non-lawyer can understand.
 

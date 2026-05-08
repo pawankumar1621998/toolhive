@@ -93,7 +93,7 @@ async function callNvidiaGpt(messages: ChatMessage[]): Promise<string> {
     body: JSON.stringify({
       model: "openai/gpt-oss-120b",
       messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
-      max_tokens: 1024,
+      max_tokens: 8192,
       temperature: 0.7,
       stream: false,
     }),
@@ -113,7 +113,7 @@ async function callNvidiaGlm(messages: ChatMessage[]): Promise<string> {
     body: JSON.stringify({
       model: "z-ai/glm-5.1",
       messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
-      max_tokens: 1024,
+      max_tokens: 8192,
       temperature: 0.7,
       stream: false,
     }),
@@ -133,7 +133,7 @@ async function callNvidia2Nemotron(messages: ChatMessage[]): Promise<string> {
     body: JSON.stringify({
       model: "nvidia/llama-3.1-nemotron-70b-instruct",
       messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
-      max_tokens: 1024,
+      max_tokens: 8192,
       temperature: 0.7,
       stream: false,
     }),
@@ -153,7 +153,7 @@ async function callNvidia2Llama(messages: ChatMessage[]): Promise<string> {
     body: JSON.stringify({
       model: "meta/llama-3.3-70b-instruct",
       messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
-      max_tokens: 1024,
+      max_tokens: 8192,
       temperature: 0.7,
       stream: false,
     }),
@@ -176,7 +176,7 @@ async function callGroq(messages: ChatMessage[]): Promise<string> {
         { role: "system", content: SYSTEM_PROMPT },
         ...messages,
       ],
-      max_tokens: 1024,
+      max_tokens: 8192,
       temperature: 0.7,
     }),
     signal: AbortSignal.timeout(20000),
@@ -203,7 +203,7 @@ async function callGemini(messages: ChatMessage[]): Promise<string> {
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 1024, temperature: 0.7 } }),
+      body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 8192, temperature: 0.7 } }),
       signal: AbortSignal.timeout(20000),
     }
   );
@@ -224,7 +224,7 @@ async function callMistral(messages: ChatMessage[]): Promise<string> {
         { role: "system", content: SYSTEM_PROMPT },
         ...messages,
       ],
-      max_tokens: 1024,
+      max_tokens: 8192,
       temperature: 0.7,
     }),
     signal: AbortSignal.timeout(20000),
@@ -246,7 +246,7 @@ async function callAnthropic(messages: ChatMessage[]): Promise<string> {
     },
     body: JSON.stringify({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 1024,
+      max_tokens: 8192,
       system: SYSTEM_PROMPT,
       messages,
     }),
@@ -269,7 +269,7 @@ async function callDeepSeek(messages: ChatMessage[]): Promise<string> {
         { role: "system", content: SYSTEM_PROMPT },
         ...messages,
       ],
-      max_tokens: 1024,
+      max_tokens: 8192,
       temperature: 0.7,
     }),
     signal: AbortSignal.timeout(20000),
