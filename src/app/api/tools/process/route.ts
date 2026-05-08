@@ -989,10 +989,9 @@ async function processPDF(
         if (!fullText) {
           throw new Error("No readable text found in this PDF. The PDF may be scanned/image-based.");
         }
-        // Use more text for better summarization
-        const chunk = fullText.slice(0, 15000);
+        // Summarize full document
         const summary = await callLocalAI(
-          `You are an expert document analyst. Read the following PDF content and write a comprehensive summary.\n\nReturn your summary in this format:\n📄 DOCUMENT OVERVIEW\n[2-3 sentence overview]\n\n🔑 KEY POINTS\n• [point 1]\n• [point 2]\n• [point 3]\n...\n\n📊 MAIN TOPICS\n[list main topics covered]\n\n💡 CONCLUSION\n[brief conclusion]\n\nDocument content (${pdfData.numpages} pages):\n${chunk}${fullText.length > 15000 ? "\n\n[Document continues — summarizing first portion]" : ""}`
+          `You are an expert document analyst. Read the following PDF content and write a comprehensive summary.\n\nReturn your summary in this format:\n📄 DOCUMENT OVERVIEW\n[2-3 sentence overview]\n\n🔑 KEY POINTS\n• [point 1]\n• [point 2]\n• [point 3]\n• [point 4]\n• [point 5]\n• [add more key points as needed]\n\n📊 MAIN TOPICS\n[list all main topics covered]\n\n💡 CONCLUSION\n[brief conclusion]\n\nFull document content (${pdfData.numpages} pages):\n${fullText}`
         );
         return [{ name: `${baseName(filenames[0])}_summary.txt`, data: Buffer.from(summary).toString("base64"), type: "text/plain" }];
       } catch (err) {
@@ -1011,15 +1010,13 @@ async function processPDF(
         if (!fullText) {
           throw new Error("No readable text found in this PDF. The PDF may be scanned/image-based.");
         }
-        // Translate more text - use 12000 chars for better results
-        const chunk = fullText.slice(0, 12000);
+        // Translate full document
         const sourceHint = sourceLang ? ` from ${sourceLang}` : "";
         const translated = await callLocalAI(
-          `You are a professional document translator. Translate the following text${sourceHint} to ${targetLang}.\n\nRules:\n- Preserve paragraph structure, headings, bullet points, and line breaks\n- Keep numbers, dates, and proper nouns as-is unless they have a common translated form\n- Do NOT add any translator notes, explanations, or comments\n- Return ONLY the translated text, nothing else\n\nText to translate:\n${chunk}`
+          `You are a professional document translator. Translate the following text${sourceHint} to ${targetLang}.\n\nRules:\n- Translate the ENTIRE document completely\n- Preserve paragraph structure, headings, bullet points, and line breaks\n- Keep numbers, dates, and proper nouns as-is unless they have a common translated form\n- Do NOT add any translator notes, explanations, or comments\n- Do NOT summarize or shorten - translate EVERYTHING\n- Return ONLY the translated text, nothing else\n\nFull document text:\n${fullText}`
         );
         const header = `TRANSLATED DOCUMENT\n${"─".repeat(40)}\nOriginal file : ${filenames[0]}\nTarget language: ${targetLang}${sourceLang ? `\nSource language: ${sourceLang}` : ""}\nPages          : ${pdfData.numpages}\nTranslated on  : ${new Date().toLocaleDateString("en-GB")}\n${"─".repeat(40)}\n\n`;
-        const footer  = fullText.length > 12000 ? `\n\n${"─".repeat(40)}\nNote: Full document has ${pdfData.numpages} pages. For complete translation, you may need to process in sections.` : "";
-        const result  = header + translated.trim() + footer;
+        const result  = header + translated.trim();
         return [{ name: `${baseName(filenames[0])}_${targetLang.replace(/\s/g, "_")}.txt`, data: Buffer.from(result).toString("base64"), type: "text/plain" }];
       } catch (err) {
         if (err instanceof Error) throw err;
