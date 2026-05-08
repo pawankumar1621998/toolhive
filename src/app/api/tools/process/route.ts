@@ -194,6 +194,7 @@ async function processImage(
       outName = `${baseName(filename)}_converted`;
       break;
     }
+    case "pdf-rotate":
     case "rotate": {
       const angle = parseInt(opts.angle ?? "90", 10);
       pipeline = pipeline.rotate(angle);
@@ -315,6 +316,7 @@ async function processImage(
       const txt = Object.entries(info).map(([k, v]) => `${k}: ${v}`).join("\n");
       return { name: `${baseName(filename)}_metadata.txt`, data: Buffer.from(txt).toString("base64"), type: "text/plain" };
     }
+    case "pdf-watermark":
     case "watermark": {
       const text     = opts.text ?? "CONFIDENTIAL";
       const opacity  = Math.max(0.05, Math.min(1, parseFloat(opts.opacity ?? "0.3")));
@@ -514,6 +516,8 @@ async function processPDF(
   const mime = "application/pdf";
 
   switch (slug) {
+    // Handle both "pdf-X" and "X" slug formats
+    case "pdf-compress":
     case "compress": {
       // pdf-lib doesn't do lossy compression — re-save strips some overhead
       const results: { name: string; data: string; type: string }[] = [];
@@ -525,6 +529,7 @@ async function processPDF(
       return results;
     }
 
+    case "pdf-merge":
     case "merge": {
       const merged = await PDFDocument.create();
       for (const buf of bufs) {
@@ -536,6 +541,7 @@ async function processPDF(
       return [{ name: "merged.pdf", data: Buffer.from(saved).toString("base64"), type: mime }];
     }
 
+    case "pdf-split":
     case "split": {
       const src = await PDFDocument.load(new Uint8Array(bufs[0]), { ignoreEncryption: true });
       const total = src.getPageCount();
@@ -550,6 +556,7 @@ async function processPDF(
       return results;
     }
 
+    case "pdf-rotate":
     case "rotate": {
       const results: { name: string; data: string; type: string }[] = [];
       for (let fi = 0; fi < bufs.length; fi++) {
@@ -565,16 +572,19 @@ async function processPDF(
       return results;
     }
 
+    case "pdf-protect":
     case "protect": {
       throw new Error("PDF_PROTECT_UNAVAILABLE: PDF password protection is not available in this environment (requires a native encryption engine). Free alternatives: ilovepdf.com/protect-pdf · sejda.com/encrypt-pdf · smallpdf.com/protect-pdf");
     }
 
+    case "pdf-unlock":
     case "unlock": {
       const pdfDoc = await PDFDocument.load(new Uint8Array(bufs[0]), { ignoreEncryption: true });
       const saved = await pdfDoc.save();
       return [{ name: `${baseName(filenames[0])}_unlocked.pdf`, data: Buffer.from(saved).toString("base64"), type: mime }];
     }
 
+    case "pdf-watermark":
     case "watermark": {
       const watermarkText = opts.text?.trim() || "CONFIDENTIAL";
       // Slider sends 10-100 (percent); pdf-lib needs 0-1
@@ -604,6 +614,7 @@ async function processPDF(
       return results;
     }
 
+    case "pdf-page-numbers":
     case "page-numbers": {
       const results: { name: string; data: string; type: string }[] = [];
       for (let fi = 0; fi < bufs.length; fi++) {
@@ -627,6 +638,8 @@ async function processPDF(
       return results;
     }
 
+    case "image-to-pdf":
+    case "image-to-pdf":
     case "jpg-to-pdf": {
       const sharp = await getSharp();
       const pdfDoc = await PDFDocument.create();
@@ -648,6 +661,7 @@ async function processPDF(
     }
 
     case "organize-pdf":
+    case "pdf-organize":
     case "reorder": {
       const src = await PDFDocument.load(new Uint8Array(bufs[0]), { ignoreEncryption: true });
       const orderStr = opts.order ?? "";
@@ -662,6 +676,7 @@ async function processPDF(
       return [{ name: `${baseName(filenames[0])}_organized.pdf`, data: Buffer.from(saved).toString("base64"), type: mime }];
     }
 
+    case "pdf-crop":
     case "crop-pdf": {
       const results: { name: string; data: string; type: string }[] = [];
       const marginPt = parseFloat(opts.margin ?? "36"); // 0.5 inch default
@@ -688,6 +703,7 @@ async function processPDF(
       return results;
     }
 
+    case "pdf-scan":
     case "scan-to-pdf": {
       const sharp = await getSharp();
       const imageExts = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "avif"];
@@ -723,6 +739,7 @@ async function processPDF(
       return [{ name: "scanned_document.pdf", data: Buffer.from(saved).toString("base64"), type: mime }];
     }
 
+    case "pdf-repair":
     case "repair-pdf": {
       const results: { name: string; data: string; type: string }[] = [];
       for (let fi = 0; fi < bufs.length; fi++) {
@@ -793,6 +810,7 @@ async function processPDF(
       return results;
     }
 
+    case "pdf-sign":
     case "sign": {
       const signerName = opts.signerName?.trim() || "Signed";
       const signDate = new Date().toLocaleDateString("en-GB");
@@ -821,6 +839,7 @@ async function processPDF(
       return results;
     }
 
+    case "pdf-excel-to-pdf":
     case "excel-to-pdf": {
       const ExcelJS = await import("exceljs");
       const results: { name: string; data: string; type: string }[] = [];
@@ -864,6 +883,7 @@ async function processPDF(
       return results;
     }
 
+    case "pdf-compare":
     case "compare-pdf": {
       if (bufs.length < 2) throw new Error("Please upload exactly 2 PDF files to compare.");
       const [d1, d2] = await Promise.all([pdfParse(bufs[0]), pdfParse(bufs[1])]);
@@ -895,6 +915,7 @@ async function processPDF(
       return results;
     }
 
+    case "pdf-header-footer":
     case "header-footer": {
       const headerText = opts.headerText ?? "";
       const footerText = opts.footerText ?? "";
@@ -926,6 +947,7 @@ async function processPDF(
       return results;
     }
 
+    case "pdf-ai-summarize":
     case "summarize-pdf": {
       const pdfData = await pdfParse(bufs[0]);
       const fullText = pdfData.text.trim();
@@ -936,6 +958,7 @@ async function processPDF(
       return [{ name: `${baseName(filenames[0])}_summary.txt`, data: Buffer.from(summary).toString("base64"), type: "text/plain" }];
     }
 
+    case "pdf-translate":
     case "translate-pdf": {
       const pdfData = await pdfParse(bufs[0]);
       const targetLang = opts.targetLanguage ?? "Hindi";
@@ -953,6 +976,7 @@ async function processPDF(
       return [{ name: `${baseName(filenames[0])}_${targetLang.replace(/\s/g, "_")}.txt`, data: Buffer.from(result).toString("base64"), type: "text/plain" }];
     }
 
+    case "pdf-redact":
     case "redact-pdf": {
       const keyword = opts.keyword ?? "";
       if (!keyword.trim()) throw new Error("Please enter a keyword to redact in the options.");
@@ -982,6 +1006,7 @@ async function processPDF(
       return results;
     }
 
+    case "pdf-edit":
     case "edit-pdf": {
       // Basic PDF annotation: add a text note at the top of each page
       const noteText = opts.text?.trim() || opts.annotation?.trim() || "";
@@ -1001,6 +1026,7 @@ async function processPDF(
       return results;
     }
 
+    case "pdf-html-to-pdf":
     case "html-to-pdf": {
       // Convert plain/HTML text to a simple PDF
       const htmlText = opts.htmlText?.trim() || opts.text?.trim() || "";
@@ -1042,6 +1068,7 @@ async function processPDF(
       throw new Error("PDF to Image conversion requires a PDF rendering engine (e.g. Ghostscript or Poppler) that is not available in this environment. Try smallpdf.com or use your PDF viewer to export pages as images.");
     }
 
+    case "pdf-ocr":
     case "ocr": {
       const results: { name: string; data: string; type: string }[] = [];
       for (let fi = 0; fi < bufs.length; fi++) {
@@ -1123,7 +1150,8 @@ export async function POST(request: NextRequest) {
     const isPDF = firstExt === "pdf" || toolSlug.startsWith("pdf-") || toolSlug === "merge" || toolSlug === "split" || toolSlug === "rotate" && firstExt === "pdf" || toolSlug === "watermark" && firstExt === "pdf" || ["compress", "unlock", "protect", "page-numbers", "jpg-to-pdf", "organize-pdf", "reorder", "crop-pdf", "pdf-to-pdfa", "scan-to-pdf", "repair-pdf"].includes(toolSlug);
 
     const isImageInput = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "avif"].includes(firstExt);
-    const isPDFSlug = ["compress", "compress-pdf", "merge", "split", "rotate", "page-numbers", "jpg-to-pdf", "organize-pdf", "crop-pdf", "pdf-to-pdfa", "scan-to-pdf", "repair-pdf", "excel-to-pdf", "redact-pdf", "compare-pdf", "sign", "summarize-pdf", "translate-pdf", "pdf-to-text", "header-footer", "edit-pdf", "html-to-pdf", "pdf-to-word", "pdf-to-excel", "pdf-to-jpg", "pdf-to-jpeg", "pdf-to-png", "pdf-to-image", "unlock", "protect", "watermark", "pdf-to-word", "pdf-to-docx", "pdf-to-xlsx", "ocr"].includes(toolSlug) || firstExt === "pdf";
+    // Check if tool slug starts with pdf- (e.g., pdf-compress, pdf-merge, etc.) or is a known PDF slug
+    const isPDFSlug = toolSlug.startsWith("pdf-") || toolSlug === "merge" || toolSlug === "split" || toolSlug === "rotate" || toolSlug === "compress" || toolSlug === "unlock" || toolSlug === "protect" || toolSlug === "sign" || toolSlug === "watermark" || toolSlug === "page-numbers" || toolSlug === "ocr" || toolSlug === "edit-pdf" || toolSlug === "html-to-pdf" || toolSlug === "reorder" || toolSlug === "jpg-to-pdf" || toolSlug === "excel-to-pdf" || toolSlug === "compare-pdf" || toolSlug === "redact-pdf" || toolSlug === "summarize-pdf" || toolSlug === "translate-pdf" || toolSlug === "pdf-to-text" || toolSlug === "header-footer";
 
     if (isPDFSlug || firstExt === "pdf") {
       const results = await processPDF(bufs, filenames, toolSlug, opts);
