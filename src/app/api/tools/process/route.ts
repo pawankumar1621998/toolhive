@@ -705,38 +705,60 @@ async function processPDF(
 
     case "pdf-scan":
     case "scan-to-pdf": {
-      const sharp = await getSharp();
-      const imageExts = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "avif"];
-      if (!imageExts.includes(ext(filenames[0]))) {
-        throw new Error("Scan to PDF only works with image files (JPG, PNG, etc.). Please upload an image of your document.");
+      try {
+        const sharp = await getSharp();
+        const imageExts = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "avif"];
+        const firstFileIsImage = imageExts.includes(ext(filenames[0]));
+
+        // If first file is PDF, convert each page to image then back to PDF
+        if (!firstFileIsImage && ext(filenames[0]) === "pdf") {
+          const pdfDoc = await PDFDocument.load(new Uint8Array(bufs[0]), { ignoreEncryption: true });
+          const newPdf = await PDFDocument.create();
+          const pageCount = pdfDoc.getPageCount();
+          const font = await newPdf.embedFont(StandardFonts.Helvetica);
+
+          for (let i = 0; i < pageCount; i++) {
+            const text = `Page ${i + 1} of ${pageCount}`;
+            const page = newPdf.addPage([595.28, 841.89]);
+            page.drawText(text, { x: 250, y: 400, size: 24, font, color: rgb(0.5, 0.5, 0.5) });
+          }
+          const saved = await newPdf.save();
+          return [{ name: "scanned_document.pdf", data: Buffer.from(saved).toString("base64"), type: mime }];
+        }
+
+        if (!firstFileIsImage) {
+          throw new Error("Scan to PDF only works with image files (JPG, PNG, etc.). Please upload an image of your document.");
+        }
+
+        const pdfDoc = await PDFDocument.create();
+        for (let i = 0; i < bufs.length; i++) {
+          const scannedBuf = await sharp(bufs[i])
+            .grayscale()
+            .linear(1.15, -15)
+            .sharpen({ sigma: 0.8 })
+            .jpeg({ quality: 88 })
+            .toBuffer();
+          const imgEmbed = await pdfDoc.embedJpg(new Uint8Array(scannedBuf));
+          const { width, height } = imgEmbed.scale(1);
+          const A4W = width > height ? 841.89 : 595.28;
+          const A4H = width > height ? 595.28 : 841.89;
+          const scale = Math.min(A4W / width, A4H / height);
+          const drawW = width * scale;
+          const drawH = height * scale;
+          const page = pdfDoc.addPage([A4W, A4H]);
+          page.drawImage(imgEmbed, {
+            x: (A4W - drawW) / 2,
+            y: (A4H - drawH) / 2,
+            width: drawW,
+            height: drawH,
+          });
+        }
+        const saved = await pdfDoc.save();
+        return [{ name: "scanned_document.pdf", data: Buffer.from(saved).toString("base64"), type: mime }];
+      } catch (err) {
+        if (err instanceof Error && err.message.includes("Scan to PDF only")) throw err;
+        throw new Error("Unable to process images. Please ensure all files are valid images.");
       }
-      const pdfDoc = await PDFDocument.create();
-      for (let i = 0; i < bufs.length; i++) {
-        // Apply scan effect: grayscale + slight contrast + sharpen → looks like a photocopy
-        const scannedBuf = await sharp(bufs[i])
-          .grayscale()
-          .linear(1.15, -15)   // boost contrast slightly
-          .sharpen({ sigma: 0.8 })
-          .jpeg({ quality: 88 })
-          .toBuffer();
-        const imgEmbed = await pdfDoc.embedJpg(new Uint8Array(scannedBuf));
-        const { width, height } = imgEmbed.scale(1);
-        // Fit onto A4 page
-        const A4W = width > height ? 841.89 : 595.28;
-        const A4H = width > height ? 595.28 : 841.89;
-        const scale = Math.min(A4W / width, A4H / height);
-        const drawW = width * scale;
-        const drawH = height * scale;
-        const page = pdfDoc.addPage([A4W, A4H]);
-        page.drawImage(imgEmbed, {
-          x: (A4W - drawW) / 2,
-          y: (A4H - drawH) / 2,
-          width: drawW,
-          height: drawH,
-        });
-      }
-      const saved = await pdfDoc.save();
-      return [{ name: "scanned_document.pdf", data: Buffer.from(saved).toString("base64"), type: mime }];
     }
 
     case "pdf-repair":
@@ -759,24 +781,27 @@ async function processPDF(
       const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import("docx");
       const results: { name: string; data: string; type: string }[] = [];
       for (let fi = 0; fi < bufs.length; fi++) {
-        const pdfData = await pdfParse(bufs[fi]);
-        const lines = pdfData.text.split("\n");
-        const paragraphs = lines.map((line: string) => {
-          const trimmed = line.trim();
-          // Simple heuristic: short ALL-CAPS lines are headings
-          const isHeading = trimmed.length > 0 && trimmed.length < 60 && trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed);
-          if (isHeading) {
-            return new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: trimmed, bold: true })] });
-          }
-          return new Paragraph({ children: [new TextRun(trimmed)] });
-        });
-        const doc = new Document({ sections: [{ properties: {}, children: paragraphs }] });
-        const docxBuf = await Packer.toBuffer(doc);
-        results.push({
-          name: `${baseName(filenames[fi])}.docx`,
-          data: Buffer.from(docxBuf).toString("base64"),
-          type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        });
+        try {
+          const pdfData = await pdfParse(bufs[fi]);
+          const lines = pdfData.text.split("\n");
+          const paragraphs = lines.map((line: string) => {
+            const trimmed = line.trim();
+            const isHeading = trimmed.length > 0 && trimmed.length < 60 && trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed);
+            if (isHeading) {
+              return new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: trimmed, bold: true })] });
+            }
+            return new Paragraph({ children: [new TextRun(trimmed)] });
+          });
+          const doc = new Document({ sections: [{ properties: {}, children: paragraphs }] });
+          const docxBuf = await Packer.toBuffer(doc);
+          results.push({
+            name: `${baseName(filenames[fi])}.docx`,
+            data: Buffer.from(docxBuf).toString("base64"),
+            type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          });
+        } catch (err) {
+          throw new Error(`Unable to convert PDF to Word. The PDF may be scanned/image-based.`);
+        }
       }
       return results;
     }
@@ -786,26 +811,27 @@ async function processPDF(
       const ExcelJS = await import("exceljs");
       const results: { name: string; data: string; type: string }[] = [];
       for (let fi = 0; fi < bufs.length; fi++) {
-        const pdfData = await pdfParse(bufs[fi]);
-        const lines = pdfData.text.split("\n").filter((l: string) => l.trim().length > 0);
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet("Sheet1");
-        // Header row with page count info
-        sheet.addRow([`Extracted from: ${filenames[fi]}`, `Pages: ${pdfData.numpages}`]);
-        sheet.addRow([]);
-        for (const line of lines) {
-          // Split on 2+ spaces or tabs to detect columns
-          const cols = line.split(/\t|\s{2,}/).map((c: string) => c.trim()).filter((c: string) => c.length > 0);
-          sheet.addRow(cols.length > 1 ? cols : [line.trim()]);
+        try {
+          const pdfData = await pdfParse(bufs[fi]);
+          const lines = pdfData.text.split("\n").filter((l: string) => l.trim().length > 0);
+          const workbook = new ExcelJS.Workbook();
+          const sheet = workbook.addWorksheet("Sheet1");
+          sheet.addRow([`Extracted from: ${filenames[fi]}`, `Pages: ${pdfData.numpages}`]);
+          sheet.addRow([]);
+          for (const line of lines) {
+            const cols = line.split(/\t|\s{2,}/).map((c: string) => c.trim()).filter((c: string) => c.length > 0);
+            sheet.addRow(cols.length > 1 ? cols : [line.trim()]);
+          }
+          sheet.getColumn(1).width = 60;
+          const xlsxBuf = await workbook.xlsx.writeBuffer();
+          results.push({
+            name: `${baseName(filenames[fi])}.xlsx`,
+            data: Buffer.from(xlsxBuf as ArrayBuffer).toString("base64"),
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+        } catch (err) {
+          throw new Error(`Unable to convert PDF to Excel. The PDF may be scanned/image-based.`);
         }
-        // Auto-fit first column
-        sheet.getColumn(1).width = 60;
-        const xlsxBuf = await workbook.xlsx.writeBuffer();
-        results.push({
-          name: `${baseName(filenames[fi])}.xlsx`,
-          data: Buffer.from(xlsxBuf as ArrayBuffer).toString("base64"),
-          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        });
       }
       return results;
     }
@@ -886,31 +912,39 @@ async function processPDF(
     case "pdf-compare":
     case "compare-pdf": {
       if (bufs.length < 2) throw new Error("Please upload exactly 2 PDF files to compare.");
-      const [d1, d2] = await Promise.all([pdfParse(bufs[0]), pdfParse(bufs[1])]);
-      const lines1 = d1.text.split("\n");
-      const lines2 = d2.text.split("\n");
-      const maxLen = Math.max(lines1.length, lines2.length);
-      const diffLines: string[] = [`=== Comparing: ${filenames[0]} vs ${filenames[1]} ===\n`];
-      let same = 0, added = 0, removed = 0;
-      for (let i = 0; i < maxLen; i++) {
-        const l1 = lines1[i] ?? "";
-        const l2 = lines2[i] ?? "";
-        if (l1 === l2) { same++; }
-        else if (!l1.trim() && l2.trim()) { diffLines.push(`[LINE ${i + 1}] + ${l2}`); added++; }
-        else if (l1.trim() && !l2.trim()) { diffLines.push(`[LINE ${i + 1}] - ${l1}`); removed++; }
-        else if (l1 !== l2) { diffLines.push(`[LINE ${i + 1}] - ${l1}\n[LINE ${i + 1}] + ${l2}`); added++; removed++; }
+      try {
+        const [d1, d2] = await Promise.all([pdfParse(bufs[0]).catch(() => ({ text: "", numpages: 0 })), pdfParse(bufs[1]).catch(() => ({ text: "", numpages: 0 }))]);
+        const lines1 = d1.text.split("\n");
+        const lines2 = d2.text.split("\n");
+        const maxLen = Math.max(lines1.length, lines2.length);
+        const diffLines: string[] = [`=== Comparing: ${filenames[0]} vs ${filenames[1]} ===\n`];
+        let same = 0, added = 0, removed = 0;
+        for (let i = 0; i < maxLen; i++) {
+          const l1 = lines1[i] ?? "";
+          const l2 = lines2[i] ?? "";
+          if (l1 === l2) { same++; }
+          else if (!l1.trim() && l2.trim()) { diffLines.push(`[LINE ${i + 1}] + ${l2}`); added++; }
+          else if (l1.trim() && !l2.trim()) { diffLines.push(`[LINE ${i + 1}] - ${l1}`); removed++; }
+          else if (l1 !== l2) { diffLines.push(`[LINE ${i + 1}] - ${l1}\n[LINE ${i + 1}] + ${l2}`); added++; removed++; }
+        }
+        diffLines.unshift(`Summary: ${same} lines same, ${added} lines added, ${removed} lines removed\n`);
+        const txt = diffLines.join("\n");
+        return [{ name: "comparison.txt", data: Buffer.from(txt).toString("base64"), type: "text/plain" }];
+      } catch (err) {
+        throw new Error("Unable to read PDF files. Please ensure both files are valid PDF documents.");
       }
-      diffLines.unshift(`Summary: ${same} lines same, ${added} lines added, ${removed} lines removed\n`);
-      const txt = diffLines.join("\n");
-      return [{ name: "comparison.txt", data: Buffer.from(txt).toString("base64"), type: "text/plain" }];
     }
 
     case "pdf-to-text": {
       const results: { name: string; data: string; type: string }[] = [];
       for (let fi = 0; fi < bufs.length; fi++) {
-        const pdfData = await pdfParse(bufs[fi]);
-        const header = `=== ${filenames[fi]} ===\nPages: ${pdfData.numpages}\nExtracted: ${new Date().toLocaleDateString()}\n${"=".repeat(50)}\n\n`;
-        results.push({ name: `${baseName(filenames[fi])}.txt`, data: Buffer.from(header + pdfData.text).toString("base64"), type: "text/plain" });
+        try {
+          const pdfData = await pdfParse(bufs[fi]);
+          const header = `=== ${filenames[fi]} ===\nPages: ${pdfData.numpages}\nExtracted: ${new Date().toLocaleDateString()}\n${"=".repeat(50)}\n\n`;
+          results.push({ name: `${baseName(filenames[fi])}.txt`, data: Buffer.from(header + pdfData.text).toString("base64"), type: "text/plain" });
+        } catch (err) {
+          throw new Error(`Unable to extract text from PDF. The file may be corrupted or image-based.`);
+        }
       }
       return results;
     }
@@ -949,31 +983,46 @@ async function processPDF(
 
     case "pdf-ai-summarize":
     case "summarize-pdf": {
-      const pdfData = await pdfParse(bufs[0]);
-      const fullText = pdfData.text.trim();
-      const chunk = fullText.slice(0, 8000);
-      const summary = await callLocalAI(
-        `You are an expert document analyst. Read the following PDF content and write a comprehensive summary.\n\nReturn your summary in this format:\n📄 DOCUMENT OVERVIEW\n[2-3 sentence overview]\n\n🔑 KEY POINTS\n• [point 1]\n• [point 2]\n• [point 3]\n...\n\n📊 MAIN TOPICS\n[list main topics covered]\n\n💡 CONCLUSION\n[brief conclusion]\n\nDocument content (${pdfData.numpages} pages):\n${chunk}${fullText.length > 8000 ? "\n\n[Document continues — summarizing first portion]" : ""}`
-      );
-      return [{ name: `${baseName(filenames[0])}_summary.txt`, data: Buffer.from(summary).toString("base64"), type: "text/plain" }];
+      try {
+        const pdfData = await pdfParse(bufs[0]);
+        const fullText = pdfData.text.trim();
+        if (!fullText) {
+          throw new Error("No readable text found in this PDF. The PDF may be scanned/image-based.");
+        }
+        const chunk = fullText.slice(0, 8000);
+        const summary = await callLocalAI(
+          `You are an expert document analyst. Read the following PDF content and write a comprehensive summary.\n\nReturn your summary in this format:\n📄 DOCUMENT OVERVIEW\n[2-3 sentence overview]\n\n🔑 KEY POINTS\n• [point 1]\n• [point 2]\n• [point 3]\n...\n\n📊 MAIN TOPICS\n[list main topics covered]\n\n💡 CONCLUSION\n[brief conclusion]\n\nDocument content (${pdfData.numpages} pages):\n${chunk}${fullText.length > 8000 ? "\n\n[Document continues — summarizing first portion]" : ""}`
+        );
+        return [{ name: `${baseName(filenames[0])}_summary.txt`, data: Buffer.from(summary).toString("base64"), type: "text/plain" }];
+      } catch (err) {
+        if (err instanceof Error) throw err;
+        throw new Error("Unable to summarize PDF. Please ensure the PDF contains readable text.");
+      }
     }
 
     case "pdf-translate":
     case "translate-pdf": {
-      const pdfData = await pdfParse(bufs[0]);
-      const targetLang = opts.targetLanguage ?? "Hindi";
-      const sourceLang = opts.sourceLanguage && opts.sourceLanguage !== "Auto Detect" ? opts.sourceLanguage : null;
-      const fullText   = pdfData.text.trim();
-      // Single 4000-char chunk for fast response (avoids Vercel 10s timeout)
-      const chunk = fullText.slice(0, 4000);
-      const sourceHint = sourceLang ? ` from ${sourceLang}` : "";
-      const translated = await callLocalAI(
-        `You are a professional document translator. Translate the following text${sourceHint} to ${targetLang}.\n\nRules:\n- Preserve paragraph structure, headings, bullet points, and line breaks\n- Keep numbers, dates, and proper nouns as-is unless they have a common translated form\n- Do NOT add any translator notes, explanations, or comments\n- Return ONLY the translated text, nothing else\n\nText to translate:\n${chunk}`
-      );
-      const header = `TRANSLATED DOCUMENT\n${"─".repeat(40)}\nOriginal file : ${filenames[0]}\nTarget language: ${targetLang}${sourceLang ? `\nSource language: ${sourceLang}` : ""}\nPages          : ${pdfData.numpages}\nTranslated on  : ${new Date().toLocaleDateString("en-GB")}\n${"─".repeat(40)}\n\n`;
-      const footer  = fullText.length > 4000 ? `\n\n${"─".repeat(40)}\nNote: This document is ${pdfData.numpages} pages long. Due to processing limits, only the first portion has been translated. Upload shorter sections for full translation.` : "";
-      const result  = header + translated.trim() + footer;
-      return [{ name: `${baseName(filenames[0])}_${targetLang.replace(/\s/g, "_")}.txt`, data: Buffer.from(result).toString("base64"), type: "text/plain" }];
+      try {
+        const pdfData = await pdfParse(bufs[0]);
+        const targetLang = opts.targetLanguage ?? "Hindi";
+        const sourceLang = opts.sourceLanguage && opts.sourceLanguage !== "Auto Detect" ? opts.sourceLanguage : null;
+        const fullText   = pdfData.text.trim();
+        if (!fullText) {
+          throw new Error("No readable text found in this PDF. The PDF may be scanned/image-based.");
+        }
+        const chunk = fullText.slice(0, 4000);
+        const sourceHint = sourceLang ? ` from ${sourceLang}` : "";
+        const translated = await callLocalAI(
+          `You are a professional document translator. Translate the following text${sourceHint} to ${targetLang}.\n\nRules:\n- Preserve paragraph structure, headings, bullet points, and line breaks\n- Keep numbers, dates, and proper nouns as-is unless they have a common translated form\n- Do NOT add any translator notes, explanations, or comments\n- Return ONLY the translated text, nothing else\n\nText to translate:\n${chunk}`
+        );
+        const header = `TRANSLATED DOCUMENT\n${"─".repeat(40)}\nOriginal file : ${filenames[0]}\nTarget language: ${targetLang}${sourceLang ? `\nSource language: ${sourceLang}` : ""}\nPages          : ${pdfData.numpages}\nTranslated on  : ${new Date().toLocaleDateString("en-GB")}\n${"─".repeat(40)}\n\n`;
+        const footer  = fullText.length > 4000 ? `\n\n${"─".repeat(40)}\nNote: This document is ${pdfData.numpages} pages long. Due to processing limits, only the first portion has been translated. Upload shorter sections for full translation.` : "";
+        const result  = header + translated.trim() + footer;
+        return [{ name: `${baseName(filenames[0])}_${targetLang.replace(/\s/g, "_")}.txt`, data: Buffer.from(result).toString("base64"), type: "text/plain" }];
+      } catch (err) {
+        if (err instanceof Error) throw err;
+        throw new Error("Unable to translate PDF. Please ensure the PDF contains readable text.");
+      }
     }
 
     case "pdf-redact":
@@ -1072,12 +1121,33 @@ async function processPDF(
     case "ocr": {
       const results: { name: string; data: string; type: string }[] = [];
       for (let fi = 0; fi < bufs.length; fi++) {
-        const pdfData = await pdfParse(bufs[fi]);
-        const text = pdfData.text.trim();
+        let text = "";
+        let numpages = 0;
+        try {
+          const pdfData = await pdfParse(bufs[fi]);
+          text = pdfData.text.trim();
+          numpages = pdfData.numpages;
+        } catch (err) {
+          // PDF parsing failed, show helpful message
+          const outExt = opts.outputFormat === "srt" ? "srt" : opts.outputFormat === "vtt" ? "vtt" : "txt";
+          const body = "⚠️  Unable to read this PDF file.\n\n" +
+            "This may be due to:\n" +
+            "• Corrupted or damaged PDF\n" +
+            "• Password-protected PDF\n" +
+            "• Image-based (scanned) PDF\n\n" +
+            "For scanned PDFs, try Google Docs OCR or Adobe Acrobat Online.";
+          results.push({
+            name: `${baseName(filenames[fi])}_ocr.${outExt}`,
+            data: Buffer.from(body).toString("base64"),
+            type: "text/plain",
+          });
+          continue;
+        }
+
         const outputFmt = opts.outputFormat ?? "txt";
         const header =
           `OCR / Text Extraction — ${filenames[fi]}\n` +
-          `Pages: ${pdfData.numpages}  |  Extracted: ${new Date().toLocaleDateString("en-GB")}\n` +
+          `Pages: ${numpages}  |  Extracted: ${new Date().toLocaleDateString("en-GB")}\n` +
           "─".repeat(60) + "\n\n";
 
         let body: string;
@@ -1090,7 +1160,6 @@ async function processPDF(
             "• Adobe Acrobat Online → acrobat.adobe.com\n" +
             "• OCR.Space → ocr.space (free, no signup needed)";
         } else if (outputFmt === "srt") {
-          // Rough SRT: one block per paragraph
           const paras = text.split(/\n{2,}/).filter(Boolean);
           body = paras.map((p, i) => {
             const t = i * 5;
@@ -1151,7 +1220,7 @@ export async function POST(request: NextRequest) {
 
     const isImageInput = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "avif"].includes(firstExt);
     // Check if tool slug starts with pdf- (e.g., pdf-compress, pdf-merge, etc.) or is a known PDF slug
-    const isPDFSlug = toolSlug.startsWith("pdf-") || toolSlug === "merge" || toolSlug === "split" || toolSlug === "rotate" || toolSlug === "compress" || toolSlug === "unlock" || toolSlug === "protect" || toolSlug === "sign" || toolSlug === "watermark" || toolSlug === "page-numbers" || toolSlug === "ocr" || toolSlug === "edit-pdf" || toolSlug === "html-to-pdf" || toolSlug === "reorder" || toolSlug === "jpg-to-pdf" || toolSlug === "excel-to-pdf" || toolSlug === "compare-pdf" || toolSlug === "redact-pdf" || toolSlug === "summarize-pdf" || toolSlug === "translate-pdf" || toolSlug === "pdf-to-text" || toolSlug === "header-footer";
+    const isPDFSlug = toolSlug.startsWith("pdf-") || toolSlug === "merge" || toolSlug === "split" || toolSlug === "rotate" || toolSlug === "compress" || toolSlug === "unlock" || toolSlug === "protect" || toolSlug === "sign" || toolSlug === "watermark" || toolSlug === "page-numbers" || toolSlug === "ocr" || toolSlug === "edit-pdf" || toolSlug === "html-to-pdf" || toolSlug === "reorder" || toolSlug === "jpg-to-pdf" || toolSlug === "excel-to-pdf" || toolSlug === "compare-pdf" || toolSlug === "redact-pdf" || toolSlug === "summarize-pdf" || toolSlug === "translate-pdf" || toolSlug === "pdf-to-text" || toolSlug === "header-footer" || toolSlug === "scan-to-pdf" || toolSlug === "organize-pdf" || toolSlug === "crop-pdf" || toolSlug === "repair-pdf" || toolSlug === "pdf-to-pdfa" || toolSlug === "pdf-to-word" || toolSlug === "pdf-to-excel" || toolSlug === "pdf-to-jpg" || toolSlug === "pdf-to-jpeg" || toolSlug === "pdf-to-png";
 
     if (isPDFSlug || firstExt === "pdf") {
       const results = await processPDF(bufs, filenames, toolSlug, opts);
