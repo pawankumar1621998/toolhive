@@ -777,13 +777,10 @@ export async function POST(request: NextRequest) {
     // Fallback: local AI providers with crafted prompts
     const prompt = buildPrompt(toolSlug, params);
     const { output, provider } = await callAI(prompt, preferredProvider);
-
     return NextResponse.json({ output, provider });
   } catch (err) {
-    return NextResponse.json(
-      { error: (err as Error).message ?? "Internal server error" },
-      { status: 500 }
-    );
+    const message = (err as Error).message ?? "Internal server error";
+    return NextResponse.json({ error: message, output: "" }, { status: 500 });
   }
 }
 
