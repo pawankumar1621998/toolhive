@@ -1136,12 +1136,11 @@ async function processPDF(
 
           const convert = fromPath(tmpPath, options);
 
-          // First identify how many pages the PDF has
-          const pageCount = await convert.identify(tmpPath, "%n ");
-          const numPages = parseInt(pageCount.trim(), 10) || 1;
+          // Try to convert up to 50 pages (reasonable max for PDFs)
+          const maxPages = 50;
+          let convertedCount = 0;
 
-          // Convert all pages one by one
-          for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+          for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
             try {
               const pageResult = await convert(pageNum, { responseType: "path" });
               if (pageResult && typeof pageResult === 'object' && 'path' in pageResult) {
@@ -1157,11 +1156,16 @@ async function processPDF(
                 });
                 // Clean up temp image
                 fs.unlinkSync(imgPath);
+                convertedCount++;
               }
             } catch (pageErr) {
-              // Skip failed pages
-              console.error(`Failed to convert page ${pageNum}:`, pageErr);
+              // Stop when we hit a page that doesn't exist
+              break;
             }
+          }
+
+          if (convertedCount === 0) {
+            throw new Error("No pages could be converted. The PDF may be corrupted or password-protected.");
           }
 
           // Clean up temp PDF
