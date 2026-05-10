@@ -9,6 +9,12 @@ async function getSharp() {
   return s.default;
 }
 
+// Lazy-load pdf2pic for PDF to image conversion
+async function getPdf2Pic() {
+  const { fromPath } = await import("pdf2pic");
+  return fromPath;
+}
+
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
@@ -1106,7 +1112,57 @@ async function processPDF(
     case "pdf-to-jpeg":
     case "pdf-to-png":
     case "pdf-to-image": {
-      throw new Error("PDF to Image conversion requires a PDF rendering engine (e.g. Ghostscript or Poppler) that is not available in this environment. Try smallpdf.com or use your PDF viewer to export pages as images.");
+      // Use pdf2pic to convert PDF pages to images
+      const results: { name: string; data: string; type: string }[] = [];
+      for (let fi = 0; fi < bufs.length; fi++) {
+        try {
+          // Save PDF to temp file
+          const tmpPath = `/tmp/pdf_${Date.now()}_${fi}.pdf`;
+          const fs = await import("fs");
+          fs.writeFileSync(tmpPath, bufs[fi]);
+
+          const fromPath = await getPdf2Pic();
+          const sharp = await getSharp();
+
+          // Convert with pdf2pic - returns base64 images
+          const options = {
+            density: parseInt(opts.dpi ?? "150", 10), // 150 DPI default for good quality
+            saveFilename: `page`,
+            savePath: "/tmp",
+            format: opts.format ?? "jpg",
+            width: opts.width ? parseInt(opts.width, 10) : undefined,
+            height: opts.height ? parseInt(opts.height, 10) : undefined,
+          };
+
+          const convert = fromPath(tmpPath, options);
+          const imagePaths = await convert(1, -1); // Convert all pages
+
+          // Process each generated image
+          for (const imgPath of imagePaths) {
+            if (typeof imgPath === "string") {
+              const imgBuffer = fs.readFileSync(imgPath);
+              const imgBase64 = imgBuffer.toString("base64");
+              const ext = opts.format === "png" ? "png" : "jpg";
+              const mimeType = ext === "png" ? "image/png" : "image/jpeg";
+              const pageNum = imgPath.match(/(\d+)\.(jpg|png)$/)?.[1] || "1";
+              results.push({
+                name: `page_${pageNum}.${ext}`,
+                data: imgBase64,
+                type: mimeType
+              });
+              // Clean up temp image
+              fs.unlinkSync(imgPath);
+            }
+          }
+
+          // Clean up temp PDF
+          fs.unlinkSync(tmpPath);
+        } catch (err) {
+          // If pdf2pic fails, return helpful error
+          throw new Error(`PDF to Image conversion failed: ${(err as Error).message}. Try using a PDF viewer to export pages as images, or use smallpdf.com.`);
+        }
+      }
+      return respondFiles(results);
     }
 
     case "pdf-ocr":
