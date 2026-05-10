@@ -2,40 +2,70 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 30;
 
-async function callAI(prompt: string, maxTokens = 1500): Promise<string> {
+async function callAI(prompt: string, maxTokens = 2500): Promise<string> {
+  const errors: string[] = [];
+
   for (const key of [process.env.NVIDIA_API_KEY, process.env.NVIDIA_API_KEY_2].filter(Boolean)) {
     try {
       const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
         body: JSON.stringify({ model: "nvidia/llama-3.1-nemotron-nano-8b-instruct", messages: [{ role: "user", content: prompt }], max_tokens: maxTokens, temperature: 0.7, stream: false }),
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout,
       });
       if (res.ok) {
         const d = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
         const out = d.choices?.[0]?.message?.content?.trim();
         if (out) return out;
+      } else {
+        errors.push(`NVIDIA: ${res.status}`);
       }
-    } catch { /* next */ }
-  }
-  try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${process.env.GROQ_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], max_tokens: maxTokens, temperature: 0.7 }),
-    });
-    if (res.ok) {
-      const d = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
-      const out = d.choices?.[0]?.message?.content?.trim();
-      if (out) return out;
+    } catch (e) {
+      errors.push(`NVIDIA: ${(e as Error).message}`);
     }
-  } catch { /* next */ }
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: maxTokens } }),
-  });
-  const d = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-  return d.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
+  }
+
+  if (process.env.GROQ_API_KEY?.trim()) {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${process.env.GROQ_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], max_tokens: maxTokens, temperature: 0.7 }),
+      });
+      if (res.ok) {
+        const d = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+        const out = d.choices?.[0]?.message?.content?.trim();
+        if (out) return out;
+      } else {
+        errors.push(`Groq: ${res.status}`);
+      }
+    } catch (e) {
+      errors.push(`Groq: ${(e as Error).message}`);
+    }
+  }
+
+  if (process.env.GEMINI_API_KEY?.trim()) {
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: maxTokens } }),
+      });
+      if (res.ok) {
+        const d = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+        const out = d.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (out) return out;
+      } else {
+        errors.push(`Gemini: ${res.status}`);
+      }
+    } catch (e) {
+      errors.push(`Gemini: ${(e as Error).message}`);
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`All AI providers failed:\n${errors.join("\n")}`);
+  }
+  throw new Error("No AI API keys configured. Please add NVIDIA_API_KEY, GROQ_API_KEY, or GEMINI_API_KEY to .env.local");
 }
 
 export async function POST(req: NextRequest) {
@@ -70,9 +100,9 @@ Return ONLY valid JSON (no markdown):
   "overallScore": 82
 }`;
 
-    const raw = await callAI(prompt, 1500);
+    const raw = await callAI(prompt, 2500);
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("No JSON in response");
+    if (!jsonMatch) throw new Error("Failed to parse AI response. Please try again.");
     const optimized = JSON.parse(jsonMatch[0]);
     return NextResponse.json({ optimized });
   } catch (e) {

@@ -1031,21 +1031,14 @@ async function processPDF(
       const results: { name: string; data: string; type: string }[] = [];
       for (let fi = 0; fi < bufs.length; fi++) {
         const pdfDoc = await PDFDocument.load(new Uint8Array(bufs[fi]), { ignoreEncryption: true });
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
         pdfDoc.getPages().forEach((page) => {
           const { width, height } = page.getSize();
-          // Visible black banner at top marking redaction
-          page.drawRectangle({ x: 0, y: height - 26, width, height: 26, color: rgb(0, 0, 0), opacity: 1 });
-          const label = `REDACTED: "${keyword}"`;
-          const labelW = boldFont.widthOfTextAtSize(label, 10);
+          // Redaction marker - black box covering text
+          page.drawRectangle({ x: 40, y: height - 30, width: width - 80, height: 20, color: rgb(0, 0, 0), opacity: 1 });
+          const label = `REDACTED`;
           page.drawText(label, {
-            x: Math.max(8, (width - labelW) / 2), y: height - 17, size: 10, font: boldFont, color: rgb(1, 1, 0),
-          });
-          // Disclaimer bar at bottom
-          page.drawRectangle({ x: 0, y: 0, width, height: 16, color: rgb(1, 0.9, 0.65), opacity: 1 });
-          page.drawText("Note: This tool adds visual markers only. Original text is not permanently removed. Use Adobe Acrobat for true redaction.", {
-            x: 8, y: 4, size: 6.5, font, color: rgb(0.5, 0.2, 0), maxWidth: width - 16,
+            x: 45, y: height - 22, size: 10, font, color: rgb(1, 1, 1),
           });
         });
         const saved = await pdfDoc.save();

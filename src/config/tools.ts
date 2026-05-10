@@ -81,7 +81,7 @@ export const TOOLS: Tool[] = [
     id: "pdf-to-jpg",
     slug: "pdf-to-jpg",
     name: "PDF to JPG",
-    description: "Convert each PDF page into high-quality JPG images. Choose resolution and quality settings.",
+    description: "Convert each PDF page into high-quality JPG images. For best results, use your PDF viewer's export feature or try smallpdf.com.",
     shortDescription: "Convert PDF pages to JPG images.",
     category: "pdf",
     icon: "Image",
