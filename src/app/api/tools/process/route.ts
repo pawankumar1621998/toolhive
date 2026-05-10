@@ -1135,25 +1135,32 @@ async function processPDF(
           };
 
           const convert = fromPath(tmpPath, options);
-          // Convert all pages - bulk returns array of result objects
-          const allPages = await convert.bulk([1, -1]);
 
-          // Process each generated image
-          for (const pageResult of allPages) {
-            if (pageResult && typeof pageResult === 'object' && 'path' in pageResult) {
-              const imgPath = (pageResult as { path: string }).path;
-              const imgBuffer = fs.readFileSync(imgPath);
-              const imgBase64 = imgBuffer.toString("base64");
-              const ext = opts.format === "png" ? "png" : "jpg";
-              const mimeType = ext === "png" ? "image/png" : "image/jpeg";
-              const pageNum = imgPath.match(/(\d+)\.(jpg|png)$/)?.[1] || "1";
-              results.push({
-                name: `page_${pageNum}.${ext}`,
-                data: imgBase64,
-                type: mimeType
-              });
-              // Clean up temp image
-              fs.unlinkSync(imgPath);
+          // First identify how many pages the PDF has
+          const pageCount = await convert.identify(tmpPath, "%n ");
+          const numPages = parseInt(pageCount.trim(), 10) || 1;
+
+          // Convert all pages one by one
+          for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+            try {
+              const pageResult = await convert(pageNum, { responseType: "path" });
+              if (pageResult && typeof pageResult === 'object' && 'path' in pageResult) {
+                const imgPath = (pageResult as { path: string }).path;
+                const imgBuffer = fs.readFileSync(imgPath);
+                const imgBase64 = imgBuffer.toString("base64");
+                const ext = opts.format === "png" ? "png" : "jpg";
+                const mimeType = ext === "png" ? "image/png" : "image/jpeg";
+                results.push({
+                  name: `page_${pageNum}.${ext}`,
+                  data: imgBase64,
+                  type: mimeType
+                });
+                // Clean up temp image
+                fs.unlinkSync(imgPath);
+              }
+            } catch (pageErr) {
+              // Skip failed pages
+              console.error(`Failed to convert page ${pageNum}:`, pageErr);
             }
           }
 
