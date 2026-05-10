@@ -27,6 +27,8 @@ export async function POST(req: NextRequest) {
 
   const { width, height } = SIZES[aspectRatio] ?? SIZES["1:1"];
   const resolvedSeed = seed ?? Math.floor(Math.random() * 999999);
+  // Clamp steps to max 4 (model limitation)
+  const resolvedSteps = Math.min(Math.max(steps, 1), 4);
 
   try {
     const res = await fetch(
@@ -38,7 +40,7 @@ export async function POST(req: NextRequest) {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({ prompt: prompt.trim(), width, height, seed: resolvedSeed, steps }),
+        body: JSON.stringify({ prompt: prompt.trim(), width, height, seed: resolvedSeed, steps: resolvedSteps }),
         signal: AbortSignal.timeout(60_000),
       }
     );
