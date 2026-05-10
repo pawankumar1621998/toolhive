@@ -67,19 +67,16 @@ export async function POST(req: NextRequest) {
       }
 
       const data = await res.json() as {
-        artifacts?: Array<{
-          base64?: string;
-          finishReason?: string;
-          seed?: number;
-        }>;
+        artifacts?: Array<Record<string, unknown>>;
       };
 
       // More robust artifact extraction
-      let base64 = data?.artifacts?.[0]?.base64;
+      const firstArtifact = data?.artifacts?.[0];
+      let base64 = firstArtifact?.base64 as string | undefined;
 
       if (!base64) {
         // Try alternative field names
-        base64 = data?.artifacts?.[0]?.image ?? data?.artifacts?.[0]?.data;
+        base64 = (firstArtifact?.image as string | undefined) ?? (firstArtifact?.data as string | undefined);
       }
 
       if (!base64) {
@@ -91,7 +88,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         image: base64,
-        seed: data.artifacts?.[0]?.seed ?? resolvedSeed,
+        seed: firstArtifact?.seed as number | undefined ?? resolvedSeed,
         width,
         height,
       });
