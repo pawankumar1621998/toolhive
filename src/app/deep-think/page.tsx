@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Head from "next/head";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 import { Brain, Lightbulb, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
 
 export default function DeepThinkPage() {
