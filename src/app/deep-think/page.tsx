@@ -34,20 +34,24 @@ export default function DeepThinkPage() {
         throw new Error(err || "Failed to get response");
       }
 
-      // For streaming response
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = "";
+      const data = await res.json() as { reasoning?: string; content?: string; error?: string };
 
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value);
-          fullResponse += chunk;
-          setResponse(fullResponse);
-        }
+      if (data.error) {
+        throw new Error(data.error);
       }
+
+      const reasoning = data.reasoning || "";
+      const content = data.content || "";
+
+      let formattedResponse = "";
+      if (reasoning) {
+        formattedResponse += "🧠 **Thinking Process:**\n" + reasoning + "\n\n";
+      }
+      if (content) {
+        formattedResponse += "✅ **Final Answer:**\n" + content;
+      }
+
+      setResponse(formattedResponse || "No response received");
     } catch (err) {
       setError((err as Error).message || "Something went wrong");
     } finally {
@@ -151,11 +155,9 @@ export default function DeepThinkPage() {
                 <Brain className="w-5 h-5 text-violet-400" />
                 AI Response
               </h2>
-              <div className="prose prose-invert prose-slate max-w-none">
-                <pre className="whitespace-pre-wrap text-slate-300 font-sans text-sm leading-relaxed bg-slate-900/50 rounded-xl p-4 overflow-x-auto">
-                  {response}
-                </pre>
-              </div>
+              <pre className="whitespace-pre-wrap text-slate-300 font-sans text-sm leading-relaxed bg-slate-900/50 rounded-xl p-4 overflow-x-auto">
+                {response}
+              </pre>
             </div>
           )}
 

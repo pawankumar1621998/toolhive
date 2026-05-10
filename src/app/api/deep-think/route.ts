@@ -25,40 +25,31 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: "z-ai/glm-5.1",
         messages,
-        temperature: 1,
+        temperature: 0.7,
         top_p: 1,
-        max_tokens: 16384,
+        max_tokens: 8000,
         chat_template_kwargs: { enable_thinking: true, clear_thinking: false },
-        stream: true,
       }),
     });
 
-    if (!res.ok || !res.body) {
+    if (!res.ok) {
       const err = await res.text();
       return NextResponse.json({ error: err }, { status: res.status });
     }
 
-    const { readable, writable } = new TransformStream();
-    const writer = writable.getWriter();
-    (async () => {
-      const reader = res.body!.getReader();
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          await writer.write(value);
-        }
-      } finally {
-        await writer.close();
-      }
-    })();
+    const data = await res.json() as {
+      choices?: Array<{
+        message?: {
+          content?: string;
+          reasoning_content?: string;
+        };
+      }>;
+    };
 
-    return new Response(readable, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache, no-transform",
-        "X-Accel-Buffering": "no",
-      },
+    // Return both reasoning and final content
+    return NextResponse.json({
+      reasoning: data.choices?.[0]?.message?.reasoning_content ?? "",
+      content: data.choices?.[0]?.message?.content ?? "",
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

@@ -4690,19 +4690,25 @@ function DeepThinkTool() {
         throw new Error(err || "Failed to get response");
       }
 
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = "";
+      const data = await res.json() as { reasoning?: string; content?: string; error?: string };
 
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value);
-          fullResponse += chunk;
-          setResponse(fullResponse);
-        }
+      if (data.error) {
+        throw new Error(data.error);
       }
+
+      const reasoning = data.reasoning || "";
+      const content = data.content || "";
+
+      // Format response nicely
+      let formattedResponse = "";
+      if (reasoning) {
+        formattedResponse += "🧠 **Thinking Process:**\n" + reasoning + "\n\n";
+      }
+      if (content) {
+        formattedResponse += "✅ **Final Answer:**\n" + content;
+      }
+
+      setResponse(formattedResponse || "No response received");
     } catch (err) {
       setError((err as Error).message || "Something went wrong");
     } finally {
