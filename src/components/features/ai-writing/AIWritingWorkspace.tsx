@@ -4124,6 +4124,8 @@ export function AIWritingWorkspace({ tool }: { tool: Tool }) {
         return <YouTubeScriptTool />;
       case "twitter-thread":
         return <TwitterThreadTool />;
+      case "deep-think":
+        return <DeepThinkTool />;
       case "bio-writer":
         return <BioWriterTool />;
       case "ai-detector":
@@ -4658,6 +4660,145 @@ function YouTubeScriptTool() {
       <NvBtn loading={loading} disabled={!title.trim()} onClick={() => generate({ title, niche, duration, style })} label="Write YouTube Script" />
       {error && <ErrorBanner message={error} />}
       <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="YouTube Script" />}</AnimatePresence>
+    </div>
+  );
+}
+
+function DeepThinkTool() {
+  const [prompt, setPrompt] = useState("");
+  const [response, setResponse] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleGenerate = async () => {
+    if (!prompt.trim()) return;
+    setLoading(true);
+    setError("");
+    setResponse("");
+
+    try {
+      const res = await fetch("/api/deep-think", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(err || "Failed to get response");
+      }
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullResponse = "";
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value);
+          fullResponse += chunk;
+          setResponse(fullResponse);
+        }
+      }
+    } catch (err) {
+      setError((err as Error).message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const examples = [
+    "Explain how neural networks learn step by step",
+    "Debug: Why is my JavaScript code running slowly?",
+    "Should I start my own business or get a job? Analyze pros/cons",
+    "Solve: If 3 cats catch 3 mice in 3 minutes, how many cats to catch 100 mice in 100 minutes?",
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20 rounded-xl p-4 mb-4">
+        <div className="flex items-center gap-2 text-violet-400 mb-2">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+          <span className="text-sm font-semibold">GLM-5.1 Thinking Model</span>
+        </div>
+        <p className="text-slate-400 text-sm">Step-by-step reasoning for complex problems</p>
+      </div>
+
+      <div>
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Your Question or Problem *</label>
+        <textarea
+          className={inputClass}
+          rows={4}
+          placeholder="Ask any question, explain a concept, debug code, solve a problem... The AI will show its step-by-step thinking process."
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+        />
+      </div>
+
+      <button
+        onClick={handleGenerate}
+        disabled={loading || !prompt.trim()}
+        className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-slate-600 disabled:to-slate-600 text-white font-medium py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+      >
+        {loading ? (
+          <>
+            <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Thinking...
+          </>
+        ) : (
+          <>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            Start Thinking
+          </>
+        )}
+      </button>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm">
+          {error}
+        </div>
+      )}
+
+      {response && (
+        <div className="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-emerald-400 mb-3">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            <span className="text-sm font-semibold">AI Thinking Process</span>
+          </div>
+          <pre className="whitespace-pre-wrap text-slate-300 text-sm font-sans leading-relaxed overflow-x-auto">
+            {response}
+          </pre>
+        </div>
+      )}
+
+      {!response && !loading && (
+        <div className="mt-4">
+          <p className="text-xs font-semibold text-foreground-muted mb-2">Try these examples:</p>
+          <div className="space-y-2">
+            {examples.map((example, idx) => (
+              <button
+                key={idx}
+                onClick={() => setPrompt(example)}
+                className="w-full text-left text-sm text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-violet-500/30 rounded-lg px-3 py-2 transition-colors"
+              >
+                {example}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

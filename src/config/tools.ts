@@ -3216,6 +3216,23 @@ export const TOOLS: Tool[] = [
     estimatedTime: "~5s",
     usageCount: 4_100_000,
   },
+  {
+    id: "deep-think",
+    slug: "deep-think",
+    name: "Deep Think",
+    description: "AI-powered step-by-step reasoning for complex problems. Uses GLM-5.1 thinking model to show detailed reasoning process - perfect for debugging code, solving problems, or understanding complex concepts.",
+    shortDescription: "Step-by-step AI reasoning for complex problems.",
+    category: "ai-writing",
+    icon: "Brain",
+    tags: ["thinking", "reasoning", "problem solving", "debugging", "step-by-step"],
+    isNew: true,
+    isFeatured: true,
+    acceptedFileTypes: [],
+    maxFiles: 0,
+    maxFileSizeMB: 0,
+    estimatedTime: "~10s",
+    usageCount: 0,
+  },
 
   // ── Contact & Creator Tools ─────────────────────────────────────────────
   {
