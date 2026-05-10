@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { width, height } = SIZES[aspectRatio] ?? SIZES["1:1"];
-  const resolvedSeed = seed ?? Math.floor(Math.random() * 999999);
+  const resolvedSeed = seed !== undefined ? Math.max(0, Math.floor(seed)) : Math.floor(Math.random() * 999999);
   // Clamp steps to max 4 (model limitation)
   const resolvedSteps = Math.min(Math.max(steps, 1), 4);
 
