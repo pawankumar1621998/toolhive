@@ -16,6 +16,8 @@
   --color-brand-violet: oklch(55% 0.22 285);
   --color-brand-blue: oklch(58% 0.2 248);
   --color-brand-cyan: oklch(62% 0.18 195);
+  --color-brand-orange: oklch(65% 0.17 50);
+  --color-brand-amber: oklch(72% 0.18 70);
 
   /* Semantic colors — map to CSS vars so they flip on .dark */
   --color-background: var(--tw-bg);

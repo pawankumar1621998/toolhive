@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import { Upload, X, Download, RotateCcw, CheckCircle2, ImageIcon, Plus } from "lucide-react";
+import { Upload, X, Download, RotateCcw, CheckCircle2, ImageIcon, Plus, Sparkles } from "lucide-react";
 import { clsx } from "clsx";
 import { ToolOptions } from "@/components/features/tool/ToolOptions";
 import { useToolStore, selectToolOptions } from "@/lib/store/toolStore";
 import { recordRecentTool } from "@/components/features/home/RecentTools";
 import type { Tool } from "@/types";
 
-// ─── Button labels per slug ───────────────────────────────────────────────────
+// ─── Button labels ─────────────────────────────────────────────────────────────
 
 const BTN_LABELS: Record<string, string> = {
   compress:            "Compress Images",
@@ -16,13 +16,13 @@ const BTN_LABELS: Record<string, string> = {
   "increase-kb":       "Increase Size",
   resize:              "Resize Images",
   "resize-cm":         "Resize Images",
-  "social-resize":     "Resize for Social Media",
+  "social-resize":     "Resize for Social",
   convert:             "Convert Format",
   rotate:              "Rotate Images",
   flip:                "Flip Images",
-  "black-white":       "Convert to Black & White",
+  "black-white":       "Convert to B&W",
   "blur-image":        "Apply Blur",
-  "remove-background": "Remove Background",
+  "remove-background": "Remove BG",
   watermark:           "Add Watermark",
   "image-to-pdf":      "Convert to PDF",
   upscale:             "Upscale Image",
@@ -30,18 +30,18 @@ const BTN_LABELS: Record<string, string> = {
   "view-metadata":     "View Metadata",
   "split-image":       "Split Image",
   "add-logo":          "Add Logo",
-  "resize-3-5-cm":     "Create Passport Photo",
-  "pixel-art":         "Create Pixel Art",
-  "crop":              "Crop Image",
-  "color-filter":      "Apply Color Filter",
-  "adjust":            "Adjust Image",
+  "resize-3-5-cm":     "Passport Photo",
+  "pixel-art":         "Pixel Art",
+  crop:                "Crop Image",
+  "color-filter":      "Color Filter",
+  adjust:              "Adjust Image",
   "add-border":        "Add Border",
   "round-image":       "Round Image",
-  "profile-photo":     "Create Profile Photo",
+  "profile-photo":     "Profile Photo",
   "blur-background":   "Blur Background",
-  "pixelate":          "Pixelate Image",
-  "collage":           "Create Collage",
-  "combine":           "Combine Images",
+  "pixelate":          "Pixelate",
+  collage:             "Create Collage",
+  combine:             "Combine Images",
   "thumbnail-creator": "Create Thumbnail",
 };
 
@@ -56,9 +56,50 @@ function fmtKB(bytes: number) {
 
 interface OutFile { name: string; url: string; size: number; }
 
-interface FileWithPreview {
-  file: File;
-  previewUrl: string;
+interface FileWithPreview { file: File; previewUrl: string; }
+
+// ─── Animated gradient orb (decorative) ───────────────────────────────────────
+
+function GradientOrb({ className }: { className?: string }) {
+  return (
+    <div className={clsx("absolute pointer-events-none overflow-hidden rounded-full", className)}>
+      <div className="absolute inset-0 bg-gradient-to-br from-brand-violet/30 to-brand-cyan/20 animate-float" />
+      <div className="absolute -inset-4 bg-gradient-to-br from-brand-blue/20 to-transparent blur-xl" />
+    </div>
+  );
+}
+
+// ─── Tool stats banner ───────────────────────────────────────────────────────
+
+function ToolStatsBanner({ tool }: { tool: Tool }) {
+  return (
+    <div className="flex flex-wrap items-center gap-4 mb-6">
+      {tool.usageCount && (
+        <div className="flex items-center gap-1.5 text-xs text-foreground-muted">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand-violet/10 text-brand-violet">
+            <Sparkles className="h-3 w-3" />
+          </span>
+          <span>{(tool.usageCount / 1_000_000).toFixed(1)}M uses</span>
+        </div>
+      )}
+      {tool.estimatedTime && (
+        <div className="flex items-center gap-1.5 text-xs text-foreground-muted">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand-cyan/10 text-brand-cyan">
+            ⚡
+          </span>
+          <span>{tool.estimatedTime}</span>
+        </div>
+      )}
+      {tool.maxFiles && tool.maxFiles > 1 && (
+        <div className="flex items-center gap-1.5 text-xs text-foreground-muted">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand-blue/10 text-brand-blue">
+            📁
+          </span>
+          <span>Up to {tool.maxFiles} files</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── Image Preview Card ───────────────────────────────────────────────────────
@@ -67,67 +108,94 @@ function ImagePreviewCard({
   fwp,
   index,
   onRemove,
+  total,
 }: {
   fwp: FileWithPreview;
   index: number;
   onRemove: (i: number) => void;
+  total: number;
 }) {
   return (
-    <div className="group relative bg-background rounded-xl border border-border overflow-hidden hover:border-primary/40 hover:shadow-md transition-all duration-200">
+    <div className="group relative bg-card rounded-2xl border border-card-border overflow-hidden hover:border-brand-violet/40 hover:shadow-xl hover:shadow-brand-violet/5 transition-all duration-300 card-lift">
+      {/* Glow accent */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-violet/5 to-transparent" />
+      </div>
+
       {/* Thumbnail */}
-      <div className="relative bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] bg-[length:16px_16px] aspect-square overflow-hidden">
+      <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-background-muted to-background-subtle">
         <img
           src={fwp.previewUrl}
           alt={fwp.file.name}
-          className="w-full h-full object-contain"
+          className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
           draggable={false}
         />
+        {/* Index badge */}
+        <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm text-white text-[10px] font-bold flex items-center justify-center">
+          {index + 1}
+        </div>
         {/* Remove button */}
         <button
           type="button"
           onClick={() => onRemove(index)}
           aria-label={`Remove ${fwp.file.name}`}
-          className="absolute top-1.5 right-1.5 z-10 h-6 w-6 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity hover:bg-black/80"
+          className="absolute top-2 right-2 z-10 h-7 w-7 rounded-full bg-black/60 backdrop-blur-sm text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200 hover:bg-red-500 hover:scale-110 hover:shadow-lg"
         >
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
+
       {/* File info */}
-      <div className="px-2.5 py-2 bg-background">
-        <p className="text-xs font-medium text-foreground truncate leading-tight" title={fwp.file.name}>
+      <div className="px-3 py-2.5 bg-card relative z-10">
+        <p className="text-xs font-semibold text-card-foreground truncate leading-tight" title={fwp.file.name}>
           {fwp.file.name}
         </p>
-        <p className="text-[10px] text-foreground-muted mt-0.5">{fmtKB(fwp.file.size)}</p>
+        <p className="text-[10px] text-foreground-subtle mt-0.5 font-mono">{fmtKB(fwp.file.size)}</p>
       </div>
     </div>
   );
 }
 
-// ─── Result Download Card ─────────────────────────────────────────────────────
+// ─── Result Download Card ──────────────────────────────────────────────────────
 
-function ResultCard({ file }: { file: OutFile }) {
+function ResultCard({ file, index }: { file: OutFile; index: number }) {
   const isImage = /\.(jpe?g|png|webp|gif|bmp|avif|tiff?)$/i.test(file.name);
 
   return (
-    <div className="bg-background rounded-xl border border-border overflow-hidden hover:border-emerald-400/50 hover:shadow-sm transition-all group">
+    <div className="group relative bg-card rounded-2xl border border-emerald-500/20 overflow-hidden hover:border-emerald-400/50 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 card-lift">
+      {/* Success glow */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+      </div>
+
       {isImage && (
-        <div className="bg-[repeating-conic-gradient(#f0f0f0_0%_25%,#ffffff_0%_50%)] bg-[length:16px_16px] aspect-video overflow-hidden">
+        <div className="relative bg-[repeating-conic-gradient(#1a1a2e_0%_25%,#16161f_0%_50%)] bg-[length:12px_12px] aspect-video overflow-hidden">
           <img
             src={file.url}
             alt={file.name}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
           />
+          {/* Result badge */}
+          <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] font-bold">
+            <CheckCircle2 className="h-3 w-3" />
+            Result
+          </div>
         </div>
       )}
-      <div className="flex items-center justify-between px-3 py-2.5 gap-2">
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-foreground truncate">{file.name}</p>
-          <p className="text-[10px] text-foreground-muted mt-0.5">{fmtKB(file.size)}</p>
+      {!isImage && (
+        <div className="relative bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 aspect-video flex items-center justify-center">
+          <CheckCircle2 className="h-10 w-10 text-emerald-500/60" />
+        </div>
+      )}
+      <div className="flex items-center justify-between px-4 py-3 bg-card relative z-10">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-card-foreground truncate">{file.name}</p>
+          <p className="text-[11px] text-foreground-subtle mt-0.5 font-mono">{fmtKB(file.size)}</p>
         </div>
         <a
           href={file.url}
           download={file.name}
-          className="shrink-0 flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          className="shrink-0 flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/25 hover:scale-105 active:scale-95"
         >
           <Download className="h-3.5 w-3.5" />
           Download
@@ -139,28 +207,19 @@ function ResultCard({ file }: { file: OutFile }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-/**
- * ImageToolWorkspace — dashboard-style image tool UI.
- *
- * States:
- *  idle      — full-width dashed upload zone
- *  selected  — two-column layout (previews left, options + button right)
- *  processing — spinner overlay on preview area
- *  done      — results panel with per-file download cards
- */
 export function ImageToolWorkspace({ tool }: { tool: Tool }) {
-  const inputRef    = useRef<HTMLInputElement>(null);
-  const addMoreRef  = useRef<HTMLInputElement>(null);
+  const inputRef   = useRef<HTMLInputElement>(null);
+  const addMoreRef = useRef<HTMLInputElement>(null);
 
   const [filesWithPreviews, setFilesWithPreviews] = useState<FileWithPreview[]>([]);
-  const [isDragging, setDrag]  = useState(false);
-  const [processing, setProc]  = useState(false);
-  const [outputs, setOutputs]  = useState<OutFile[]>([]);
-  const [error, setError]      = useState<string | null>(null);
+  const [isDragging, setDrag]    = useState(false);
+  const [processing, setProc]    = useState(false);
+  const [outputs, setOutputs]    = useState<OutFile[]>([]);
+  const [error, setError]        = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const toolOpts = useToolStore(selectToolOptions);
 
-  // Register for recent history
   useEffect(() => {
     recordRecentTool({
       id: tool.id,
@@ -171,23 +230,15 @@ export function ImageToolWorkspace({ tool }: { tool: Tool }) {
     });
   }, [tool.id]);
 
-  // Clean up object URLs on unmount or when previews change
   useEffect(() => {
-    return () => {
-      filesWithPreviews.forEach((fwp) => URL.revokeObjectURL(fwp.previewUrl));
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => { filesWithPreviews.forEach((fwp) => URL.revokeObjectURL(fwp.previewUrl)); };
+  }, [filesWithPreviews]);
 
-  // Also clean up output blob URLs on unmount
   useEffect(() => {
-    return () => {
-      outputs.forEach((o) => URL.revokeObjectURL(o.url));
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => { outputs.forEach((o) => URL.revokeObjectURL(o.url)); };
+  }, [outputs]);
 
-  const maxFiles = tool.maxFiles > 0 ? tool.maxFiles : 10;
+  const maxFiles = tool.maxFiles > 0 ? tool.maxFiles : 20;
   const accept   = tool.acceptedFileTypes.length > 0 ? tool.acceptedFileTypes.join(",") : "image/*";
 
   const addFiles = useCallback(
@@ -197,16 +248,10 @@ export function ImageToolWorkspace({ tool }: { tool: Tool }) {
       setFilesWithPreviews((prev) => {
         const combined = [
           ...prev,
-          ...incoming.map((file) => ({
-            file,
-            previewUrl: URL.createObjectURL(file),
-          })),
+          ...incoming.map((file) => ({ file, previewUrl: URL.createObjectURL(file) })),
         ].slice(0, maxFiles);
-        // Revoke URLs for any items that were sliced off
         const kept = new Set(combined.map((c) => c.previewUrl));
-        prev.forEach((p) => {
-          if (!kept.has(p.previewUrl)) URL.revokeObjectURL(p.previewUrl);
-        });
+        prev.forEach((p) => { if (!kept.has(p.previewUrl)) URL.revokeObjectURL(p.previewUrl); });
         return combined;
       });
       setOutputs([]);
@@ -222,8 +267,6 @@ export function ImageToolWorkspace({ tool }: { tool: Tool }) {
     });
   }, []);
 
-  // ── Drag handlers ────────────────────────────────────────────────────────────
-
   const onDragOver  = (e: React.DragEvent) => { e.preventDefault(); setDrag(true); };
   const onDragLeave = (e: React.DragEvent) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node)) setDrag(false);
@@ -234,13 +277,11 @@ export function ImageToolWorkspace({ tool }: { tool: Tool }) {
     addFiles(e.dataTransfer.files);
   };
 
-  // ── Process ──────────────────────────────────────────────────────────────────
-
   const handleProcess = async () => {
     if (!filesWithPreviews.length || processing) return;
     setProc(true);
     setError(null);
-    setOutputs([]);
+    setShowSuccess(false);
     try {
       const fd = new FormData();
       fd.append("toolSlug", tool.slug);
@@ -248,10 +289,7 @@ export function ImageToolWorkspace({ tool }: { tool: Tool }) {
       filesWithPreviews.forEach(({ file }) => fd.append("files", file, file.name));
 
       const res  = await fetch("/api/tools/process", { method: "POST", body: fd });
-      const data = await res.json() as {
-        files?: Array<{ name: string; data: string; type: string }>;
-        error?: string;
-      };
+      const data = await res.json() as { files?: Array<{ name: string; data: string; type: string }>; error?: string };
 
       if (data.error) throw new Error(data.error);
       if (!data.files?.length) throw new Error("No output files returned.");
@@ -262,6 +300,7 @@ export function ImageToolWorkspace({ tool }: { tool: Tool }) {
         return { name: f.name, url: URL.createObjectURL(blob), size: blob.size };
       });
       setOutputs(outs);
+      setShowSuccess(true);
     } catch (err) {
       setError((err as Error).message ?? "Processing failed. Please try again.");
     } finally {
@@ -275,16 +314,20 @@ export function ImageToolWorkspace({ tool }: { tool: Tool }) {
     setFilesWithPreviews([]);
     setOutputs([]);
     setError(null);
+    setShowSuccess(false);
   };
 
   const btnLabel = BTN_LABELS[tool.slug] ?? tool.name;
   const hasFiles = filesWithPreviews.length > 0;
 
-  // ── Idle state: full-width upload zone ───────────────────────────────────────
+  // ── Idle ──────────────────────────────────────────────────────────────────────
 
   if (!hasFiles && outputs.length === 0) {
     return (
       <div className="w-full">
+        {/* Tool stats */}
+        <ToolStatsBanner tool={tool} />
+
         <div
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
@@ -295,186 +338,209 @@ export function ImageToolWorkspace({ tool }: { tool: Tool }) {
           aria-label="Upload image files"
           onKeyDown={(e) => e.key === "Enter" && inputRef.current?.click()}
           className={clsx(
-            "border-2 border-dashed rounded-2xl py-16 px-8 text-center cursor-pointer",
-            "transition-all duration-200 select-none",
+            "relative overflow-hidden rounded-3xl border-2 border-dashed transition-all duration-300 cursor-pointer group",
             isDragging
-              ? "border-teal-500 bg-teal-50/60 dark:bg-teal-950/20 scale-[1.01]"
-              : "border-border hover:border-teal-400 hover:bg-background-subtle"
+              ? "border-brand-violet bg-brand-violet/5 dark:bg-brand-violet/10 scale-[1.01]"
+              : "border-border/60 hover:border-brand-violet/50 hover:bg-background-subtle/50 dark:hover:bg-background-subtle/30"
           )}
         >
-          <input
-            ref={inputRef}
-            type="file"
-            accept={accept}
-            multiple={maxFiles !== 1}
-            className="sr-only"
-            onChange={(e) => addFiles(e.target.files)}
-          />
+          {/* Background gradient orbs */}
+          <GradientOrb className="w-64 h-64 -top-20 -left-20 opacity-30 group-hover:opacity-50 transition-opacity" />
+          <GradientOrb className="w-48 h-48 -bottom-12 -right-12 opacity-20 group-hover:opacity-40 transition-opacity" />
 
-          {/* Upload icon cluster */}
-          <div className="flex items-center justify-center mb-5">
+          <input ref={inputRef} type="file" accept={accept} multiple className="sr-only" onChange={(e) => addFiles(e.target.files)} />
+
+          {/* Content */}
+          <div className="relative z-10 py-20 px-8 text-center">
+            {/* Icon */}
             <div className={clsx(
-              "h-16 w-16 rounded-2xl flex items-center justify-center transition-colors",
-              isDragging ? "bg-teal-100 dark:bg-teal-900/40" : "bg-background-subtle border border-border"
+              "relative mx-auto mb-6 w-20 h-20 rounded-2xl flex items-center justify-center transition-all duration-300",
+              isDragging
+                ? "bg-brand-violet/20 ring-4 ring-brand-violet/20 scale-110"
+                : "bg-gradient-to-br from-brand-violet/10 to-brand-cyan/10 ring-1 ring-border group-hover:ring-brand-violet/30 group-hover:scale-105"
             )}>
-              <ImageIcon className={clsx("h-8 w-8", isDragging ? "text-teal-600" : "text-foreground-muted")} />
+              <ImageIcon className={clsx(
+                "h-10 w-10 transition-all duration-300",
+                isDragging ? "text-brand-violet scale-110" : "text-foreground-muted group-hover:text-brand-violet"
+              )} />
+              {/* Pulse ring on hover */}
+              <div className="absolute inset-0 rounded-2xl animate-pulse-ring opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-          </div>
 
-          <p className="text-lg font-semibold text-foreground mb-1.5">
-            {isDragging ? "Drop images here" : "Select Or Drag & Drop Images Here"}
-          </p>
-          <p className="text-sm text-foreground-muted mb-6">
-            {accept === "image/*"
-              ? "JPG, PNG, WebP, GIF and more"
-              : accept.replace(/image\//g, "").replace(/,/g, ", ").toUpperCase()
-            }
-            {" · "}Max {tool.maxFileSizeMB > 0 ? `${tool.maxFileSizeMB} MB` : "50 MB"} per file
-          </p>
-
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
-            className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white px-8 py-3 rounded-xl text-sm font-semibold transition-colors shadow-sm"
-          >
-            <Upload className="h-4 w-4" />
-            Select Images
-          </button>
-
-          {maxFiles > 1 && (
-            <p className="mt-4 text-xs text-foreground-subtle">
-              You can select up to {maxFiles} images at once
+            <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-brand-violet transition-colors">
+              {isDragging ? "Drop your images here" : "Upload Images"}
+            </h3>
+            <p className="text-sm text-foreground-muted mb-8 max-w-sm mx-auto leading-relaxed">
+              Drag & drop images here or click to browse. Supports JPG, PNG, WebP, GIF and more.
             </p>
-          )}
+
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
+              className={clsx(
+                "inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-sm font-bold transition-all duration-300",
+                "bg-gradient-to-r from-brand-violet to-brand-blue text-white",
+                "hover:shadow-xl hover:shadow-brand-violet/30 hover:scale-105 active:scale-95",
+                "shadow-lg shadow-brand-violet/20"
+              )}
+            >
+              <Upload className="h-4 w-4" />
+              Select Images
+            </button>
+
+            {maxFiles > 1 && (
+              <p className="mt-6 text-xs text-foreground-subtle flex items-center justify-center gap-2">
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand-violet/10 text-brand-violet text-[10px] font-bold">i</span>
+                Batch processing — up to {maxFiles} images at once
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Feature highlights */}
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-5">
+          {["AI-Powered", "100% Free", "No Sign-up", "Secure"].map((tag) => (
+            <span key={tag} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background-subtle/60 dark:bg-background-muted/40 border border-border/40 text-[11px] font-semibold text-foreground-muted backdrop-blur-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-violet" />
+              {tag}
+            </span>
+          ))}
         </div>
       </div>
     );
   }
 
-  // ── Results state ─────────────────────────────────────────────────────────────
+  // ── Results ──────────────────────────────────────────────────────────────────
 
   if (outputs.length > 0) {
     return (
       <div className="w-full">
-        {/* Success header */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+        {/* Success banner */}
+        <div className={clsx(
+          "relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 p-6 mb-6",
+          "animate-fade-up"
+        )}>
+          <GradientOrb className="w-40 h-40 -top-10 -right-10 opacity-20" />
+
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                  <CheckCircle2 className="h-7 w-7 text-white" />
+                </div>
+                <div className="absolute inset-0 rounded-2xl animate-ping opacity-25 bg-emerald-400" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-foreground">All done!</p>
+                <p className="text-sm text-foreground-muted mt-0.5">
+                  {outputs.length} file{outputs.length > 1 ? "s" : ""} processed successfully
+                  {filesWithPreviews.length !== outputs.length && ` from ${filesWithPreviews.length} uploads`}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold text-foreground leading-tight">
-                {outputs.length} file{outputs.length > 1 ? "s" : ""} ready to download
-              </p>
-              <p className="text-xs text-foreground-muted">Processing complete</p>
-            </div>
+            <button
+              type="button"
+              onClick={reset}
+              className="flex items-center gap-2 text-sm font-semibold text-foreground-muted hover:text-foreground border border-border/40 hover:border-border bg-background/50 hover:bg-background backdrop-blur-sm px-5 py-2.5 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Process More
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={reset}
-            className="flex items-center gap-1.5 text-sm text-foreground-muted hover:text-foreground border border-border hover:border-foreground/30 bg-background hover:bg-background-subtle px-3 py-2 rounded-lg transition-all"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Process More
-          </button>
         </div>
 
         {/* Results grid */}
-        <div className={clsx(
-          "grid gap-3",
-          outputs.length === 1 ? "grid-cols-1 max-w-sm" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-        )}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {outputs.map((f, i) => (
-            <ResultCard key={i} file={f} />
+            <div key={i} className="animate-fade-up" style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both" }}>
+              <ResultCard file={f} index={i} />
+            </div>
           ))}
         </div>
 
-        {/* Batch download if multiple */}
-        {outputs.length > 1 && (
-          <div className="mt-4 pt-4 border-t border-border">
-            <p className="text-xs text-foreground-subtle text-center">
-              Download each file individually above
-            </p>
-          </div>
-        )}
-
-        <p className="mt-4 text-center text-xs text-foreground-subtle">
-          Files are processed securely and never stored on our servers.
-        </p>
+        {/* Footer */}
+        <div className="mt-6 flex items-center justify-between text-xs text-foreground-subtle">
+          <span>Files are processed securely and automatically deleted.</span>
+          <span className="inline-flex items-center gap-1 text-emerald-600">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Ready to download
+          </span>
+        </div>
       </div>
     );
   }
 
-  // ── Files selected state: two-column layout ───────────────────────────────────
+  // ── Files selected ───────────────────────────────────────────────────────────
 
   return (
     <div className="w-full">
-      {/* Hidden inputs */}
-      <input
-        ref={inputRef}
-        type="file"
-        accept={accept}
-        multiple={maxFiles !== 1}
-        className="sr-only"
-        onChange={(e) => addFiles(e.target.files)}
-      />
-      <input
-        ref={addMoreRef}
-        type="file"
-        accept={accept}
-        multiple={maxFiles !== 1}
-        className="sr-only"
-        onChange={(e) => addFiles(e.target.files)}
-      />
+      {/* Tool stats */}
+      <ToolStatsBanner tool={tool} />
 
-      <div className="flex flex-col lg:flex-row gap-4 items-start">
+      <div className="flex flex-col lg:flex-row gap-5 items-start">
 
-        {/* ── Left column: image preview grid ── */}
+        {/* ── Left: preview grid ── */}
         <div className="flex-1 min-w-0">
-
-          {/* Preview grid with drag-drop overlay */}
           <div
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             onDrop={onDrop}
             className={clsx(
-              "relative rounded-2xl border-2 transition-all duration-200",
+              "relative rounded-2xl border-2 transition-all duration-300 overflow-hidden",
               isDragging
-                ? "border-teal-500 bg-teal-50/40 dark:bg-teal-950/10"
-                : "border-border bg-background-subtle/40",
+                ? "border-brand-violet bg-brand-violet/5 dark:bg-brand-violet/10"
+                : "border-border/60 bg-background-subtle/30 dark:bg-background-muted/20",
               processing && "pointer-events-none"
             )}
           >
+            {/* Background orbs */}
+            <GradientOrb className="w-32 h-32 top-0 right-0 opacity-10" />
+
             {/* Drag overlay */}
             {isDragging && (
-              <div className="absolute inset-0 z-20 rounded-2xl flex items-center justify-center bg-teal-50/80 dark:bg-teal-950/40 border-2 border-teal-500 border-dashed">
-                <div className="text-center">
-                  <Upload className="h-8 w-8 text-teal-600 mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-teal-700 dark:text-teal-400">Drop to add images</p>
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-brand-violet/10 backdrop-blur-sm border-2 border-brand-violet border-dashed rounded-2xl">
+                <div className="h-16 w-16 rounded-2xl bg-brand-violet/20 flex items-center justify-center mb-3">
+                  <Upload className="h-8 w-8 text-brand-violet" />
                 </div>
+                <p className="text-sm font-bold text-brand-violet">Drop to add images</p>
               </div>
             )}
 
             {/* Processing overlay */}
             {processing && (
-              <div className="absolute inset-0 z-20 rounded-2xl flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
-                <div className="h-10 w-10 rounded-full border-[3px] border-border border-t-teal-600 animate-spin mb-3" />
-                <p className="text-sm font-semibold text-foreground">Processing…</p>
-                <p className="text-xs text-foreground-muted mt-0.5">This may take a moment</p>
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-background/90 backdrop-blur-md rounded-2xl">
+                <div className="relative mb-4">
+                  <div className="h-14 w-14 rounded-full border-4 border-brand-violet/20 border-t-brand-violet animate-spin" />
+                  <div className="absolute inset-0 rounded-full animate-ping opacity-30 bg-brand-violet" />
+                </div>
+                <p className="text-base font-bold text-foreground mb-1">Processing your images</p>
+                <p className="text-xs text-foreground-muted">This usually takes a few seconds</p>
               </div>
             )}
 
-            <div className="p-3">
-              {/* Header row */}
-              <div className="flex items-center justify-between mb-3 px-1">
-                <span className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">
-                  {filesWithPreviews.length} Image{filesWithPreviews.length > 1 ? "s" : ""} Selected
-                </span>
+            <div className="p-4 relative z-10">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-brand-violet/10">
+                    <ImageIcon className="h-4 w-4 text-brand-violet" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">
+                      {filesWithPreviews.length} Image{filesWithPreviews.length > 1 ? "s" : ""} Selected
+                    </p>
+                    {filesWithPreviews.length > 1 && (
+                      <p className="text-[11px] text-foreground-muted">
+                        Batch processing enabled
+                      </p>
+                    )}
+                  </div>
+                </div>
                 {filesWithPreviews.length < maxFiles && (
                   <button
                     type="button"
                     onClick={() => addMoreRef.current?.click()}
-                    className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700 font-medium transition-colors"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-brand-violet hover:text-brand-violet/80 transition-colors px-3 py-1.5 rounded-lg hover:bg-brand-violet/10"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add More
@@ -482,32 +548,32 @@ export function ImageToolWorkspace({ tool }: { tool: Tool }) {
                 )}
               </div>
 
-              {/* Thumbnails grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {/* Thumbnails */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {filesWithPreviews.map((fwp, i) => (
                   <ImagePreviewCard
                     key={`${fwp.file.name}-${i}`}
                     fwp={fwp}
                     index={i}
                     onRemove={removeFile}
+                    total={filesWithPreviews.length}
                   />
                 ))}
 
-                {/* Drop zone tile to add more */}
                 {filesWithPreviews.length < maxFiles && (
                   <button
                     type="button"
                     onClick={() => addMoreRef.current?.click()}
-                    className="aspect-square rounded-xl border-2 border-dashed border-border hover:border-teal-400 hover:bg-teal-50/30 dark:hover:bg-teal-950/10 flex flex-col items-center justify-center gap-1.5 text-foreground-muted hover:text-teal-600 transition-all"
+                    className="aspect-square rounded-2xl border-2 border-dashed border-border/40 hover:border-brand-violet/50 hover:bg-brand-violet/5 flex flex-col items-center justify-center gap-2 text-foreground-muted hover:text-brand-violet transition-all duration-200 hover:scale-105"
                   >
-                    <Plus className="h-6 w-6" />
-                    <span className="text-[10px] font-medium">Add More</span>
+                    <Plus className="h-7 w-7" />
+                    <span className="text-[10px] font-semibold">Add More</span>
                   </button>
                 )}
               </div>
 
               {maxFiles > 1 && (
-                <p className="text-[10px] text-foreground-subtle mt-3 px-1">
+                <p className="text-[11px] text-foreground-subtle mt-4 text-center font-mono">
                   {filesWithPreviews.length}/{maxFiles} images
                 </p>
               )}
@@ -515,35 +581,37 @@ export function ImageToolWorkspace({ tool }: { tool: Tool }) {
           </div>
         </div>
 
-        {/* ── Right column: options + action ── */}
-        <div className="w-full lg:w-72 shrink-0">
+        {/* ── Right: options + action ── */}
+        <div className="w-full lg:w-80 shrink-0">
           <div className="sticky top-4">
-            <div className="bg-background rounded-2xl border border-border overflow-hidden shadow-sm">
+            <div className="rounded-2xl border border-border/60 bg-card overflow-hidden shadow-xl shadow-black/5 dark:shadow-black/20 backdrop-blur-sm">
 
-              {/* Options panel header */}
-              <div className="px-4 py-3 border-b border-border bg-background-subtle/50">
-                <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wide">
-                  Options
-                </p>
+              {/* Options header */}
+              <div className="px-5 py-4 border-b border-border/40 bg-gradient-to-r from-brand-violet/5 to-transparent">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-brand-violet/10 flex items-center justify-center">
+                    <Sparkles className="h-3.5 w-3.5 text-brand-violet" />
+                  </div>
+                  <p className="text-xs font-bold text-foreground-muted uppercase tracking-widest">Options</p>
+                </div>
               </div>
 
-              {/* Tool-specific options */}
-              <div className="px-4 py-4">
+              {/* Tool options */}
+              <div className="px-5 py-5">
                 <ToolOptions tool={tool} />
               </div>
 
               {/* Process button */}
-              <div className="px-4 pb-4 pt-1 space-y-2">
+              <div className="px-5 pb-5 space-y-3">
                 <button
                   type="button"
                   onClick={handleProcess}
                   disabled={!filesWithPreviews.length || processing}
                   aria-busy={processing}
                   className={clsx(
-                    "w-full py-3 rounded-xl text-sm font-semibold transition-all",
-                    "flex items-center justify-center gap-2",
+                    "w-full py-4 rounded-2xl text-sm font-bold transition-all duration-300 flex items-center justify-center gap-3",
                     filesWithPreviews.length && !processing
-                      ? "bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white shadow-sm hover:shadow-md"
+                      ? "bg-gradient-to-r from-brand-violet to-brand-blue text-white shadow-lg shadow-brand-violet/25 hover:shadow-xl hover:shadow-brand-violet/40 hover:scale-[1.02] active:scale-[0.98]"
                       : "bg-border text-foreground-muted cursor-not-allowed"
                   )}
                 >
@@ -552,29 +620,29 @@ export function ImageToolWorkspace({ tool }: { tool: Tool }) {
                       <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                       Processing…
                     </>
-                  ) : btnLabel}
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      {btnLabel}
+                    </>
+                  )}
                 </button>
 
-                {/* Error inline */}
                 {error && (
-                  <div
-                    role="alert"
-                    aria-live="assertive"
-                    className="flex items-start gap-2 text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 rounded-xl px-3 py-2.5"
-                  >
-                    <span className="shrink-0 mt-0.5">&#x26A0;</span>
+                  <div role="alert" aria-live="assertive" className="flex items-start gap-2.5 text-sm text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+                    <span className="shrink-0 mt-0.5 text-base">&#x26A0;</span>
                     <span>{error}</span>
                   </div>
                 )}
               </div>
 
-              {/* Footer note */}
-              <div className="px-4 py-2.5 border-t border-border bg-background-subtle/40">
-                <p className="text-[10px] text-foreground-subtle text-center leading-relaxed">
-                  {maxFiles > 1
-                    ? `Up to ${maxFiles} images at once. `
-                    : ""}
-                  Processed securely — files are never stored.
+              {/* Footer */}
+              <div className="px-5 py-3.5 border-t border-border/40 bg-background-subtle/30">
+                <p className="text-[10px] text-foreground-subtle text-center leading-relaxed flex items-center justify-center gap-1.5">
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-success/10">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                  </span>
+                  {maxFiles > 1 ? `${maxFiles} files max · ` : ""}Secure processing — files never stored
                 </p>
               </div>
             </div>
