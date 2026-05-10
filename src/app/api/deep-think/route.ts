@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,9 +27,10 @@ export async function POST(req: NextRequest) {
         messages,
         temperature: 0.7,
         top_p: 1,
-        max_tokens: 8000,
+        max_tokens: 4096,
         chat_template_kwargs: { enable_thinking: true, clear_thinking: false },
       }),
+      signal: (() => { const ac = new AbortController(); setTimeout(() => ac.abort(), 240000); return ac.signal; })(),
     });
 
     if (!res.ok) {
