@@ -11,7 +11,7 @@ async function callAI(prompt: string, maxTokens = 2000): Promise<string> {
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
         body: JSON.stringify({ model: "nvidia/llama-3.1-nemotron-nano-8b-instruct", messages: [{ role: "user", content: prompt }], max_tokens: maxTokens, temperature: 0.7, stream: false }),
-        signal: AbortSignal.timeout,
+        signal: (() => { const ac = new AbortController(); setTimeout(() => ac.abort(), 25000); return ac.signal; })(),
       });
       if (res.ok) {
         const d = await res.json() as { choices?: Array<{ message?: { content?: string } }> };

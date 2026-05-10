@@ -1135,11 +1135,13 @@ async function processPDF(
           };
 
           const convert = fromPath(tmpPath, options);
-          const imagePaths = await convert(1, -1); // Convert all pages
+          // Convert all pages - bulk returns array of result objects
+          const allPages = await convert.bulk([1, -1]);
 
           // Process each generated image
-          for (const imgPath of imagePaths) {
-            if (typeof imgPath === "string") {
+          for (const pageResult of allPages) {
+            if (pageResult && typeof pageResult === 'object' && 'path' in pageResult) {
+              const imgPath = (pageResult as { path: string }).path;
               const imgBuffer = fs.readFileSync(imgPath);
               const imgBase64 = imgBuffer.toString("base64");
               const ext = opts.format === "png" ? "png" : "jpg";
@@ -1162,7 +1164,7 @@ async function processPDF(
           throw new Error(`PDF to Image conversion failed: ${(err as Error).message}. Try using a PDF viewer to export pages as images, or use smallpdf.com.`);
         }
       }
-      return respondFiles(results);
+      return results;
     }
 
     case "pdf-ocr":
