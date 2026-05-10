@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
           Accept: "application/json",
         },
         body: JSON.stringify({ prompt: prompt.trim(), width, height, seed: resolvedSeed, steps: resolvedSteps }),
-        signal: AbortSignal.timeout(60_000),
+        signal: (() => { const ac = new AbortController(); setTimeout(() => ac.abort(), 120000); return ac.signal; })(),
       }
     );
 
