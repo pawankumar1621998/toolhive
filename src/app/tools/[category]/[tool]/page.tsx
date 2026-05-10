@@ -12,6 +12,7 @@ import { VideoDownloader } from "@/components/features/video/VideoDownloader";
 import { ConverterTextWorkspace } from "@/components/features/converter/ConverterTextWorkspace";
 import { CalcWorkspace } from "@/components/features/calculator/CalcWorkspace";
 import { ImageToolWorkspace } from "@/components/features/image/ImageToolWorkspace";
+import { PDFToolWorkspace } from "@/components/features/pdf-editor/PDFToolWorkspace";
 import { TranslatePdfWorkspace } from "@/components/features/tool/TranslatePdfWorkspace";
 import { ContactCreatorWorkspace } from "@/components/features/contact/ContactCreatorWorkspace";
 import { SocialMediaWorkspace } from "@/components/features/social/SocialMediaWorkspace";
@@ -361,8 +362,8 @@ export default async function ToolPage({
             </div>
 
           ) : tool.category === "pdf" ? (
-            <div className="py-8 sm:py-10 max-w-4xl">
-              <ToolWorkspace tool={tool} />
+            <div className="py-6 sm:py-8 max-w-2xl">
+              <PDFToolWorkspace tool={tool} />
               <ToolInfoPanel tool={tool} />
               <Suspense fallback={<SectionSkeleton rows={1} />}>
                 <RelatedTools category={tool.category} currentToolId={tool.id} />

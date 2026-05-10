@@ -645,7 +645,6 @@ async function processPDF(
     }
 
     case "image-to-pdf":
-    case "image-to-pdf":
     case "jpg-to-pdf": {
       const sharp = await getSharp();
       const pdfDoc = await PDFDocument.create();
@@ -1282,7 +1281,7 @@ export async function POST(request: NextRequest) {
 
     const isImageInput = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "avif"].includes(firstExt);
     // Check if tool slug starts with pdf- (e.g., pdf-compress, pdf-merge, etc.) or is a known PDF slug
-    const isPDFSlug = toolSlug.startsWith("pdf-") || toolSlug === "merge" || toolSlug === "split" || toolSlug === "rotate" || toolSlug === "compress" || toolSlug === "unlock" || toolSlug === "protect" || toolSlug === "sign" || toolSlug === "watermark" || toolSlug === "page-numbers" || toolSlug === "ocr" || toolSlug === "edit-pdf" || toolSlug === "html-to-pdf" || toolSlug === "reorder" || toolSlug === "jpg-to-pdf" || toolSlug === "excel-to-pdf" || toolSlug === "compare-pdf" || toolSlug === "redact-pdf" || toolSlug === "summarize-pdf" || toolSlug === "translate-pdf" || toolSlug === "pdf-to-text" || toolSlug === "header-footer" || toolSlug === "scan-to-pdf" || toolSlug === "organize-pdf" || toolSlug === "crop-pdf" || toolSlug === "repair-pdf" || toolSlug === "pdf-to-pdfa" || toolSlug === "pdf-to-word" || toolSlug === "pdf-to-excel" || toolSlug === "pdf-to-jpg" || toolSlug === "pdf-to-jpeg" || toolSlug === "pdf-to-png";
+    const isPDFSlug = toolSlug.startsWith("pdf-") || toolSlug === "merge" || toolSlug === "split" || toolSlug === "rotate" || toolSlug === "compress" || toolSlug === "unlock" || toolSlug === "protect" || toolSlug === "sign" || toolSlug === "watermark" || toolSlug === "page-numbers" || toolSlug === "ocr" || toolSlug === "edit-pdf" || toolSlug === "html-to-pdf" || toolSlug === "reorder" || toolSlug === "jpg-to-pdf" || toolSlug === "image-to-pdf" || toolSlug === "excel-to-pdf" || toolSlug === "compare-pdf" || toolSlug === "redact-pdf" || toolSlug === "summarize-pdf" || toolSlug === "translate-pdf" || toolSlug === "pdf-to-text" || toolSlug === "header-footer" || toolSlug === "scan-to-pdf" || toolSlug === "organize-pdf" || toolSlug === "crop-pdf" || toolSlug === "repair-pdf" || toolSlug === "pdf-to-pdfa" || toolSlug === "pdf-to-word" || toolSlug === "pdf-to-excel" || toolSlug === "pdf-to-jpg" || toolSlug === "pdf-to-jpeg" || toolSlug === "pdf-to-png";
 
     if (isPDFSlug || firstExt === "pdf") {
       const results = await processPDF(bufs, filenames, toolSlug, opts);
