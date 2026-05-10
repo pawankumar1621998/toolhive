@@ -5,6 +5,26 @@ export const maxDuration = 45;
 async function callAI(prompt: string): Promise<string> {
   const errors: string[] = [];
 
+  // Try STEP API first
+  if (process.env.STEP_API_KEY?.trim()) {
+    try {
+      const res = await fetch("https://api.stepfun.com/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${process.env.STEP_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "stepfun-ai/step-3.5-flash", messages: [{ role: "user", content: prompt }], max_tokens: 8000, temperature: 0.5 }),
+      });
+      if (res.ok) {
+        const d = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+        const out = d.choices?.[0]?.message?.content?.trim();
+        if (out) return out;
+      } else {
+        errors.push(`STEP: ${res.status}`);
+      }
+    } catch (e) {
+      errors.push(`STEP: ${(e as Error).message}`);
+    }
+  }
+
   for (const key of [process.env.NVIDIA_API_KEY, process.env.NVIDIA_API_KEY_2].filter(Boolean)) {
     try {
       const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {

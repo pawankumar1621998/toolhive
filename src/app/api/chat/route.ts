@@ -84,6 +84,25 @@ interface ChatMessage {
 
 // ─── AI Provider calls (with message history) ────────────────────────────────
 
+async function callStep(messages: ChatMessage[]): Promise<string> {
+  const key = process.env.STEP_API_KEY;
+  if (!key) throw new Error("no key");
+  const res = await fetch("https://api.stepfun.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "stepfun-ai/step-3.5-flash",
+      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+      max_tokens: 8192,
+      temperature: 0.7,
+      stream: false,
+    }),
+  });
+  if (!res.ok) throw new Error(`STEP ${res.status}`);
+  const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+  return data.choices?.[0]?.message?.content ?? "";
+}
+
 async function callNvidiaGpt(messages: ChatMessage[]): Promise<string> {
   const key = process.env.NVIDIA_API_KEY;
   if (!key) throw new Error("no key");
@@ -293,7 +312,7 @@ export async function POST(req: NextRequest) {
     // Limit history to last 20 messages to keep tokens low
     const recent = messages.slice(-20);
 
-    const providers = [callNvidiaGpt, callNvidiaGlm, callNvidia2Nemotron, callNvidia2Llama, callGroq, callGemini, callMistral, callDeepSeek, callAnthropic];
+    const providers = [callStep, callNvidiaGpt, callNvidiaGlm, callNvidia2Nemotron, callNvidia2Llama, callGroq, callGemini, callMistral, callDeepSeek, callAnthropic];
     let lastError = "";
 
     for (const fn of providers) {

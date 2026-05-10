@@ -70,6 +70,19 @@ async function testOpenRouter() {
   } catch (e) { return { status: "error", error: (e as Error).message }; }
 }
 
+async function testStep() {
+  const key = process.env.STEP_API_KEY;
+  if (!key) return { status: "missing" };
+  try {
+    const res = await fetch("https://api.stepfun.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "stepfun-ai/step-3.5-flash", messages: [{ role: "user", content: "hi" }], max_tokens: 5 }),
+    });
+    return { status: res.ok ? "ok" : "error", code: res.status };
+  } catch (e) { return { status: "error", error: (e as Error).message }; }
+}
+
 async function testNvidiaText() {
   const key = process.env.NVIDIA_API_KEY;
   if (!key) return { status: "missing" };
@@ -126,7 +139,8 @@ async function testRemoveBg() {
 }
 
 export async function GET() {
-  const [groq, gemini, mistral, deepseek, openrouter, nvidiaText, nvidiaKey2, nvidiaVision, removeBg] = await Promise.all([
+  const [step, groq, gemini, mistral, deepseek, openrouter, nvidiaText, nvidiaKey2, nvidiaVision, removeBg] = await Promise.all([
+    testStep(),
     testGroq(),
     testGemini(),
     testMistral(),
@@ -139,6 +153,7 @@ export async function GET() {
   ]);
 
   const results = {
+    step,
     groq,
     gemini,
     mistral,
