@@ -1,9 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const maxDuration = 45;
+export const maxDuration = 120;
 
+// Use thinking model for detailed reasoning
+async function callAIWithThinking(prompt: string): Promise<string> {
+  const key = process.env.NVIDIA_THINKING_API_KEY ?? process.env.NVIDIA_API_KEY;
+  if (!key) {
+    throw new Error("No API key configured");
+  }
+
+  const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "z-ai/glm-5.1",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.5,
+      top_p: 1,
+      max_tokens: 8000,
+      chat_template_kwargs: { enable_thinking: true, clear_thinking: false },
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Thinking API error: ${res.status}`);
+  }
+
+  const data = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+  return data.choices?.[0]?.message?.content ?? "";
+}
+
+// Fallback regular AI
 async function callAI(prompt: string): Promise<string> {
-  // Try STEP API first
   if (process.env.STEP_API_KEY?.trim()) {
     try {
       const res = await fetch("https://api.stepfun.com/v1/chat/completions", {
@@ -33,7 +61,7 @@ async function callAI(prompt: string): Promise<string> {
           messages: [{ role: "user", content: prompt }],
           max_tokens: 2000, temperature: 0.4, stream: false,
         }),
-        signal: AbortSignal.timeout(25000),
+        signal: (() => { const ac = new AbortController(); setTimeout(() => ac.abort(), 25000); return ac.signal; })(),
       });
       if (res.ok) {
         const d = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
@@ -77,7 +105,7 @@ export async function POST(req: NextRequest) {
 
     const truncated = documentText;
 
-    const prompt = `You are an expert legal analyst. Analyze this ${documentType} document and provide a comprehensive breakdown in simple, plain language that a non-lawyer can understand.
+    const prompt = `You are an expert legal analyst with step-by-step reasoning. Analyze this ${documentType} document and provide a comprehensive breakdown in simple, plain language that a non-lawyer can understand.
 
 DOCUMENT:
 """
@@ -128,7 +156,12 @@ Return ONLY valid JSON (no markdown, no explanation outside JSON):
 
 riskScore must be 0-100. riskLevel must be "Low", "Medium", or "High". severity in redFlags must be "Low", "Medium", or "High".`;
 
-    const raw = await callAI(prompt);
+    let raw: string;
+    try {
+      raw = await callAIWithThinking(prompt);
+    } catch {
+      raw = await callAI(prompt);
+    }
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("Failed to parse AI response");
     const analysis = JSON.parse(jsonMatch[0]);
