@@ -1142,7 +1142,8 @@ async function processPDF(
 
           for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
             try {
-              const pageResult = await convert.bulk([pageNum])[0];
+              const pageResults = await convert.bulk([pageNum]);
+              const pageResult = pageResults[0];
               if (pageResult && typeof pageResult === 'object' && 'path' in pageResult) {
                 const imgPath = (pageResult as { path: string }).path;
                 const imgBuffer = fs.readFileSync(imgPath);
