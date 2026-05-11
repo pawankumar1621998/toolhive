@@ -290,7 +290,7 @@ function IPLookup() {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query`);
+      const response = await fetch(`https://ip-api.com/json/${ip}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query`);
       const data = await response.json();
       if (data.status === "fail") {
         setError("Invalid IP address or API limit reached");
