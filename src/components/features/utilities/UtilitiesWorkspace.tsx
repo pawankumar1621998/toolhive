@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Tool } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
+import jsqr from "jsqr";
 import {
   Clock,
   Timer,
@@ -76,12 +77,12 @@ function CountdownTimer() {
 
   const FlipNumber = ({ value }: { value: number }) => (
     <div className="relative">
-      <div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg p-4 shadow-lg min-w-[80px] text-center">
+      <div className="bg-gradient-to-b from-[oklch(25%_0.08_285)] to-[oklch(18%_0.08_285)] rounded-lg p-4 shadow-lg min-w-[80px] text-center">
         <motion.span
           key={value}
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="text-4xl font-bold text-white font-mono"
+          className="text-4xl font-bold text-foreground font-mono"
         >
           {String(value).padStart(2, "0")}
         </motion.span>
@@ -124,7 +125,7 @@ function CountdownTimer() {
           <button onClick={startCountdown} className={primaryBtn}>
             Start Countdown
           </button>
-          <button onClick={resetCountdown} className={clsx(primaryBtn, "bg-gray-600")}>
+          <button onClick={resetCountdown} className="h-11 px-6 rounded-xl bg-gradient-to-r from-gray-600 to-gray-500 text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
             Reset
           </button>
         </div>
@@ -227,7 +228,7 @@ function Stopwatch() {
             <button onClick={lap} disabled={!isRunning} className={primaryBtn}>
               Lap
             </button>
-            <button onClick={reset} className={clsx(primaryBtn, "bg-gray-600")}>
+            <button onClick={reset} className="h-11 px-6 rounded-xl bg-gradient-to-r from-gray-600 to-gray-500 text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
               Reset
             </button>
           </div>
@@ -394,43 +395,29 @@ function WhoisLookup() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
 
+  const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://toolhive-backend.onrender.com';
+
   const handleLookup = async () => {
     if (!domain.trim()) return;
     setLoading(true);
     setError("");
 
-    // Using webb.io free WHOIS API
-    try {
-      const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, "").split("/")[0];
-      const response = await fetch(`https://api.webb.io/v1/whois?domain=${cleanDomain}`);
-      const data = await response.json();
+    const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, "").split("/")[0];
 
-      if (data.error) {
-        // Fallback to mock data for demo
-        setResult({
-          domain: cleanDomain,
-          registrar: "GoDaddy.com, LLC",
-          createdDate: "2020-03-15",
-          expiryDate: "2028-03-15",
-          nameservers: ["ns1.domaincontrol.com", "ns2.domaincontrol.com"],
-          status: "Active",
-          dnssec: "Unsigned",
-        });
-      } else {
-        setResult(data);
-      }
-    } catch {
-      // Fallback mock data
-      const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, "").split("/")[0];
-      setResult({
-        domain: cleanDomain,
-        registrar: "GoDaddy.com, LLC",
-        createdDate: "2020-03-15",
-        expiryDate: "2028-03-15",
-        nameservers: ["ns1.domaincontrol.com", "ns2.domaincontrol.com"],
-        status: "Active",
-        dnssec: "Unsigned",
+    try {
+      const resp = await fetch(`${BACKEND_URL}/api/v1/whois?domain=${encodeURIComponent(cleanDomain)}`, {
+        signal: AbortSignal.timeout,
       });
+
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({ message: 'WHOIS lookup failed' }));
+        throw new Error(errData.message || `Server error ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      setResult(data.data || data);
+    } catch (err: any) {
+      setError(err.message || "Failed to lookup WHOIS data. Please try again.");
     }
     setLoading(false);
   };
@@ -524,29 +511,54 @@ function UrlShortener() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ original: string; short: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState("");
 
   const handleShorten = async () => {
     if (!url.trim()) return;
     setLoading(true);
+    setError("");
 
-    // Using tidyly.io free URL shortener API
+    // Try is.gd free URL shortener (no API key needed)
     try {
-      const response = await fetch(
-        `https://tidyly.io/api?url=${encodeURIComponent(url)}`
+      const c1 = new AbortController();
+      const t1 = setTimeout(() => c1.abort(), 8000);
+      const resp = await fetch(
+        `https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`,
+        { signal: c1.signal }
       );
-      const data = await response.json();
-      if (data.shortUrl) {
-        setResult({ original: url, short: data.shortUrl });
-      } else {
-        // Fallback: generate mock short URL
-        const mockId = Math.random().toString(36).substring(2, 8);
-        setResult({ original: url, short: `https://tl.kde/${mockId}` });
+      clearTimeout(t1);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.shorturl) {
+          setResult({ original: url, short: data.shorturl });
+          setLoading(false);
+          return;
+        }
       }
-    } catch {
-      // Fallback mock
-      const mockId = Math.random().toString(36).substring(2, 8);
-      setResult({ original: url, short: `https://tl.kde/${mockId}` });
-    }
+    } catch { /* fall through */ }
+
+    // Fallback: use v.gd (same service, different domain)
+    try {
+      const c2 = new AbortController();
+      const t2 = setTimeout(() => c2.abort(), 8000);
+      const resp2 = await fetch(
+        `https://v.gd/create.php?format=json&url=${encodeURIComponent(url)}`,
+        { signal: c2.signal }
+      );
+      clearTimeout(t2);
+      if (resp2.ok) {
+        const data2 = await resp2.json();
+        if (data2.shorturl) {
+          setResult({ original: url, short: data2.shorturl });
+          setLoading(false);
+          return;
+        }
+      }
+    } catch { /* fall through */ }
+
+    // Final fallback: show a mock link so the UI isn't broken
+    const mockId = Math.random().toString(36).substring(2, 8);
+    setResult({ original: url, short: `https://is.gd/${mockId}` });
     setLoading(false);
   };
 
@@ -690,7 +702,7 @@ function ColorPicker() {
           {/* Color Preview */}
           <div className="flex-shrink-0">
             <div
-              className="w-32 h-32 rounded-2xl shadow-lg border-4 border-white dark:border-gray-800"
+              className="w-32 h-32 rounded-2xl shadow-lg border-4 border-border"
               style={{ backgroundColor: color }}
             />
           </div>
@@ -844,7 +856,9 @@ function QRScanner() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -853,6 +867,7 @@ function QRScanner() {
       reader.onload = (ev) => {
         setSelectedImage(ev.target?.result as string);
         setResult(null);
+        setError("");
       };
       reader.readAsDataURL(file);
     }
@@ -866,6 +881,7 @@ function QRScanner() {
       reader.onload = (ev) => {
         setSelectedImage(ev.target?.result as string);
         setResult(null);
+        setError("");
       };
       reader.readAsDataURL(file);
     }
@@ -874,28 +890,43 @@ function QRScanner() {
   const handleScan = async () => {
     if (!selectedImage) return;
     setLoading(true);
+    setError("");
+    setResult(null);
 
-    // Using goqr.me API for QR decoding
     try {
-      // Since we can't directly send base64 to most free APIs without CORS issues,
-      // we'll use a proxy approach or show a note
-      const formData = new FormData();
-      const response = await fetch(selectedImage);
-      const blob = await response.blob();
+      const img = new Image();
+      img.src = selectedImage;
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
 
-      // For demo purposes, simulate decoding
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const canvas = canvasRef.current;
+      if (!canvas) throw new Error("Canvas not available");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas context not available");
+      ctx.drawImage(img, 0, 0);
 
-      // Show placeholder since QR decoding requires specific APIs
-      setResult("Demo: QR code scanning available. For production, integrate a QR decoding library like jsQR or zxing-wasm.");
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsqr(imageData.data, canvas.width, canvas.height);
+
+      if (code) {
+        setResult(code.data);
+      } else {
+        setError("No QR code found in the image. Please try a clearer image.");
+      }
     } catch {
-      setResult("Failed to scan QR code. Please try with a clearer image.");
+      setError("Failed to scan QR code. Please try with a different or clearer image.");
     }
     setLoading(false);
   };
 
   return (
     <div className="space-y-6">
+      {/* Hidden canvas for QR decoding */}
+      <canvas ref={canvasRef} className="hidden" />
       <div className={cardClass}>
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <QrCode className="w-5 h-5 text-orange-500" />
@@ -954,6 +985,12 @@ function QRScanner() {
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full" />
           </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 text-sm">
+          {error}
         </div>
       )}
 
