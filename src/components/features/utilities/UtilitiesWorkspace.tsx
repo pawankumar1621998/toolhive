@@ -405,9 +405,12 @@ function WhoisLookup() {
     const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, "").split("/")[0];
 
     try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
       const resp = await fetch(`${BACKEND_URL}/api/v1/whois?domain=${encodeURIComponent(cleanDomain)}`, {
-        signal: AbortSignal.timeout,
+        signal: controller.signal,
       });
+      clearTimeout(timer);
 
       if (!resp.ok) {
         const errData = await resp.json().catch(() => ({ message: 'WHOIS lookup failed' }));
