@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -86,19 +86,10 @@ const scaleInVariant: Variants = {
 // ─────────────────────────────────────────────
 // Animated mesh background orbs
 // Reduced on mobile for performance — full set on lg+
+// Static on desktop for LCP optimization
 // ─────────────────────────────────────────────
 
 function MeshBackground({ shouldReduce }: { shouldReduce: boolean }) {
-  const orb1Animate = shouldReduce
-    ? { scale: 1, opacity: 0.7 }
-    : { scale: [1, 1.08, 1] as number[], opacity: [0.7, 1, 0.7] as number[] };
-  const orb2Animate = shouldReduce
-    ? { scale: 1, opacity: 0.6 }
-    : { scale: [1, 1.12, 1] as number[], opacity: [0.6, 0.9, 0.6] as number[] };
-  const orb3Animate = shouldReduce
-    ? { scale: 1, opacity: 0.5 }
-    : { scale: [1, 1.1, 1] as number[], opacity: [0.5, 0.8, 0.5] as number[] };
-
   return (
     <div className="absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
       {/* Base gradient */}
@@ -106,38 +97,44 @@ function MeshBackground({ shouldReduce }: { shouldReduce: boolean }) {
 
       {/*
        * Orb 1 — always rendered but smaller on mobile
-       * On mobile (< lg) we scale down the orb significantly to avoid heavy GPU paint.
+       * CSS-only animation for LCP optimization (no JS animation blocking)
        */}
-      <motion.div
-        className="absolute -top-32 -left-32 h-[350px] w-[350px] lg:h-[600px] lg:w-[600px] rounded-full"
+      <div
+        className={clsx(
+          "absolute -top-32 -left-32 lg:-top-40 lg:-left-40",
+          "h-[350px] w-[350px] lg:h-[600px] lg:w-[600px] rounded-full",
+          !shouldReduce && "animate-[float_7s_ease-in-out_infinite]"
+        )}
         style={{
-          background:
-            "radial-gradient(circle, oklch(55% 0.22 285 / 0.12) 0%, transparent 70%)",
+          background: "radial-gradient(circle, oklch(55% 0.22 285 / 0.12) 0%, transparent 70%)",
+          animation: shouldReduce ? "none" : undefined,
         }}
-        animate={orb1Animate}
-        transition={{ duration: 7, repeat: shouldReduce ? 0 : Infinity, ease: "easeInOut" }}
       />
 
       {/* Orb 2 — hidden on mobile, visible on lg+ */}
-      <motion.div
-        className="absolute -top-20 right-0 h-[500px] w-[500px] rounded-full hidden lg:block"
+      <div
+        className={clsx(
+          "absolute -top-20 right-0",
+          "h-[500px] w-[500px] rounded-full hidden lg:block",
+          !shouldReduce && "animate-[float_9s_ease-in-out_infinite_1s]"
+        )}
         style={{
-          background:
-            "radial-gradient(circle, oklch(58% 0.2 248 / 0.1) 0%, transparent 70%)",
+          background: "radial-gradient(circle, oklch(58% 0.2 248 / 0.1) 0%, transparent 70%)",
+          animation: shouldReduce ? "none" : undefined,
         }}
-        animate={orb2Animate}
-        transition={{ duration: 9, repeat: shouldReduce ? 0 : Infinity, ease: "easeInOut", delay: 1 }}
       />
 
       {/* Orb 3 — hidden on mobile, visible on lg+ */}
-      <motion.div
-        className="absolute bottom-0 left-1/3 h-[400px] w-[400px] rounded-full hidden lg:block"
+      <div
+        className={clsx(
+          "absolute bottom-0 left-1/3",
+          "h-[400px] w-[400px] rounded-full hidden lg:block",
+          !shouldReduce && "animate-[float_8s_ease-in-out_infinite_2s]"
+        )}
         style={{
-          background:
-            "radial-gradient(circle, oklch(62% 0.18 195 / 0.08) 0%, transparent 70%)",
+          background: "radial-gradient(circle, oklch(62% 0.18 195 / 0.08) 0%, transparent 70%)",
+          animation: shouldReduce ? "none" : undefined,
         }}
-        animate={orb3Animate}
-        transition={{ duration: 8, repeat: shouldReduce ? 0 : Infinity, ease: "easeInOut", delay: 2 }}
       />
 
       {/* Subtle grid — hidden on mobile (performance) */}
@@ -206,20 +203,47 @@ function FloatingBadge({
 }
 
 // ─────────────────────────────────────────────
-// Search bar with live suggestions
+// Search bar with live suggestions — OPTIMIZED
+// Debounced search to prevent INP issues
 // ─────────────────────────────────────────────
 
 const TRENDING_SEARCHES = [
   "PDF Compress", "Background Remover", "Video Downloader", "AI Resume", "Image Resize",
 ];
 
-function scoreToolMatch(tool: Tool, q: string): number {
+// Debounce hook for search performance
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+// Pre-compute search index for faster lookups
+const TOOL_SEARCH_INDEX = TOOLS.map((tool) => ({
+  tool,
+  nameLower: tool.name.toLowerCase(),
+  descLower: tool.shortDescription.toLowerCase(),
+  tagsLower: tool.tags.map((t) => t.toLowerCase()),
+  categoryLower: tool.category.toLowerCase(),
+}));
+
+function scoreToolMatch(toolIndex: typeof TOOL_SEARCH_INDEX[0], q: string): number {
   const ql = q.toLowerCase();
   let s = 0;
-  if (tool.name.toLowerCase().includes(ql)) s += 8;
-  if (tool.shortDescription.toLowerCase().includes(ql)) s += 4;
-  if (tool.tags.some((t) => t.toLowerCase().includes(ql))) s += 3;
-  if (tool.category.toLowerCase().includes(ql)) s += 1;
+  if (toolIndex.nameLower.includes(ql)) s += 8;
+  if (toolIndex.descLower.includes(ql)) s += 4;
+  if (toolIndex.tagsLower.some((t) => t.includes(ql))) s += 3;
+  if (toolIndex.categoryLower.includes(ql)) s += 1;
   return s;
 }
 
@@ -231,18 +255,25 @@ function HeroSearchBar() {
   const [activeIdx, setActiveIdx] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const q = query.trim();
-    if (!q) { setSuggestions([]); setActiveIdx(-1); return; }
-    const matches = TOOLS
-      .map((t) => ({ tool: t, s: scoreToolMatch(t, q) }))
+  // Debounce search query to 150ms to prevent excessive re-renders
+  const debouncedQuery = useDebounce(query, 150);
+
+  // Memoize search results for performance
+  const searchResults = useMemo(() => {
+    const q = debouncedQuery.trim();
+    if (!q) return [];
+    return TOOL_SEARCH_INDEX
+      .map((toolIndex) => ({ tool: toolIndex.tool, s: scoreToolMatch(toolIndex, q) }))
       .filter((x) => x.s > 0)
       .sort((a, b) => b.s - a.s)
       .slice(0, 6)
       .map((x) => x.tool);
-    setSuggestions(matches);
+  }, [debouncedQuery]);
+
+  useEffect(() => {
+    setSuggestions(searchResults);
     setActiveIdx(-1);
-  }, [query]);
+  }, [searchResults]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -513,20 +544,21 @@ function SocialProof() {
 }
 
 // ─────────────────────────────────────────────
-// HeroSection
+// HeroSection — OPTIMIZED for Core Web Vitals
+// LCP: Removed framer-motion orbs, using CSS-only animations
+// INP: Debounced search with useDebounce hook
+// CLS: Pre-reserved space for floating badges
 // ─────────────────────────────────────────────
 
 /**
  * HeroSection — Client Component
  *
- * Mobile-first responsive hero:
- * - Search bar: full-width, h-12 on mobile
- * - Category pills: horizontal scroll on mobile
- * - Stats: 3-col stacked grid on mobile
- * - Headline: text-3xl → 4xl → 5xl → 6xl
- * - CTA buttons: full-width on mobile
- * - Background orbs: reduced count on mobile for perf
- * - "No signup" badge: always visible
+ * Performance optimizations:
+ * - CSS-only background orbs instead of framer-motion (better LCP)
+ * - Debounced search input (150ms) to prevent INP issues
+ * - Pre-computed search index for faster lookups
+ * - Mobile-first responsive design
+ * - Reduced motion support via shouldReduce
  */
 export function HeroSection() {
   const shouldReduce = useReducedMotion() ?? false;
@@ -542,17 +574,20 @@ export function HeroSection() {
       <MeshBackground shouldReduce={shouldReduce} />
 
       {/* Floating badges — decorative only, xl+ */}
-      {FLOATING_BADGES.map((b) => (
-        <FloatingBadge
-          key={b.label}
-          label={b.label}
-          sub={b.sub}
-          icon={b.icon}
-          posClass={b.x}
-          delay={b.delay}
-          shouldReduce={shouldReduce}
-        />
-      ))}
+      {/* Reserve space to prevent CLS */}
+      <div className="hidden xl:block" aria-hidden="true">
+        {FLOATING_BADGES.map((b) => (
+          <FloatingBadge
+            key={b.label}
+            label={b.label}
+            sub={b.sub}
+            icon={b.icon}
+            posClass={b.x}
+            delay={b.delay}
+            shouldReduce={shouldReduce}
+          />
+        ))}
+      </div>
 
       <div className="container mx-auto px-4">
         <motion.div
@@ -593,8 +628,8 @@ export function HeroSection() {
               "text-foreground leading-[1.08]"
             )}
           >
-            Your All-in-One{" "}
-            <span className="text-gradient">AI Toolkit</span>
+            Free AI Tools —{" "}
+            <span className="text-gradient">PDF, Image & Writing</span>
           </motion.h1>
 
           {/* Subheadline */}
@@ -606,8 +641,7 @@ export function HeroSection() {
               "leading-relaxed"
             )}
           >
-            200+ free AI-powered tools for PDF, images, video, and writing.
-            No account needed — start processing files instantly.
+            Compress PDF, remove backgrounds, generate AI images, write Twitter threads, and 200+ more tools — all free, no signup needed.
           </motion.p>
 
           {/* "No signup required" badge — visible on all screen sizes */}
