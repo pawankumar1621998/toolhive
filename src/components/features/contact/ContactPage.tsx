@@ -414,7 +414,7 @@ export function ContactPage() {
               <p className="text-sm text-foreground-muted">
                 Before reaching out, you might find your answer in our{" "}
                 <a
-                  href="/faq"
+                  href="/guides/pdf-tools-faq"
                   className="font-medium text-primary hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                 >
                   FAQ page
