@@ -28,9 +28,50 @@ const LD_JSON_WEBSITE = {
     },
     "query-input": "required name=search_term_string",
   },
+  publisher: {
+    "@type": "Organization",
+    name: "ToolHive",
+    url: "https://toolhive-red.vercel.app",
+  },
 };
 
 const LD_JSON_ORG = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "ToolHive",
+  url: "https://toolhive-red.vercel.app",
+  logo: {
+    "@type": "ImageObject",
+    url: "https://toolhive-red.vercel.app/favicon.ico",
+  },
+  description:
+    "ToolHive provides 200+ free AI-powered online tools for PDF, image, video, and writing tasks. No signup required, works instantly in your browser. Founded by Pawan Kumar from Haryana, India.",
+  founder: {
+    "@type": "Person",
+    name: "Pawan Kumar",
+    jobTitle: "Founder",
+    homeLocation: {
+      "@type": "Place",
+      name: "Haryana, India",
+    },
+  },
+  areaServed: {
+    "@type": "Place",
+    name: "Worldwide",
+  },
+  sameAs: [
+    "https://twitter.com/toolhive",
+    "https://linkedin.com/company/toolhive",
+    "https://github.com/toolhive",
+  ],
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer service",
+    email: "support@toolhive.app",
+  },
+};
+
+const LD_JSON_SOFTWARE = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: "ToolHive",
@@ -56,10 +97,6 @@ const LD_JSON_ORG = {
     "@type": "Place",
     name: "Worldwide",
   },
-  sameAs: [
-    "https://twitter.com/toolhive",
-    "https://linkedin.com/company/toolhive",
-  ],
 };
 
 // ─────────────────────────────────────────────
@@ -194,6 +231,11 @@ export default function RootLayout({
           id="ld-org"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(LD_JSON_ORG) }}
+        />
+        <Script
+          id="ld-software"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(LD_JSON_SOFTWARE) }}
         />
 
         {/*

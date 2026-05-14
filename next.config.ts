@@ -56,6 +56,38 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  /**
+   * Redirects for SEO — keyword-friendly URLs redirect to actual tool pages
+   */
+  async redirects() {
+    return [
+      // PDF tools
+      { source: "/compress-pdf", destination: "/tools/pdf/compress", permanent: true },
+      { source: "/pdf-summarizer", destination: "/tools/ai-writing/summarize", permanent: true },
+      { source: "/pdf-compress", destination: "/tools/pdf/compress", permanent: true },
+      { source: "/merge-pdf", destination: "/tools/pdf/merge", permanent: true },
+      { source: "/split-pdf", destination: "/tools/pdf/split", permanent: true },
+
+      // Image tools
+      { source: "/remove-background", destination: "/tools/image/remove-background", permanent: true },
+      { source: "/image-resize", destination: "/tools/image/resize", permanent: true },
+      { source: "/background-remover", destination: "/tools/image/remove-background", permanent: true },
+      { source: "/image-generator", destination: "/tools/image/image-generator", permanent: true },
+
+      // AI Writing tools
+      { source: "/twitter-thread-generator", destination: "/tools/ai-writing/twitter-thread-generator", permanent: true },
+      { source: "/linkedin-post-generator", destination: "/tools/ai-writing/linkedin-post-generator", permanent: true },
+      { source: "/youtube-script-generator", destination: "/tools/ai-writing/youtube-script-generator", permanent: true },
+      { source: "/grammar-checker", destination: "/tools/ai-writing/grammar-check", permanent: true },
+      { source: "/paraphrasing-tool", destination: "/tools/ai-writing/paraphrase", permanent: true },
+
+      // Resume
+      { source: "/resume-builder", destination: "/tools/resume/builder", permanent: true },
+      { source: "/free-resume", destination: "/tools/resume/builder", permanent: true },
+      { source: "/premium-resume", destination: "/tools/resume/builder", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;
