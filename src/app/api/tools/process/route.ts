@@ -1181,47 +1181,58 @@ async function processPDF(
     case "pdf-ocr":
     case "ocr": {
       const results: { name: string; data: string; type: string }[] = [];
+      const language = (opts.language as string) || "eng";
+
       for (let fi = 0; fi < bufs.length; fi++) {
-        let text = "";
+        let extractedText = "";
         let numpages = 0;
+
+        // Step 1: Try pdf-parse first (works for digital/searchable PDFs)
         try {
           const pdfData = await pdfParse(bufs[fi]);
-          text = pdfData.text.trim();
+          extractedText = pdfData.text.trim();
           numpages = pdfData.numpages;
-        } catch (err) {
-          // PDF parsing failed, show helpful message
-          const outExt = opts.outputFormat === "srt" ? "srt" : opts.outputFormat === "vtt" ? "vtt" : "txt";
-          const body = "⚠️  Unable to read this PDF file.\n\n" +
-            "This may be due to:\n" +
-            "• Corrupted or damaged PDF\n" +
-            "• Password-protected PDF\n" +
-            "• Image-based (scanned) PDF\n\n" +
-            "For scanned PDFs, try Google Docs OCR or Adobe Acrobat Online.";
-          results.push({
-            name: `${baseName(filenames[fi])}_ocr.${outExt}`,
-            data: Buffer.from(body).toString("base64"),
-            type: "text/plain",
-          });
-          continue;
+        } catch (_err) {
+          numpages = 1;
+        }
+
+        // Step 2: If no text found — scanned/image-based PDF
+        // PDF→image conversion requires canvas/puppeteer (not available on Vercel)
+        // Use Image to Text (OCR) tool with NVIDIA AI Vision instead
+        if (extractedText.length < 20) {
+          extractedText =
+            `⚠️  This PDF appears to be scanned/image-based — no searchable text detected.\n\n` +
+            `For scanned PDFs, use our AI-powered Image to Text (OCR) tool:\n` +
+            `→ toolhive.vercel.app/tools/image/image-ocr\n` +
+            `→ Upload each page as JPG/PNG\n\n` +
+            `For free online OCR:\n` +
+            `• ocr.space\n` +
+            `• Google Drive → Upload PDF → Right-click → Open with Google Docs`;
+        }
+
+        // Step 3: Final fallback if still no text
+        if (extractedText.length < 20) {
+          extractedText =
+            `⚠️  This PDF appears to be scanned/image-based — no searchable text detected.\n\n` +
+            `For best results with scanned PDFs, use our AI Image to Text (OCR) tool:\n` +
+            `→ toolhive.vercel.app/tools/image/image-ocr\n` +
+            `→ Upload each page as JPG/PNG\n\n` +
+            `For free online OCR:\n` +
+            `• ocr.space\n` +
+            `• Google Drive → Upload PDF → Right-click → Open with Google Docs`;
         }
 
         const outputFmt = opts.outputFormat ?? "txt";
         const header =
           `OCR / Text Extraction — ${filenames[fi]}\n` +
-          `Pages: ${numpages}  |  Extracted: ${new Date().toLocaleDateString("en-GB")}\n` +
+          `Pages: ${numpages}  |  Language: ${language}  |  Extracted: ${new Date().toLocaleDateString("en-GB")}\n` +
           "─".repeat(60) + "\n\n";
 
         let body: string;
-        if (text.length < 20) {
-          body =
-            "⚠️  No readable text found in this PDF.\n\n" +
-            "This appears to be a scanned/image-based PDF. Our tool extracts text from digital (searchable) PDFs only.\n\n" +
-            "For scanned PDFs, try one of these free options:\n" +
-            "• Google Drive → upload PDF → right-click → Open with Google Docs (free OCR)\n" +
-            "• Adobe Acrobat Online → acrobat.adobe.com\n" +
-            "• OCR.Space → ocr.space (free, no signup needed)";
+        if (extractedText.length < 20) {
+          body = extractedText;
         } else if (outputFmt === "srt") {
-          const paras = text.split(/\n{2,}/).filter(Boolean);
+          const paras = extractedText.split(/\n{2,}/).filter(Boolean);
           body = paras.map((p, i) => {
             const t = i * 5;
             const h = String(Math.floor(t / 3600)).padStart(2, "0");
@@ -1230,7 +1241,7 @@ async function processPDF(
             return `${i + 1}\n${h}:${m}:${s},000 --> ${h}:${m}:${String(t % 60 + 4).padStart(2, "0")},000\n${p.trim()}\n`;
           }).join("\n");
         } else {
-          body = text;
+          body = extractedText;
         }
 
         const outExt = outputFmt === "srt" ? "srt" : outputFmt === "vtt" ? "vtt" : "txt";

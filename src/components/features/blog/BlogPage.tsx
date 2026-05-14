@@ -171,7 +171,7 @@ function FeaturedPostCard({ post }: { post: BlogPost }) {
         <div className="absolute bottom-5 left-6 flex items-center gap-2">
           <Badge variant={BADGE_VARIANT[post.category]} size="md">{post.category}</Badge>
           {post.trending && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 px-2.5 py-1 text-xs font-semibold text-white">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/20 backdrop-blur-sm border border-primary/30 px-2.5 py-1 text-xs font-semibold text-primary">
               <TrendingUp className="h-3 w-3" /> Trending
             </span>
           )}

@@ -107,7 +107,7 @@ function LinkInBioTool() {
       <button onClick={() => generate({ name, profession, instagram, twitter, youtube, links })}
         disabled={isLoading || !name.trim()}
         className="w-full h-11 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all">
-        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> Generating…</> : "Generate Link in Bio Page"}
+        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-foreground-muted/30 border-t-foreground rounded-full" /> Generating…</> : "Generate Link in Bio Page"}
       </button>
       {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2">{error}</p>}
       {output && (
@@ -162,7 +162,7 @@ function SocialBioTool() {
       <button onClick={() => generate({ name, niche, platform, vibe })}
         disabled={isLoading || !niche.trim()}
         className="w-full h-11 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all">
-        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> Generating…</> : "Generate Bio"}
+        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-foreground-muted/30 border-t-foreground rounded-full" /> Generating…</> : "Generate Bio"}
       </button>
       {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2">{error}</p>}
       {output && (
@@ -195,7 +195,7 @@ function InstaDmReplyTool() {
       <button onClick={() => generate({ product, keywords })}
         disabled={isLoading || !product.trim()}
         className="w-full h-11 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all">
-        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> Generating…</> : "Generate Auto-Reply Templates"}
+        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-foreground-muted/30 border-t-foreground rounded-full" /> Generating…</> : "Generate Auto-Reply Templates"}
       </button>
       {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2">{error}</p>}
       {output && (
@@ -236,7 +236,7 @@ function CTABuilderTool() {
       <button onClick={() => generate({ offer, audience, ctaType })}
         disabled={isLoading || !offer.trim()}
         className="w-full h-11 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all">
-        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> Building…</> : "Build CTA Link"}
+        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-foreground-muted/30 border-t-foreground rounded-full" /> Building…</> : "Build CTA Link"}
       </button>
       {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2">{error}</p>}
       {output && (
@@ -290,7 +290,7 @@ function EmailSignatureTool() {
       <button onClick={() => generate({ name, title, company, email, phone, linkedin, twitter })}
         disabled={isLoading || !name.trim() || !email.trim()}
         className="w-full h-11 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all">
-        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> Generating…</> : "Generate Email Signature"}
+        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-foreground-muted/30 border-t-foreground rounded-full" /> Generating…</> : "Generate Email Signature"}
       </button>
       {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2">{error}</p>}
       {output && (
@@ -331,7 +331,7 @@ function ColdDMTool() {
       <button onClick={() => generate({ product, target, channel })}
         disabled={isLoading || !product.trim() || !target.trim()}
         className="w-full h-11 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all">
-        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> Generating…</> : "Generate Cold DMs"}
+        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-foreground-muted/30 border-t-foreground rounded-full" /> Generating…</> : "Generate Cold DMs"}
       </button>
       {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2">{error}</p>}
       {output && (
@@ -368,7 +368,7 @@ function ContactFormTool() {
       <button onClick={() => generate({ email, style })}
         disabled={isLoading || !email.trim()}
         className="w-full h-11 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all">
-        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> Generating…</> : "Generate HTML Contact Form"}
+        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-foreground-muted/30 border-t-foreground rounded-full" /> Generating…</> : "Generate HTML Contact Form"}
       </button>
       {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2">{error}</p>}
       {output && (
@@ -413,7 +413,7 @@ function WhatsAppLinkTool() {
       <button onClick={() => generate({ phone, message, countryCode: country })}
         disabled={isLoading || !phone.trim()}
         className="w-full h-11 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all">
-        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> Generating…</> : "Generate WhatsApp Link"}
+        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-foreground-muted/30 border-t-foreground rounded-full" /> Generating…</> : "Generate WhatsApp Link"}
       </button>
       {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2">{error}</p>}
       {output && (
@@ -462,7 +462,7 @@ function VCardTool() {
       <button onClick={() => generate({ name, title, company, email, phone, website })}
         disabled={isLoading || !name.trim()}
         className="w-full h-11 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all">
-        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> Generating…</> : "Generate vCard + QR Code"}
+        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-foreground-muted/30 border-t-foreground rounded-full" /> Generating…</> : "Generate vCard + QR Code"}
       </button>
       {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2">{error}</p>}
       {output && (
@@ -496,7 +496,7 @@ function YouTubeCommentTool() {
       <button onClick={() => generate({ channel, niche })}
         disabled={isLoading || !channel.trim()}
         className="w-full h-11 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all">
-        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> Generating…</> : "Generate YouTube Comment Templates"}
+        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-foreground-muted/30 border-t-foreground rounded-full" /> Generating…</> : "Generate YouTube Comment Templates"}
       </button>
       {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2">{error}</p>}
       {output && (
@@ -528,7 +528,7 @@ function SocialSchedulerTool() {
       <button onClick={() => generate({ niche, platform })}
         disabled={isLoading || !niche.trim()}
         className="w-full h-11 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all">
-        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> Generating…</> : "Generate Content Calendar"}
+        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-foreground-muted/30 border-t-foreground rounded-full" /> Generating…</> : "Generate Content Calendar"}
       </button>
       {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2">{error}</p>}
       {output && (
@@ -555,7 +555,7 @@ function LinkAnalyzerTool() {
       <button onClick={() => generate({ url })}
         disabled={isLoading || !url.trim()}
         className="w-full h-11 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all">
-        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" /> Analyzing…</> : "Analyze Link"}
+        {isLoading ? <><span className="animate-spin h-4 w-4 border-2 border-foreground-muted/30 border-t-foreground rounded-full" /> Analyzing…</> : "Analyze Link"}
       </button>
       {error && <p className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 rounded-xl px-3 py-2">{error}</p>}
       {output && (

@@ -105,22 +105,22 @@ function GSTCalculator() {
       {result && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className={clsx(resultCard, "text-center border-blue-200 bg-blue-50")}>
-              <div className="text-xs text-blue-600 font-semibold uppercase tracking-wide">Base Amount</div>
-              <div className="text-2xl font-bold text-blue-600 mt-1">
+            <div className={clsx(resultCard, "text-center border-blue-500/30 bg-blue-500/10")}>
+              <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide">Base Amount</div>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
                 ₹{fmt(result.base)}
               </div>
             </div>
-            <div className={clsx(resultCard, "text-center border-orange-200 bg-orange-50")}>
-              <div className="text-xs text-orange-600 font-semibold uppercase tracking-wide">GST ({rate}%)</div>
-              <div className="text-2xl font-bold text-orange-500 mt-1">
+            <div className={clsx(resultCard, "text-center border-orange-500/30 bg-orange-500/10")}>
+              <div className="text-xs text-orange-600 dark:text-orange-600 dark:text-orange-400 font-semibold uppercase tracking-wide">GST ({rate}%)</div>
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-600 dark:text-orange-400 mt-1">
                 ₹{fmt(result.gst)}
               </div>
             </div>
           </div>
-          <div className={clsx(resultCard, "text-center border-emerald-200 bg-emerald-50")}>
-            <div className="text-xs text-emerald-600 font-semibold uppercase tracking-wide mb-1">Total (GST Inclusive)</div>
-            <div className="text-3xl font-bold text-emerald-600">
+          <div className={clsx(resultCard, "text-center border-emerald-500/30 bg-emerald-500/10")}>
+            <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wide mb-1">Total (GST Inclusive)</div>
+            <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
               ₹{fmt(result.inclusive)}
             </div>
           </div>
@@ -220,9 +220,9 @@ function TipCalculator() {
 
       {result && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-          <div className={clsx(resultCard, "text-center border-emerald-200 bg-emerald-50")}>
-            <div className="text-xs text-emerald-600 font-semibold uppercase tracking-wide mb-1">Total per Person</div>
-            <div className="text-4xl font-bold text-emerald-600">
+          <div className={clsx(resultCard, "text-center border-emerald-500/30 bg-emerald-500/10")}>
+            <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wide mb-1">Total per Person</div>
+            <div className="text-4xl font-bold text-emerald-600 dark:text-emerald-400">
               ₹{fmt(result.perPerson)}
             </div>
           </div>
@@ -233,7 +233,7 @@ function TipCalculator() {
             </div>
             <div className={clsx(resultCard, "text-center")}>
               <div className="text-xs text-foreground-muted">Tip ({tipPct}%)</div>
-              <div className="text-lg font-bold text-orange-500">₹{fmt(result.tip)}</div>
+              <div className="text-lg font-bold text-orange-600 dark:text-orange-600 dark:text-orange-400">₹{fmt(result.tip)}</div>
             </div>
             <div className={clsx(resultCard, "text-center")}>
               <div className="text-xs text-foreground-muted">Total</div>
@@ -242,7 +242,7 @@ function TipCalculator() {
           </div>
           <div className={clsx(resultCard, "text-center")}>
             <div className="text-xs text-foreground-muted">Tip per Person</div>
-            <div className="text-sm font-bold text-orange-400">₹{fmt(result.tipPerPerson)}</div>
+            <div className="text-sm font-bold text-orange-600 dark:text-orange-400">₹{fmt(result.tipPerPerson)}</div>
           </div>
         </motion.div>
       )}
@@ -291,11 +291,11 @@ function ROICalculator() {
 
       {result && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-          <div className={clsx(resultCard, result.roi >= 0 ? "border-emerald-200 bg-emerald-50" : "border-rose-200 bg-rose-50", "text-center")}>
-            <div className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: result.roi >= 0 ? "#10b981" : "#f43f5e" }}>
+          <div className={clsx(resultCard, result.roi >= 0 ? "border-emerald-500/30 bg-emerald-500/10" : "border-rose-500/30 bg-rose-500/10", "text-center")}>
+            <div className={clsx("text-xs font-semibold uppercase tracking-wide mb-1", result.roi >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
               {result.roi >= 0 ? "Net Profit" : "Net Loss"}
             </div>
-            <div className="text-3xl font-bold" style={{ color: result.roi >= 0 ? "#10b981" : "#f43f5e" }}>
+            <div className={clsx("text-3xl font-bold", result.roi >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
               {result.roi >= 0 ? "+" : ""}{fmt(result.roi)}%
             </div>
           </div>
@@ -386,11 +386,11 @@ function ProfitMarginCalculator() {
       {result && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
           {/* Gross Margin */}
-          <div className={clsx(resultCard, "border-blue-200 bg-blue-50")}>
-            <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Gross Profit & Margin</div>
+          <div className={clsx(resultCard, "border-blue-500/30 bg-blue-500/10")}>
+            <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide mb-1">Gross Profit & Margin</div>
             <div className="flex items-end justify-between">
-              <div className="text-2xl font-bold text-blue-700">₹{fmt(result.grossProfit, 0)}</div>
-              <div className="text-2xl font-bold text-blue-500">{fmt(result.grossMargin)}%</div>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">₹{fmt(result.grossProfit, 0)}</div>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{fmt(result.grossMargin)}%</div>
             </div>
             <div className="text-xs text-blue-400 mt-1">Revenue - COGS</div>
           </div>
@@ -406,13 +406,13 @@ function ProfitMarginCalculator() {
           </div>
 
           {/* Net Margin */}
-          <div className={clsx(resultCard, "border-emerald-200 bg-emerald-50")}>
-            <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-1">Net Profit & Margin</div>
+          <div className={clsx(resultCard, "border-emerald-500/30 bg-emerald-500/10")}>
+            <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-1">Net Profit & Margin</div>
             <div className="flex items-end justify-between">
-              <div className="text-2xl font-bold text-emerald-700">₹{fmt(result.netProfit, 0)}</div>
-              <div className="text-2xl font-bold text-emerald-500">{fmt(result.netMargin)}%</div>
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">₹{fmt(result.netProfit, 0)}</div>
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmt(result.netMargin)}%</div>
             </div>
-            <div className="text-xs text-emerald-400 mt-1">Operating Profit - Taxes</div>
+            <div className="text-xs text-emerald-500 dark:text-emerald-400 mt-1">Operating Profit - Taxes</div>
           </div>
 
           {/* Bar visualization */}
@@ -570,7 +570,7 @@ function StartupValuationCalculator() {
           <div className="grid grid-cols-2 gap-3">
             <div className={clsx(resultCard, "text-center")}>
               <div className="text-xs text-foreground-muted">Revenue Multiple</div>
-              <div className="text-lg font-bold text-orange-500">{result.revenueMultiple}x</div>
+              <div className="text-lg font-bold text-orange-600 dark:text-orange-600 dark:text-orange-400">{result.revenueMultiple}x</div>
             </div>
             <div className={clsx(resultCard, "text-center")}>
               <div className="text-xs text-foreground-muted">Per User Value</div>

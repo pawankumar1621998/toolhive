@@ -346,7 +346,7 @@ export function TextToImage() {
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-end justify-end p-3 opacity-0 group-hover:opacity-100">
                     <button
                       onClick={handleDownload}
-                      className="flex items-center gap-1.5 rounded-xl bg-white/95 px-3 py-2 text-xs font-semibold text-gray-900 hover:bg-white shadow-lg"
+                      className="flex items-center gap-1.5 rounded-xl bg-card/95 px-3 py-2 text-xs font-semibold text-foreground hover:bg-card shadow-lg"
                     >
                       <Download className="h-3.5 w-3.5" />
                       Save PNG

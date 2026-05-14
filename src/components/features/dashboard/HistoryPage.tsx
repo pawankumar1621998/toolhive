@@ -73,7 +73,6 @@ const FILTER_CATEGORIES: { label: string; value: "all" | ToolCategory }[] = [
   { label: "All", value: "all" },
   { label: "PDF", value: "pdf" },
   { label: "Image", value: "image" },
-  { label: "Video", value: "video" },
   { label: "AI Writing", value: "ai-writing" },
   { label: "Calculator", value: "calculator" },
 ];

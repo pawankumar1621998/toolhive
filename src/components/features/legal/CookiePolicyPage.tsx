@@ -420,7 +420,7 @@ export function CookiePolicyPage() {
                 </p>
                 <Link
                   href="/contact"
-                  className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-violet-600 hover:bg-white/90 transition-colors"
+                  className="inline-flex items-center gap-2 rounded-xl bg-card px-5 py-2.5 text-sm font-bold text-primary hover:opacity-90 transition-colors"
                 >
                   Contact Us
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />

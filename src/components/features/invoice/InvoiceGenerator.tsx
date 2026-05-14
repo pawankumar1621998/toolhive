@@ -187,42 +187,42 @@ export function InvoiceGenerator() {
             ref={previewRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-white rounded-2xl shadow-lg border border-card-border p-8 text-gray-800 text-sm overflow-hidden"
+            className="bg-card rounded-2xl shadow-lg border border-card-border p-8 text-foreground text-sm overflow-hidden"
             style={{ fontFamily: "sans-serif", minHeight: 600 }}
           >
             {/* Invoice header */}
             <div className="flex justify-between items-start mb-8">
               <div>
                 <h1 className="text-3xl font-black text-sky-600 tracking-tight">INVOICE</h1>
-                <p className="text-gray-500 text-sm mt-1">#{invoiceNo}</p>
+                <p className="text-foreground-muted text-sm mt-1">#{invoiceNo}</p>
               </div>
-              <div className="text-right text-xs text-gray-500 space-y-0.5">
-                <p>Date: <span className="font-semibold text-gray-700">{invoiceDate}</span></p>
-                {dueDate && <p>Due: <span className="font-semibold text-gray-700">{dueDate}</span></p>}
+              <div className="text-right text-xs text-foreground-muted space-y-0.5">
+                <p>Date: <span className="font-semibold text-foreground">{invoiceDate}</span></p>
+                {dueDate && <p>Due: <span className="font-semibold text-foreground">{dueDate}</span></p>}
               </div>
             </div>
 
             {/* From / To */}
             <div className="grid grid-cols-2 gap-6 mb-8">
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">From</p>
-                <p className="font-bold text-gray-800">{fromName || "Your Business"}</p>
-                {fromEmail && <p className="text-gray-500">{fromEmail}</p>}
-                {fromPhone && <p className="text-gray-500">{fromPhone}</p>}
-                {fromAddress && <p className="text-gray-500 whitespace-pre-line">{fromAddress}</p>}
+                <p className="text-xs font-bold text-foreground-subtle uppercase tracking-widest mb-1.5">From</p>
+                <p className="font-bold text-foreground">{fromName || "Your Business"}</p>
+                {fromEmail && <p className="text-foreground-muted">{fromEmail}</p>}
+                {fromPhone && <p className="text-foreground-muted">{fromPhone}</p>}
+                {fromAddress && <p className="text-foreground-muted whitespace-pre-line">{fromAddress}</p>}
               </div>
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">Bill To</p>
-                <p className="font-bold text-gray-800">{toName || "Client Name"}</p>
-                {toEmail && <p className="text-gray-500">{toEmail}</p>}
-                {toAddress && <p className="text-gray-500 whitespace-pre-line">{toAddress}</p>}
+                <p className="text-xs font-bold text-foreground-subtle uppercase tracking-widest mb-1.5">Bill To</p>
+                <p className="font-bold text-foreground">{toName || "Client Name"}</p>
+                {toEmail && <p className="text-foreground-muted">{toEmail}</p>}
+                {toAddress && <p className="text-foreground-muted whitespace-pre-line">{toAddress}</p>}
               </div>
             </div>
 
             {/* Items table */}
             <table className="w-full text-xs mb-6" style={{ borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ backgroundColor: "#f0f9ff", color: "#0284c7" }}>
+                <tr className="bg-sky-500/10 text-sky-600 dark:text-sky-400">
                   <th className="text-left py-2 px-3 font-bold rounded-tl-lg">Description</th>
                   <th className="text-center py-2 px-3 font-bold">Qty</th>
                   <th className="text-right py-2 px-3 font-bold">Rate</th>
@@ -231,11 +231,11 @@ export function InvoiceGenerator() {
               </thead>
               <tbody>
                 {items.map((item, idx) => (
-                  <tr key={item.id} style={{ backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
-                    <td className="py-2 px-3 text-gray-700">{item.description || "—"}</td>
-                    <td className="py-2 px-3 text-center text-gray-600">{item.qty}</td>
-                    <td className="py-2 px-3 text-right text-gray-600">{sym}{fmt(parseFloat(item.rate) || 0)}</td>
-                    <td className="py-2 px-3 text-right font-semibold text-gray-800">{sym}{fmt((parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0))}</td>
+                  <tr key={item.id} className={idx % 2 === 0 ? "bg-card" : "bg-background-subtle"}>
+                    <td className="py-2 px-3 text-foreground">{item.description || "—"}</td>
+                    <td className="py-2 px-3 text-center text-foreground-muted">{item.qty}</td>
+                    <td className="py-2 px-3 text-right text-foreground-muted">{sym}{fmt(parseFloat(item.rate) || 0)}</td>
+                    <td className="py-2 px-3 text-right font-semibold text-foreground">{sym}{fmt((parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0))}</td>
                   </tr>
                 ))}
               </tbody>
@@ -243,18 +243,18 @@ export function InvoiceGenerator() {
 
             {/* Totals */}
             <div className="ml-auto w-48 space-y-1.5 text-xs">
-              <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>{sym}{fmt(subtotal)}</span></div>
-              {parseFloat(taxRate) > 0 && <div className="flex justify-between text-gray-600"><span>Tax ({taxRate}%)</span><span>{sym}{fmt(tax)}</span></div>}
-              <div className="flex justify-between font-black text-base text-sky-600 border-t border-gray-200 pt-2 mt-2">
+              <div className="flex justify-between text-foreground-muted"><span>Subtotal</span><span>{sym}{fmt(subtotal)}</span></div>
+              {parseFloat(taxRate) > 0 && <div className="flex justify-between text-foreground-muted"><span>Tax ({taxRate}%)</span><span>{sym}{fmt(tax)}</span></div>}
+              <div className="flex justify-between font-black text-base text-sky-600 border-t border-border pt-2 mt-2">
                 <span>Total</span><span>{sym}{fmt(total)}</span>
               </div>
             </div>
 
             {/* Notes */}
             {notes && (
-              <div className="mt-8 pt-4 border-t border-gray-100">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">Notes</p>
-                <p className="text-xs text-gray-500 whitespace-pre-line">{notes}</p>
+              <div className="mt-8 pt-4 border-t border-border">
+                <p className="text-xs font-bold text-foreground-subtle uppercase tracking-widest mb-1.5">Notes</p>
+                <p className="text-xs text-foreground-muted whitespace-pre-line">{notes}</p>
               </div>
             )}
           </motion.div>

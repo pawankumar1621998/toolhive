@@ -636,7 +636,7 @@ function CSSShadowGenerator() {
 
       <div className="bg-background-subtle rounded-xl p-8 flex items-center justify-center">
         <div
-          className="w-48 h-48 bg-white rounded-xl"
+          className="w-48 h-48 bg-card rounded-xl"
           style={{ boxShadow: getShadow() }}
         />
       </div>

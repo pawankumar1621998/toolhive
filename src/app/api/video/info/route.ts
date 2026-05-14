@@ -24,44 +24,110 @@ export async function POST(req: NextRequest) {
 
     // ── YouTube ──────────────────────────────────────────────────────────────
     if (/youtube\.com|youtu\.be/i.test(url)) {
-      const info = await ytdl.getInfo(url, {
-        requestOptions: {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      // Use Cobalt API for YouTube info
+      const bodyStr = JSON.stringify({ url, downloadMode: "video", videoQuality: "720", filenameStyle: "basic" });
+      const cobaltInstances = ["https://api.cobalt.tools/", "https://co.wuk.sh/", "https://cobalt.uli.rocks/"];
+
+      for (const instance of cobaltInstances) {
+        try {
+          const res = await fetch(instance, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+              "Origin": "https://cobalt.tools",
+              "Referer": "https://cobalt.tools/",
+            },
+            body: bodyStr,
+            signal: AbortSignal.timeout(12_000),
+          });
+          if (res.ok) {
+            const data = await res.json() as { status: string; url?: string; filename?: string };
+            if (data.status === "tunnel" || data.status === "redirect") {
+              // Got a download URL — extract thumbnail from known YouTube pattern
+              const vidId = url.match(/(?:v=|shorts\/)([a-zA-Z0-9_-]{11})/)?.[1] || "";
+              return NextResponse.json({
+                success: true,
+                data: {
+                  title: data.filename?.replace(/\.[^.]+$/, "") || "YouTube Video",
+                  author: "YouTube",
+                  duration: "Unknown",
+                  views: null,
+                  platform: "YouTube",
+                  thumbnail: vidId ? `https://i.ytimg.com/vi/${vidId}/mqdefault.jpg` : null,
+                },
+              });
+            }
+          }
+        } catch { /* try next */ }
+      }
+
+      // Fallback: try ytdl-core
+      try {
+        const ytdl = await import("@distube/ytdl-core");
+        const info = await ytdl.getInfo(url, {
+          requestOptions: { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" } },
+        });
+        const d = info.videoDetails;
+        const thumb = d.thumbnails[d.thumbnails.length - 1]?.url ?? null;
+        return NextResponse.json({
+          success: true,
+          data: {
+            title: d.title,
+            author: d.author.name,
+            duration: fmtDuration(parseInt(d.lengthSeconds, 10)),
+            views: d.viewCount ? fmtViews(d.viewCount) : null,
+            platform: "YouTube",
+            thumbnail: thumb,
           },
-        },
-      });
-      const d = info.videoDetails;
-      const thumb = d.thumbnails[d.thumbnails.length - 1]?.url ?? null;
-      return NextResponse.json({
-        success: true,
-        data: {
-          title: d.title,
-          author: d.author.name,
-          duration: fmtDuration(parseInt(d.lengthSeconds, 10)),
-          views: d.viewCount ? fmtViews(d.viewCount) : null,
-          platform: "YouTube",
-          thumbnail: thumb,
-        },
-      });
+        });
+      } catch {
+        return NextResponse.json({ success: true, data: { title: "YouTube Video", author: "YouTube", duration: "Unknown", views: null, platform: "YouTube", thumbnail: null } });
+      }
     }
 
     // ── TikTok ───────────────────────────────────────────────────────────────
     if (/tiktok\.com/i.test(url)) {
-      const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, {
+      // Resolve short URLs first
+      let videoUrl = url;
+      if (/vm\.|vt\./i.test(url)) {
+        try {
+          const headRes = await fetch(url, {
+            method: "HEAD",
+            redirect: "follow",
+            signal: AbortSignal.timeout(8_000),
+          });
+          videoUrl = headRes.url;
+        } catch {
+          // use original URL
+        }
+      }
+      const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(videoUrl)}`, {
         signal: AbortSignal.timeout(15_000),
       });
       const data = await res.json() as {
         code: number; msg?: string;
-        data?: { title: string; author: { nickname: string }; duration: number; cover: string };
+        data?: { title?: string; author?: { nickname?: string }; duration: number; cover: string; author_id?: string };
       };
-      if (data.code !== 0 || !data.data) throw new Error(data.msg ?? "TikTok fetch failed");
+      if (data.code !== 0 || !data.data) {
+        // Fallback: return minimal info if API fails
+        return NextResponse.json({
+          success: true,
+          data: {
+            title: "TikTok Video",
+            author: "TikTok",
+            duration: "Unknown",
+            views: null,
+            platform: "TikTok",
+            thumbnail: null,
+          },
+        });
+      }
       return NextResponse.json({
         success: true,
         data: {
           title: data.data.title || "TikTok Video",
-          author: data.data.author.nickname,
+          author: data.data.author?.nickname || data.data.author_id || "TikTok",
           duration: fmtDuration(data.data.duration),
           views: null,
           platform: "TikTok",
@@ -72,6 +138,66 @@ export async function POST(req: NextRequest) {
 
     // ── Instagram ────────────────────────────────────────────────────────────
     if (/instagram\.com/i.test(url)) {
+      // Try TikWM API for Instagram info
+      try {
+        const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`, {
+          signal: AbortSignal.timeout(15_000),
+        });
+        const data = await res.json() as {
+          code: number; msg?: string;
+          data?: { title?: string; author?: string; duration: number; cover: string; author_id?: string };
+        };
+        if (data.code === 0 && data.data) {
+          return NextResponse.json({
+            success: true,
+            data: {
+              title: data.data.title || "Instagram Video",
+              author: data.data.author || data.data.author_id || "Instagram",
+              duration: fmtDuration(data.data.duration),
+              views: null,
+              platform: "Instagram",
+              thumbnail: data.data.cover,
+            },
+          });
+        }
+      } catch { /* continue */ }
+
+      // Try embed scraping
+      try {
+        const shortcodeMatch = url.match(/instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/);
+        if (shortcodeMatch) {
+          const embedRes = await fetch(
+            `https://www.instagram.com/p/${shortcodeMatch[1]}/embed/captioned/`,
+            {
+              headers: {
+                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15",
+                "Accept": "text/html",
+              },
+              signal: AbortSignal.timeout(10_000),
+            }
+          );
+          if (embedRes.ok) {
+            const html = await embedRes.text();
+            const thumbMatch = html.match(/"og_image"\s*:\s*"([^"]+)"/) || html.match(/<meta property="og:image"[^>]*content="([^"]+)"/);
+            const titleMatch = html.match(/"og_title"\s*:\s*"([^"]+)"/);
+            if (thumbMatch || titleMatch) {
+              return NextResponse.json({
+                success: true,
+                data: {
+                  title: titleMatch ? titleMatch[1] : "Instagram Video",
+                  author: "Instagram",
+                  duration: "Unknown",
+                  views: null,
+                  platform: "Instagram",
+                  thumbnail: thumbMatch ? thumbMatch[1].replace(/\\u0026/g, "&") : null,
+                },
+              });
+            }
+          }
+        }
+      } catch { /* continue */ }
+
+      // Fallback: minimal info
       return NextResponse.json({
         success: true,
         data: {
@@ -102,6 +228,30 @@ export async function POST(req: NextRequest) {
 
     // ── Facebook ─────────────────────────────────────────────────────────────
     if (/facebook\.com|fb\.watch/i.test(url)) {
+      // Try RapidURL for Facebook info
+      try {
+        const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, {
+          signal: AbortSignal.timeout(15_000),
+        });
+        const data = await res.json() as {
+          code: number; msg?: string;
+          data?: { title?: string; author?: string; duration: number; cover: string };
+        };
+        if (data.code === 0 && data.data) {
+          return NextResponse.json({
+            success: true,
+            data: {
+              title: data.data.title || "Facebook Video",
+              author: data.data.author || "Facebook",
+              duration: fmtDuration(data.data.duration),
+              views: null,
+              platform: "Facebook",
+              thumbnail: data.data.cover,
+            },
+          });
+        }
+      } catch { /* continue */ }
+
       return NextResponse.json({
         success: true,
         data: {

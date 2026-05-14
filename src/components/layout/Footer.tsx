@@ -87,7 +87,6 @@ const FOOTER_COLUMNS = [
     links: [
       { label: "PDF Tools",   href: "/tools/pdf"        },
       { label: "Image Tools", href: "/tools/image"      },
-      { label: "Video Tools", href: "/tools/video"      },
       { label: "AI Writing",  href: "/tools/ai-writing" },
       { label: "Converters",   href: "/tools/converter"  },
       { label: "Resume Tools", href: "/tools/resume"     },
@@ -226,7 +225,7 @@ export function Footer() {
 
             {/* Description — concise on mobile, same copy but max-w constrains on wider */}
             <p className="mt-3 text-sm text-foreground-muted leading-relaxed md:max-w-[18rem]">
-              200+ free AI-powered tools for PDF, image, video &amp; writing.
+              200+ free AI-powered tools for PDF, image &amp; writing.
               No signup needed for most tools.
             </p>
 

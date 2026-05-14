@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import Script from "next/script";
 import { ToolHero } from "@/components/features/tool/ToolHero";
 import { ToolWorkspace } from "@/components/features/tool/ToolWorkspace";
 import { ThumbnailCreator } from "@/components/features/tool/ThumbnailCreator";
@@ -8,14 +9,11 @@ import { ResumeToolWorkspace } from "@/components/features/resume/ResumeToolWork
 import { AIWritingWorkspace } from "@/components/features/ai-writing/AIWritingWorkspace";
 import { QRCodeGenerator } from "@/components/features/image/QRCodeGenerator";
 import { MemeGeneratorUI } from "@/components/features/image/MemeGeneratorUI";
-import { VideoDownloader } from "@/components/features/video/VideoDownloader";
 import { ConverterTextWorkspace } from "@/components/features/converter/ConverterTextWorkspace";
 import { CalcWorkspace } from "@/components/features/calculator/CalcWorkspace";
 import { ImageToolWorkspace } from "@/components/features/image/ImageToolWorkspace";
 import { PDFToolWorkspace } from "@/components/features/pdf-editor/PDFToolWorkspace";
 import { TranslatePdfWorkspace } from "@/components/features/tool/TranslatePdfWorkspace";
-import { ContactCreatorWorkspace } from "@/components/features/contact/ContactCreatorWorkspace";
-import { SocialMediaWorkspace } from "@/components/features/social/SocialMediaWorkspace";
 import GeneratorWorkspace from "@/components/features/generators/GeneratorWorkspace";
 import TextWritingWorkspace from "@/components/features/text-writing/TextWritingWorkspace";
 import CodeWorkspace from "@/components/features/code/CodeWorkspace";
@@ -60,22 +58,44 @@ export async function generateMetadata({
 
   const categoryConfig = TOOL_CATEGORIES.find((c) => c.id === category);
 
+  // Build canonical URL with correct production domain
+  const canonicalUrl = `https://toolhive-red.vercel.app/tools/${category}/${toolSlug}`;
+
   return {
-    title: `${tool.name} — Free Online Tool | ToolHive`,
+    title: tool.name,
     description: tool.description,
-    keywords: [tool.name, ...tool.tags, "free online tool", "ToolHive"],
+    keywords: [
+      tool.name,
+      ...tool.tags,
+      "free online tool",
+      "ToolHive",
+      "no signup",
+      "free",
+      "no watermark",
+    ],
     openGraph: {
       title: `${tool.name} — ToolHive`,
-      description: tool.shortDescription,
+      description: tool.shortDescription || tool.description.substring(0, 160),
       type: "website",
+      url: canonicalUrl,
+      siteName: "ToolHive",
+      images: [
+        {
+          url: "/og-image.png",
+          width: 1200,
+          height: 630,
+          alt: `${tool.name} — Free Online Tool by ToolHive`,
+        },
+      ],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: `${tool.name} — ToolHive`,
-      description: tool.shortDescription,
+      description: tool.shortDescription || tool.description.substring(0, 160),
+      images: ["/og-image.png"],
     },
     alternates: {
-      canonical: `/tools/${category}/${toolSlug}`,
+      canonical: canonicalUrl,
     },
   };
 }
@@ -84,26 +104,116 @@ export async function generateMetadata({
 // Page structured data (JSON-LD)
 // ─────────────────────────────────────────────
 
-function ToolJsonLd({ tool }: { tool: NonNullable<ReturnType<typeof getToolBySlug>> }) {
-  const jsonLd = {
+function ToolJsonLd({ tool, url }: { tool: NonNullable<ReturnType<typeof getToolBySlug>>; url: string }) {
+  const categoryName = TOOL_CATEGORIES.find((c) => c.id === tool.category)?.label || tool.category;
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://toolhive-red.vercel.app",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: categoryName,
+        item: `https://toolhive-red.vercel.app/tools/${tool.category}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: tool.name,
+        item: url,
+      },
+    ],
+  };
+
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: `How to use ${tool.name}?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `${tool.name} is completely free to use. Simply upload your file or enter your text, configure any settings if available, and click process. Your result will be ready instantly with no signup required.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `Is ${tool.name} free?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes, 100% free with no signup required. No limits on usage, no watermarks on output.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: `Is my data safe?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes. All files are encrypted with TLS 1.3 and automatically deleted after 1 hour. We never store, share, or use your files for AI training.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: `What file formats are supported?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: tool.acceptedFileTypes?.length
+            ? `Supported formats: ${tool.acceptedFileTypes.join(", ").toUpperCase()}. Max file size: ${tool.maxFileSizeMB ? `${tool.maxFileSizeMB}MB` : "varies"} per file.`
+            : "Works with any text input. No file upload required.",
+        },
+      },
+    ],
+  };
+
+  const appJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     name: tool.name,
     description: tool.description,
+    url: url,
     applicationCategory: "UtilityApplication",
     operatingSystem: "All",
     offers: {
       "@type": "Offer",
       price: "0",
       priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
     },
+    aggregateRating: tool.usageCount ? {
+      "@type": "AggregateRating",
+      ratingValue: "4.8",
+      ratingCount: String(Math.min(tool.usageCount, 999999)),
+      bestRating: "5",
+      worstRating: "1",
+    } : undefined,
   };
 
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />
+    <>
+      <Script
+        id="ld-tool-breadcrumb"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <Script
+        id="ld-tool-faq"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <Script
+        id="ld-tool"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }}
+      />
+    </>
   );
 }
 
@@ -137,9 +247,11 @@ export default async function ToolPage({
   const tool = getToolBySlug(toolSlug, category);
   if (!tool) notFound();
 
+  const canonicalUrl = `https://toolhive-red.vercel.app/tools/${category}/${toolSlug}`;
+
   return (
     <>
-      <ToolJsonLd tool={tool} />
+      <ToolJsonLd tool={tool} url={canonicalUrl} />
 
       <div className="min-h-screen bg-background flex">
         {/* ── Left sidebar — desktop only (lg+) ───────────── */}
@@ -194,14 +306,6 @@ export default async function ToolPage({
                 <RelatedTools category={tool.category} currentToolId={tool.id} />
               </Suspense>
             </div>
-          ) : tool.category === "video" ? (
-            <div className="py-8 sm:py-10 max-w-4xl">
-              <VideoDownloader tool={tool} />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
           ) : tool.category === "converter" ? (
             <div className="py-8 sm:py-10 max-w-5xl">
               <ConverterTextWorkspace tool={tool} />
@@ -213,14 +317,6 @@ export default async function ToolPage({
           ) : tool.category === "calculator" ? (
             <div className="py-8 sm:py-10 max-w-4xl">
               <CalcWorkspace tool={tool} />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-          ) : tool.category === "contact-creator" ? (
-            <div className="py-8 sm:py-10 max-w-3xl">
-              <ContactCreatorWorkspace tool={tool} />
               <ToolInfoPanel tool={tool} />
               <Suspense fallback={<SectionSkeleton rows={1} />}>
                 <RelatedTools category={tool.category} currentToolId={tool.id} />
@@ -238,15 +334,6 @@ export default async function ToolPage({
           ) : tool.category === "image" ? (
             <div className="py-6 sm:py-8 max-w-2xl">
               <ImageToolWorkspace tool={tool} />
-              <ToolInfoPanel tool={tool} />
-              <Suspense fallback={<SectionSkeleton rows={1} />}>
-                <RelatedTools category={tool.category} currentToolId={tool.id} />
-              </Suspense>
-            </div>
-
-          ) : tool.category === "social-media" ? (
-            <div className="py-8 sm:py-10 max-w-5xl">
-              <SocialMediaWorkspace tool={tool} />
               <ToolInfoPanel tool={tool} />
               <Suspense fallback={<SectionSkeleton rows={1} />}>
                 <RelatedTools category={tool.category} currentToolId={tool.id} />

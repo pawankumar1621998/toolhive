@@ -8,7 +8,6 @@ const TOOL_MAP: Record<string, { name: string; category: string; apiRoute: strin
   "smart-resume":      { name: "Smart Resume",       category: "Resume",    apiRoute: "/api/resume/ai",             fallback: null },
   "cover-letter":      { name: "Cover Letter",       category: "Resume",    apiRoute: "/api/cover-letter",          fallback: null },
   "image-bg-remove":   { name: "BG Remover",         category: "Image",    apiRoute: "/api/tools/process",          fallback: "remove.bg" },
-  "youtube-downloader":{ name: "YouTube Downloader", category: "Video",    apiRoute: "/api/video/stream",           fallback: null },
 };
 
 const ERROR_PATTERN_MAP: Array<{

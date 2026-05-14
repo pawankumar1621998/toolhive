@@ -795,7 +795,7 @@ function GrammarChecker() {
       <button onClick={checkGrammar} disabled={loading || !text.trim()} className={primaryBtn}>
         {loading ? (
           <span className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             Checking...
           </span>
         ) : (
@@ -888,7 +888,7 @@ function TextSummarizer() {
       <button onClick={summarizeText} disabled={loading || !text.trim()} className={primaryBtn}>
         {loading ? (
           <span className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             Summarizing...
           </span>
         ) : (
@@ -944,7 +944,7 @@ function PlagiarismChecker() {
       <button onClick={checkPlagiarism} disabled={loading || !text.trim()} className={primaryBtn}>
         {loading ? (
           <span className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             Checking...
           </span>
         ) : (
@@ -1056,7 +1056,7 @@ function Paraphraser() {
       <button onClick={paraphraseText} disabled={loading || !text.trim()} className={primaryBtn}>
         {loading ? (
           <span className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             Paraphrasing...
           </span>
         ) : (

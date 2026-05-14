@@ -484,7 +484,7 @@ export default function ScreenshotEditorWorkspace({ tool }: { tool: Tool }) {
           </div>
 
           {/* Canvas Area */}
-          <div className="relative border border-border rounded-xl overflow-auto bg-gray-100 dark:bg-gray-800 p-4">
+          <div className="relative border border-border rounded-xl overflow-auto bg-background-muted p-4">
             <div
               className="relative inline-block shadow-lg"
               style={{ width: imageSize.width * scale, height: imageSize.height * scale }}

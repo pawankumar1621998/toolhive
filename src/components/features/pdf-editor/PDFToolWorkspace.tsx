@@ -621,7 +621,7 @@ export function PDFToolWorkspace({ tool }: { tool: Tool }) {
                 >
                   {processing ? (
                     <>
-                      <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      <span className="h-4 w-4 rounded-full border-2 border-foreground-muted/30 border-t-foreground animate-spin" />
                       Processing…
                     </>
                   ) : (

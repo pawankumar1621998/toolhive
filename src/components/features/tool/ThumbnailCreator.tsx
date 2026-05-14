@@ -495,7 +495,7 @@ export function ThumbnailCreator() {
                       )}
                     >
                       <span
-                        className="w-3 h-3 rounded-full border border-white/20 flex-shrink-0"
+                        className="w-3 h-3 rounded-full border border-foreground-muted/20 flex-shrink-0"
                         style={
                           key === "gradient"
                             ? { background: cfg.swatch as string }

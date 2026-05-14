@@ -55,7 +55,6 @@ const NAV_SECTIONS: NavSectionConfig[] = [
     items: [
       { href: "/tools/pdf",        icon: FileText, label: "PDF Tools"   },
       { href: "/tools/image",      icon: Image,    label: "Image Tools" },
-      { href: "/tools/video",      icon: Video,    label: "Video Tools" },
       { href: "/tools/ai-writing", icon: Pen,      label: "AI Writing"  },
     ],
   },

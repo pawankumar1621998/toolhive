@@ -17,6 +17,7 @@ interface StatItem {
   description: string;
   icon: React.FC<{ className?: string }>;
   gradient: string;
+  glowClass: string;
 }
 
 const STATS: StatItem[] = [
@@ -27,6 +28,7 @@ const STATS: StatItem[] = [
     description: "Files processed by ToolHive users globally",
     icon: TrendingUp,
     gradient: "from-rose-500 to-orange-400",
+    glowClass: "hover:shadow-[0_8px_32px_oklch(65%_0.17_50_/_0.2)]",
   },
   {
     value: 200,
@@ -34,7 +36,8 @@ const STATS: StatItem[] = [
     label: "Free Tools",
     description: "Tools available with no subscription required",
     icon: Zap,
-    gradient: "from-violet-500 to-blue-400",
+    gradient: "from-violet-600 to-purple-500",
+    glowClass: "hover:shadow-[0_8px_32px_oklch(55%_0.22_285_/_0.2)]",
   },
   {
     value: 2,
@@ -43,6 +46,7 @@ const STATS: StatItem[] = [
     description: "Professionals and individuals using ToolHive",
     icon: Users,
     gradient: "from-emerald-500 to-teal-400",
+    glowClass: "hover:shadow-[0_8px_32px_oklch(70%_0.16_160_/_0.2)]",
   },
   {
     value: 99.9,
@@ -51,6 +55,7 @@ const STATS: StatItem[] = [
     description: "Reliable availability when you need it most",
     icon: Clock,
     gradient: "from-sky-500 to-cyan-400",
+    glowClass: "hover:shadow-[0_8px_32px_oklch(60%_0.18_195_/_0.2)]",
   },
 ];
 
@@ -82,7 +87,6 @@ function useAnimatedCounter(
       if (startRef.current === null) startRef.current = timestamp;
       const elapsed = timestamp - startRef.current;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       const next = eased * target;
       setCurrent(Number.isInteger(target) ? Math.floor(next) : Math.round(next * 10) / 10);
@@ -103,9 +107,7 @@ function useAnimatedCounter(
 }
 
 // ─────────────────────────────────────────────
-// Stat card
-// Mobile: horizontal layout (icon left, text+number right) with divider below
-// Desktop: centered vertical layout (unchanged)
+// Premium StatCard — glass morphism with animated glow
 // ─────────────────────────────────────────────
 
 function StatCard({
@@ -113,13 +115,11 @@ function StatCard({
   active,
   shouldReduce,
   index,
-  isLast,
 }: {
   item: StatItem;
   active: boolean;
   shouldReduce: boolean;
   index: number;
-  isLast: boolean;
 }) {
   const count = useAnimatedCounter(item.value, 1800, active, shouldReduce);
   const displayValue = Number.isInteger(item.value)
@@ -129,72 +129,101 @@ function StatCard({
   const Icon = item.icon;
 
   return (
-    <>
-      <motion.div
-        initial={shouldReduce ? undefined : { opacity: 0, y: 24 }}
-        animate={active ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
-        transition={
-          shouldReduce
-            ? undefined
-            : {
-                duration: 0.5,
-                delay: index * 0.1,
-                ease: [0.22, 0.61, 0.36, 1] as [number, number, number, number],
-              }
-        }
+    <motion.div
+      initial={shouldReduce ? undefined : { opacity: 0, y: 28 }}
+      animate={active ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
+      transition={
+        shouldReduce
+          ? undefined
+          : {
+              duration: 0.55,
+              delay: index * 0.1,
+              ease: [0.22, 0.61, 0.36, 1] as [number, number, number, number],
+            }
+      }
+      className={clsx(
+        "relative rounded-2xl overflow-hidden",
+        "border border-border/50 bg-card/80 backdrop-blur-md",
+        "transition-all duration-300",
+        "hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/10",
+        item.glowClass,
+        // Mobile: horizontal flex
+        "flex flex-row items-center gap-4 p-5 sm:p-6 sm:flex-col sm:items-center sm:gap-3 sm:p-8 lg:p-8"
+      )}
+      role="listitem"
+    >
+      {/* Background gradient accent */}
+      <div
         className={clsx(
-          "relative rounded-2xl",
-          "glass-card border border-card-border",
-          "transition-all duration-250 hover:-translate-y-1 hover:shadow-xl",
-          // Mobile: horizontal flex layout
-          "flex flex-row items-center gap-4 p-5 sm:p-6",
-          // sm+: override to centered vertical layout
-          "sm:flex-col sm:items-center sm:gap-4 sm:p-6 sm:p-8 lg:p-8"
+          "pointer-events-none absolute inset-0 rounded-2xl opacity-0",
+          "group-hover:opacity-100 transition-opacity duration-300",
+          `bg-gradient-to-br ${item.gradient}`
         )}
-        role="listitem"
+        aria-hidden="true"
       >
+        <div className="absolute inset-0 rounded-2xl bg-card/95 backdrop-blur-md" />
+      </div>
+
+      {/* Top accent line */}
+      <div
+        className={clsx(
+          "absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl",
+          `bg-gradient-to-r ${item.gradient}`
+        )}
+        aria-hidden="true"
+      />
+
+      {/* Content */}
+      <div className="relative flex flex-row sm:flex-col items-center sm:items-center gap-4 sm:gap-3 w-full sm:w-auto">
         {/* Icon */}
         <div
           className={clsx(
-            "flex shrink-0 items-center justify-center rounded-xl",
-            "h-12 w-12",
+            "relative flex shrink-0 items-center justify-center rounded-2xl",
+            "h-14 w-14 sm:h-15 sm:w-15",
             `bg-gradient-to-br ${item.gradient}`,
-            "shadow-md"
+            "shadow-lg"
           )}
+          style={{ width: "3.75rem", height: "3.75rem" }}
           aria-hidden="true"
         >
-          <Icon className="h-6 w-6 text-white" />
+          <Icon className="h-7 w-7 text-white" />
+          {/* Glow ring */}
+          <div
+            className={clsx(
+              "absolute inset-0 rounded-2xl opacity-0",
+              "group-hover:opacity-100 transition-opacity duration-300",
+              `bg-gradient-to-br ${item.gradient} blur-xl`
+            )}
+            style={{ transform: "scale(1.3)" }}
+          />
         </div>
 
-        {/* Number + label + description */}
-        <div className="flex-1 sm:text-center">
+        {/* Number + label */}
+        <div className="flex-1 sm:flex-none sm:text-center">
           {/* Big animated number */}
           <p
-            className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gradient tabular-nums leading-none"
+            className={clsx(
+              "text-3xl sm:text-4xl lg:text-5xl font-black text-foreground tabular-nums leading-none",
+              "bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text"
+            )}
             aria-label={`${item.value}${item.suffix} ${item.label}`}
           >
             {displayValue}
-            <span className="text-2xl sm:text-3xl lg:text-4xl">{item.suffix}</span>
+            <span className={clsx("text-2xl sm:text-3xl lg:text-4xl", `bg-gradient-to-r ${item.gradient} bg-clip-text text-transparent`)}>
+              {item.suffix}
+            </span>
           </p>
           {/* Label */}
-          <p className="mt-2 text-sm sm:text-base font-semibold text-foreground leading-snug">
+          <p className="mt-2 text-sm sm:text-base font-bold text-foreground leading-snug sm:text-center">
             {item.label}
           </p>
-          {/* Description — visible on sm+ only to keep mobile cards compact */}
+          {/* Description */}
           <p className="hidden sm:block mt-1 text-sm text-foreground-muted max-w-[160px] mx-auto leading-snug">
             {item.description}
           </p>
         </div>
-      </motion.div>
-
-      {/* Divider between cards on mobile (inside the grid flow) */}
-      {!isLast && (
-        <div
-          className="block sm:hidden h-px bg-border/60 col-span-1"
-          aria-hidden="true"
-        />
-      )}
-    </>
+      </div>
+    </motion.div>
   );
 }
 
@@ -202,15 +231,6 @@ function StatCard({
 // StatsSection
 // ─────────────────────────────────────────────
 
-/**
- * StatsSection — Client Component
- *
- * Mobile:  single-column stacked cards with horizontal layout + dividers
- * sm+:     3-column grid
- * lg:      4-column grid
- *
- * Animated number counters trigger when the section enters the viewport.
- */
 export function StatsSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const [active, setActive] = useState(false);
@@ -233,7 +253,7 @@ export function StatsSection() {
           observer.disconnect();
         }
       },
-      { threshold: 0.15 } // lower threshold so mobile triggers before fully in view
+      { threshold: 0.15 }
     );
 
     observer.observe(el);
@@ -255,19 +275,21 @@ export function StatsSection() {
         className="absolute inset-0 -z-10"
         style={{
           backgroundImage: [
-            "radial-gradient(ellipse at 20% 50%, oklch(55% 0.22 285 / 0.07) 0%, transparent 60%)",
-            "radial-gradient(ellipse at 80% 50%, oklch(62% 0.18 195 / 0.06) 0%, transparent 60%)",
+            "radial-gradient(ellipse at 15% 50%, oklch(55% 0.22 285 / var(--stats-violet-opacity, 0.18)) 0%, transparent 60%)",
+            "radial-gradient(ellipse at 85% 50%, oklch(60% 0.18 195 / var(--stats-cyan-opacity, 0.15)) 0%, transparent 60%)",
+            "radial-gradient(ellipse at 50% 80%, oklch(65% 0.17 50 / var(--stats-orange-opacity, 0.12)) 0%, transparent 50%)",
           ].join(", "),
         }}
         aria-hidden="true"
       />
-      {/* Top/bottom border accents */}
+
+      {/* Top/bottom gradient border accents */}
       <div
-        className="absolute inset-x-0 top-0 h-px bg-gradient-brand opacity-20"
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent"
         aria-hidden="true"
       />
       <div
-        className="absolute inset-x-0 bottom-0 h-px bg-gradient-brand opacity-20"
+        className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent"
         aria-hidden="true"
       />
 
@@ -276,13 +298,13 @@ export function StatsSection() {
         <div className="text-center mb-10 sm:mb-12">
           <motion.h2
             id="stats-heading"
-            initial={shouldReduce ? undefined : { opacity: 0, y: 16 }}
-            animate={active ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+            initial={shouldReduce ? undefined : { opacity: 0, y: 18 }}
+            animate={active ? { opacity: 1, y: 0 } : { opacity: 0, y: 18 }}
             transition={{
               duration: 0.5,
               ease: [0.22, 0.61, 0.36, 1] as [number, number, number, number],
             }}
-            className="text-2xl sm:text-3xl font-bold text-foreground"
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground tracking-tight"
           >
             Trusted by millions worldwide
           </motion.h2>
@@ -294,23 +316,15 @@ export function StatsSection() {
               delay: 0.08,
               ease: [0.22, 0.61, 0.36, 1] as [number, number, number, number],
             }}
-            className="mt-2 text-sm text-foreground-muted"
+            className="mt-2 text-sm sm:text-base text-foreground-muted"
           >
             Numbers that speak for themselves
           </motion.p>
         </div>
 
-        {/*
-         * Stats grid
-         * Mobile:  1 column (stacked, each card has horizontal layout)
-         * sm:      2 columns
-         * lg:      4 columns
-         *
-         * Note: dividers are rendered as sibling elements inside StatCard,
-         * using col-span-1 so they slot between cards in the single-column flow.
-         */}
+        {/* Stats grid */}
         <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5"
           role="list"
           aria-label="Platform statistics"
         >
@@ -321,7 +335,6 @@ export function StatsSection() {
               active={active}
               shouldReduce={shouldReduce}
               index={index}
-              isLast={index === STATS.length - 1}
             />
           ))}
         </div>

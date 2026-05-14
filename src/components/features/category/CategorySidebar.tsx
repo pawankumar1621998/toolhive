@@ -21,13 +21,10 @@ import type { ToolFilter } from "./ToolsGrid";
 const SUB_CATEGORIES: Record<ToolCategory, string[]> = {
   pdf: ["Convert", "Compress", "Edit", "Merge", "Split", "Security"],
   image: ["Compress", "Resize", "Convert", "Enhance", "Background"],
-  video: ["Compress", "Trim", "Convert", "Audio", "Subtitle"],
   "ai-writing": ["Summarize", "Translate", "Rewrite", "Grammar", "Generate"],
   converter: ["Document", "Image", "Video", "Audio", "Archive"],
   resume: ["Builder", "Templates", "Analyzer", "Skills", "Cover Letter", "ATS"],
   calculator: ["Finance", "Health", "Math", "Date", "Shopping"],
-  "contact-creator": ["Bio", "Links", "Templates", "DM", "Card"],
-  "social-media": ["Hashtag", "Bio", "Caption", "Post", "Schedule", "Meme"],
   generators: ["Random", "Name", "Code", "Color", "Password", "QR Code"],
   "text-writing": ["Counter", "Case", "Diff", "Grammar", "Summarize", "Paraphrase"],
   utilities: ["Timer", "Lookup", "URL", "Color", "QR", "Hash"],

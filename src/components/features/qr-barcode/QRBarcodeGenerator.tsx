@@ -258,7 +258,7 @@ export function QRBarcodeGenerator() {
               <button onClick={generateQR} disabled={qrLoading}
                 className="w-full py-3 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
                 style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}>
-                {qrLoading ? <><span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating…</> : <><QrCode className="h-4 w-4" />Generate QR Code</>}
+                {qrLoading ? <><span className="h-4 w-4 border-2 border-foreground-muted/30 border-t-foreground rounded-full animate-spin" />Generating…</> : <><QrCode className="h-4 w-4" />Generate QR Code</>}
               </button>
             </>
           )}
@@ -298,7 +298,7 @@ export function QRBarcodeGenerator() {
               <button onClick={generateBarcode} disabled={barcodeLoading || !barcodeText.trim()}
                 className="w-full py-3 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
                 style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}>
-                {barcodeLoading ? <><span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Generating…</> : <><BarChart2 className="h-4 w-4" />Generate Barcode</>}
+                {barcodeLoading ? <><span className="h-4 w-4 border-2 border-foreground-muted/30 border-t-foreground rounded-full animate-spin" />Generating…</> : <><BarChart2 className="h-4 w-4" />Generate Barcode</>}
               </button>
             </>
           )}
@@ -317,7 +317,7 @@ export function QRBarcodeGenerator() {
                 <>
                   {qrImage ? (
                     <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-4">
-                      <div className="p-3 bg-white rounded-2xl shadow-xl">
+                      <div className="p-3 bg-card rounded-2xl shadow-xl">
                         <img src={qrImage} alt="QR Code" className="block" style={{ width: qrSize, height: qrSize, maxWidth: "100%" }} />
                       </div>
                       <div className="flex flex-wrap gap-2 justify-center">
@@ -351,7 +351,7 @@ export function QRBarcodeGenerator() {
                 <>
                   {barcodeImage ? (
                     <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-4 w-full">
-                      <div className="p-4 bg-white rounded-2xl shadow-xl w-full flex justify-center">
+                      <div className="p-4 bg-card rounded-2xl shadow-xl w-full flex justify-center">
                         <img src={barcodeImage} alt="Barcode" className="max-w-full" />
                       </div>
                       <div className="flex flex-wrap gap-2 justify-center">

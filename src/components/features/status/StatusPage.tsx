@@ -147,7 +147,7 @@ export function StatusPage() {
             <button
               onClick={fetchHealth}
               disabled={isChecking}
-              className="flex items-center gap-2 rounded-xl bg-white/80 dark:bg-black/30 px-4 py-2 text-sm font-semibold text-foreground hover:bg-white dark:hover:bg-black/40 disabled:opacity-50 transition-all shadow-sm shrink-0"
+              className="flex items-center gap-2 rounded-xl bg-card/80 backdrop-blur-sm px-4 py-2 text-sm font-semibold text-foreground hover:opacity-80 disabled:opacity-50 transition-all shadow-sm shrink-0"
             >
               <RefreshCw className={clsx("h-4 w-4", isChecking && "animate-spin")} />
               {isChecking ? "Checking…" : "Refresh"}
@@ -176,7 +176,7 @@ export function StatusPage() {
             </p>
             <ul className="space-y-2">
               {health.criticalIssues.map((issue, i) => (
-                <li key={i} className="flex items-start gap-2 text-xs text-foreground-muted bg-white/50 dark:bg-black/20 rounded-xl p-3">
+                <li key={i} className="flex items-start gap-2 text-xs text-foreground-muted bg-background-subtle/50 rounded-xl p-3">
                   <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0 mt-0.5" />
                   {issue}
                 </li>

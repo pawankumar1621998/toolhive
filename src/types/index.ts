@@ -7,13 +7,10 @@
 export type ToolCategory =
   | "pdf"
   | "image"
-  | "video"
   | "ai-writing"
   | "converter"
   | "resume"
   | "calculator"
-  | "contact-creator"
-  | "social-media"
   | "generators"
   | "text-writing"
   | "utilities"

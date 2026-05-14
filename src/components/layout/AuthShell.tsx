@@ -239,7 +239,7 @@ export function AuthShell({ children }: AuthShellProps) {
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <Link href="/" className="flex items-center gap-3 group w-fit">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 border border-white/20 shadow-lg backdrop-blur-sm transition-transform duration-200 group-hover:scale-105">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 border border-primary/30 shadow-lg backdrop-blur-sm transition-transform duration-200 group-hover:scale-105">
               <Zap className="h-5 w-5 text-white" />
             </div>
             <span className="text-2xl font-bold text-white tracking-tight">
@@ -273,7 +273,7 @@ export function AuthShell({ children }: AuthShellProps) {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.4, delay: 0.3 + i * 0.1, ease: "easeOut" }}
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15 border border-white/20 text-white">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 border border-primary/30 text-white">
                   {feature.icon}
                 </span>
                 <span className="text-sm text-white/85 font-medium">

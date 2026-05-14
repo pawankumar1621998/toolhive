@@ -13,10 +13,10 @@ import {
 // ─── Theme Colors ───────────────────────────────────────────────────────────
 const ACCENT = "from-orange-500 to-rose-500";
 const ACCENT_SOLID = "bg-gradient-to-r from-orange-500 to-rose-500";
-const TEXT_PRIMARY = "text-slate-900";
-const TEXT_SECONDARY = "text-slate-500";
-const BG_CARD = "bg-white";
-const BORDER = "border-slate-200";
+const TEXT_PRIMARY = "text-foreground";
+const TEXT_SECONDARY = "text-foreground-muted";
+const BG_CARD = "bg-card";
+const BORDER = "border-border";
 
 // ─── Stats Card ─────────────────────────────────────────────────────────────
 function StatCard({ label, value, icon: Icon, trend }: { label: string; value: string | number; icon: any; trend?: string }) {
@@ -32,8 +32,8 @@ function StatCard({ label, value, icon: Icon, trend }: { label: string; value: s
           </span>
         )}
       </div>
-      <p className="text-2xl font-bold text-slate-900 mb-0.5">{value}</p>
-      <p className="text-sm text-slate-500">{label}</p>
+      <p className="text-2xl font-bold text-foreground mb-0.5">{value}</p>
+      <p className="text-sm text-foreground-muted">{label}</p>
     </div>
   );
 }
@@ -48,14 +48,14 @@ function NavItem({ icon: Icon, label, active, onClick, badge }: {
       className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
         active
           ? "bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-sm"
-          : "text-slate-600 hover:bg-slate-100"
+          : "text-foreground-muted hover:bg-background-subtle"
       }`}
     >
       <Icon className="w-5 h-5 flex-shrink-0" />
       <span className="flex-1 text-left">{label}</span>
       {badge !== undefined && badge > 0 && (
         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-          active ? "bg-white/20 text-white" : "bg-orange-100 text-orange-600"
+          active ? "bg-card/20 text-white" : "bg-orange-100 text-orange-600"
         }`}>
           {badge}
         </span>
@@ -76,7 +76,7 @@ function RuleCard({ rule, onToggle, onEdit, onDelete }: {
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-slate-900">{rule.name}</h3>
+            <h3 className="font-semibold text-foreground">{rule.name}</h3>
             <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
               rule.triggerType === "comment_keyword"
                 ? "bg-blue-100 text-blue-600"
@@ -89,12 +89,12 @@ function RuleCard({ rule, onToggle, onEdit, onDelete }: {
           </div>
           <div className="flex flex-wrap gap-1 mb-2">
             {rule.keywords.slice(0, 4).map((kw) => (
-              <span key={kw} className="text-[11px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">
+              <span key={kw} className="text-[11px] px-2 py-0.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-full">
                 {kw}
               </span>
             ))}
             {rule.keywords.length > 4 && (
-              <span className="text-[11px] text-slate-400">+{rule.keywords.length - 4}</span>
+              <span className="text-[11px] text-foreground-subtle">+{rule.keywords.length - 4}</span>
             )}
           </div>
         </div>
@@ -105,20 +105,20 @@ function RuleCard({ rule, onToggle, onEdit, onDelete }: {
           {rule.enabled ? (
             <ToggleRight className="w-8 h-8 text-green-500" />
           ) : (
-            <ToggleLeft className="w-8 h-8 text-slate-300" />
+            <ToggleLeft className="w-8 h-8 text-foreground-subtle" />
           )}
         </button>
       </div>
 
-      <div className="bg-slate-50 rounded-xl p-3 mb-3 border border-slate-100">
-        <p className="text-xs text-slate-400 mb-1">Auto-Reply Message:</p>
-        <p className="text-sm text-slate-700 line-clamp-2">
-          {rule.dmMessage || <span className="text-slate-400 italic">No message set</span>}
+      <div className="bg-background-subtle rounded-xl p-3 mb-3 border border-border">
+        <p className="text-xs text-foreground-subtle mb-1">Auto-Reply Message:</p>
+        <p className="text-sm text-foreground line-clamp-2">
+          {rule.dmMessage || <span className="text-foreground-subtle italic">No message set</span>}
         </p>
       </div>
 
-      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-        <div className="flex items-center gap-3 text-xs text-slate-400">
+      <div className="flex items-center justify-between pt-3 border-t border-border">
+        <div className="flex items-center gap-3 text-xs text-foreground-subtle">
           <span className="flex items-center gap-1">
             <Zap className="w-3 h-3" />
             {rule.triggeredCount ?? 0} triggers
@@ -131,10 +131,10 @@ function RuleCard({ rule, onToggle, onEdit, onDelete }: {
           )}
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => onEdit(rule)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition">
+          <button onClick={() => onEdit(rule)} className="p-1.5 rounded-lg hover:bg-background-subtle text-foreground-muted hover:text-foreground transition">
             <Edit3 className="w-4 h-4" />
           </button>
-          <button onClick={() => onDelete(rule.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition">
+          <button onClick={() => onDelete(rule.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-foreground-subtle hover:text-red-500 transition">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -153,7 +153,7 @@ function LeadCard({ lead }: { lead: { username: string; comment: string; keyword
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-slate-900">@{lead.username}</span>
+            <span className="font-semibold text-foreground">@{lead.username}</span>
             <span className="text-[10px] px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded-full font-medium">
               {lead.keyword}
             </span>
@@ -163,8 +163,8 @@ function LeadCard({ lead }: { lead: { username: string; comment: string; keyword
               </span>
             )}
           </div>
-          <p className="text-sm text-slate-600 mb-1 line-clamp-1">"{lead.comment}"</p>
-          <span className="text-[10px] text-slate-400">{lead.time}</span>
+          <p className="text-sm text-foreground-muted mb-1 line-clamp-1">"{lead.comment}"</p>
+          <span className="text-[10px] text-foreground-subtle">{lead.time}</span>
         </div>
       </div>
     </div>
@@ -214,30 +214,30 @@ function CreateRuleForm({ onClose, editRule, onSave }: {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl p-6 w-full max-w-xl shadow-2xl">
+      <div className="bg-card rounded-3xl p-6 w-full max-w-xl shadow-2xl">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-bold text-slate-900">
+          <h2 className="text-xl font-bold text-foreground">
             {editRule ? "Edit Automation Rule" : "Create New Rule"}
           </h2>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400">
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-background-subtle text-foreground-muted">
             ✕
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-slate-700 mb-1.5 block">Rule Name</label>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Rule Name</label>
             <input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="e.g. Product Inquiry Auto-Reply"
-              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400"
+              className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400"
               required
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium text-slate-700 mb-1.5 block">Trigger Type</label>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Trigger Type</label>
             <div className="grid grid-cols-3 gap-2">
               {[
                 { value: "comment_keyword", label: "💬 Comment", desc: "When someone comments" },
@@ -251,36 +251,36 @@ function CreateRuleForm({ onClose, editRule, onSave }: {
                   className={`p-3 rounded-xl border text-left transition-all ${
                     form.triggerType === type.value
                       ? "border-orange-400 bg-orange-50 ring-2 ring-orange-500/20"
-                      : "border-slate-200 hover:border-slate-300"
+                      : "border-border hover:border-border"
                   }`}
                 >
-                  <p className="text-sm font-medium text-slate-900">{type.label}</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">{type.desc}</p>
+                  <p className="text-sm font-medium text-foreground">{type.label}</p>
+                  <p className="text-[10px] text-foreground-subtle mt-0.5">{type.desc}</p>
                 </button>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-slate-700 mb-1.5 block">
-              Keywords <span className="text-slate-400 font-normal">(comma separated)</span>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">
+              Keywords <span className="text-foreground-subtle font-normal">(comma separated)</span>
             </label>
             <input
               value={form.keywords}
               onChange={(e) => setForm({ ...form, keywords: e.target.value })}
               placeholder="price, buy, discount, order, shipping"
-              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400"
+              className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400"
               required
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium text-slate-700 mb-1.5 block">Auto-Reply DM Message</label>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Auto-Reply DM Message</label>
             <textarea
               value={form.dmMessage}
               onChange={(e) => setForm({ ...form, dmMessage: e.target.value })}
               placeholder="Hi! Thanks for reaching out. Here's our catalog link..."
-              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400"
+              className="w-full border border-border rounded-xl px-4 py-2.5 text-sm h-24 resize-none focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400"
               required
             />
             <button
@@ -304,7 +304,7 @@ function CreateRuleForm({ onClose, editRule, onSave }: {
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition"
+              className="px-6 py-2.5 rounded-xl border border-border text-foreground-muted font-medium hover:bg-background-subtle transition"
             >
               Cancel
             </button>
@@ -384,10 +384,10 @@ export default function AutomationDashboard() {
           <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-orange-500 to-rose-500 flex items-center justify-center mb-8 shadow-xl shadow-orange-500/20">
             <Camera className="w-12 h-12 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">
+          <h1 className="text-4xl font-bold text-foreground mb-4">
             Go Viral with <span className="bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent">DM Automation</span>
           </h1>
-          <p className="text-lg text-slate-500 mb-8 max-w-xl">
+          <p className="text-lg text-foreground-muted mb-8 max-w-xl">
             Automatically reply to comments and DMs with personalized messages. Turn every follower into a customer.
           </p>
 
@@ -397,9 +397,9 @@ export default function AutomationDashboard() {
               { icon: Users, label: "10k+ Creators" },
               { icon: TrendingUp, label: "5M+ Followers" },
             ].map(({ icon: Icon, label }) => (
-              <div key={label} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+              <div key={label} className="bg-card rounded-2xl p-4 border border-border shadow-sm">
                 <Icon className="w-6 h-6 text-orange-500 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-slate-900">{label}</p>
+                <p className="text-sm font-semibold text-foreground">{label}</p>
               </div>
             ))}
           </div>
@@ -416,7 +416,7 @@ export default function AutomationDashboard() {
             Connect Instagram Free
           </button>
 
-          <div className="flex items-center gap-4 mt-6 text-sm text-slate-400">
+          <div className="flex items-center gap-4 mt-6 text-sm text-foreground-subtle">
             <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-green-500" /> No Credit Card</span>
             <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-green-500" /> Instant Setup</span>
             <span className="flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-green-500" /> Meta Verified</span>
@@ -428,35 +428,35 @@ export default function AutomationDashboard() {
 
   // ── Connected Dashboard ───────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-background-subtle flex">
 
       {/* ── Sidebar ── */}
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col fixed h-full overflow-y-auto">
+      <aside className="w-64 bg-card border-r border-border flex flex-col fixed h-full overflow-y-auto">
         {/* Logo */}
-        <div className="p-5 border-b border-slate-100">
+        <div className="p-5 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-rose-500 flex items-center justify-center shadow-md">
               <Camera className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="font-bold text-slate-900 text-sm">ToolHive</p>
-              <p className="text-[10px] text-slate-400">Instagram Automation</p>
+              <p className="font-bold text-foreground text-sm">ToolHive</p>
+              <p className="text-[10px] text-foreground-subtle">Instagram Automation</p>
             </div>
           </div>
         </div>
 
         {/* Account */}
         {activeAccount && (
-          <div className="p-4 border-b border-slate-100">
-            <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-3">
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center gap-3 bg-background-subtle rounded-xl p-3">
               <img
                 src={activeAccount.profile_picture_url || `https://ui-avatars.com/api/?name=${activeAccount.username}&background=ff6b35&color=fff`}
                 className="w-10 h-10 rounded-full object-cover"
                 alt=""
               />
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-slate-900 text-sm truncate">{activeAccount.username}</p>
-                <p className="text-[10px] text-slate-400">{activeAccount.followers_count?.toLocaleString()} followers</p>
+                <p className="font-semibold text-foreground text-sm truncate">{activeAccount.username}</p>
+                <p className="text-[10px] text-foreground-subtle">{activeAccount.followers_count?.toLocaleString()} followers</p>
               </div>
               <div className="w-2 h-2 rounded-full bg-green-400"></div>
             </div>
@@ -473,7 +473,7 @@ export default function AutomationDashboard() {
         </nav>
 
         {/* Bottom */}
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-4 border-t border-border">
           <button
             onClick={async () => {
               await fetch("/api/auth/instagram/connect?action=disconnect");
@@ -496,8 +496,8 @@ export default function AutomationDashboard() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-                  <p className="text-slate-500 text-sm mt-0.5">Welcome back! Here's your automation overview.</p>
+                  <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+                  <p className="text-foreground-muted text-sm mt-0.5">Welcome back! Here's your automation overview.</p>
                 </div>
                 <button
                   onClick={() => { setEditRule(null); setShowCreateForm(true); }}
@@ -518,14 +518,14 @@ export default function AutomationDashboard() {
 
               {/* Quick Actions */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-100 to-rose-100 flex items-center justify-center">
                       <RefreshCw className={`w-6 h-6 text-orange-500 ${isCheckingComments ? "animate-spin" : ""}`} />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-slate-900">Check Comments</h3>
-                      <p className="text-sm text-slate-400">Scan recent comments for triggers</p>
+                      <h3 className="font-semibold text-foreground">Check Comments</h3>
+                      <p className="text-sm text-foreground-subtle">Scan recent comments for triggers</p>
                     </div>
                   </div>
                   <button
@@ -538,14 +538,14 @@ export default function AutomationDashboard() {
                   </button>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center">
                       <Sparkles className="w-6 h-6 text-blue-500" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-slate-900">Create Rule with AI</h3>
-                      <p className="text-sm text-slate-400">Let AI build your automation</p>
+                      <h3 className="font-semibold text-foreground">Create Rule with AI</h3>
+                      <p className="text-sm text-foreground-subtle">Let AI build your automation</p>
                     </div>
                   </div>
                   <button
@@ -559,9 +559,9 @@ export default function AutomationDashboard() {
               </div>
 
               {/* Recent Triggers */}
-              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+              <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-slate-900">Recent Activity</h3>
+                  <h3 className="font-semibold text-foreground">Recent Activity</h3>
                   <button onClick={() => setPage("leads")} className="text-sm text-orange-500 hover:text-orange-600 font-medium flex items-center gap-1">
                     View all <ChevronRight className="w-4 h-4" />
                   </button>
@@ -580,8 +580,8 @@ export default function AutomationDashboard() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold text-slate-900">Automation Rules</h1>
-                  <p className="text-slate-500 text-sm mt-0.5">{rules.length} rules configured</p>
+                  <h1 className="text-2xl font-bold text-foreground">Automation Rules</h1>
+                  <p className="text-foreground-muted text-sm mt-0.5">{rules.length} rules configured</p>
                 </div>
                 <button
                   onClick={() => { setEditRule(null); setShowCreateForm(true); }}
@@ -597,28 +597,28 @@ export default function AutomationDashboard() {
                 {["All", "Active", "Paused"].map((filter) => (
                   <button
                     key={filter}
-                    className="px-4 py-2 rounded-xl text-sm font-medium bg-white border border-slate-200 text-slate-600 hover:border-orange-300 hover:text-orange-500 transition"
+                    className="px-4 py-2 rounded-xl text-sm font-medium bg-card border border-border text-foreground-muted hover:border-orange-300 hover:text-orange-500 transition"
                   >
                     {filter}
                   </button>
                 ))}
                 <div className="flex-1" />
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-subtle" />
                   <input
                     placeholder="Search rules..."
-                    className="pl-9 pr-4 py-2 rounded-xl text-sm bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                    className="pl-9 pr-4 py-2 rounded-xl text-sm bg-card border border-border focus:outline-none focus:ring-2 focus:ring-orange-500/20"
                   />
                 </div>
               </div>
 
               {rules.length === 0 ? (
-                <div className="bg-white rounded-2xl p-16 border border-slate-200 text-center">
+                <div className="bg-card rounded-2xl p-16 border border-border text-center">
                   <div className="w-16 h-16 rounded-3xl bg-orange-50 flex items-center justify-center mx-auto mb-4">
                     <Zap className="w-8 h-8 text-orange-300" />
                   </div>
-                  <h3 className="font-semibold text-slate-900 mb-2">No automation rules yet</h3>
-                  <p className="text-slate-500 text-sm mb-6 max-w-sm mx-auto">
+                  <h3 className="font-semibold text-foreground mb-2">No automation rules yet</h3>
+                  <p className="text-foreground-muted text-sm mb-6 max-w-sm mx-auto">
                     Create your first rule to start automatically replying to comments and DMs.
                   </p>
                   <button
@@ -649,11 +649,11 @@ export default function AutomationDashboard() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold text-slate-900">Leads</h1>
-                  <p className="text-slate-500 text-sm mt-0.5">{mockLeads.length} potential customers collected</p>
+                  <h1 className="text-2xl font-bold text-foreground">Leads</h1>
+                  <p className="text-foreground-muted text-sm mt-0.5">{mockLeads.length} potential customers collected</p>
                 </div>
                 <div className="flex gap-2">
-                  <button className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 font-medium px-4 py-2 rounded-xl text-sm hover:border-orange-300 transition">
+                  <button className="flex items-center gap-2 bg-card border border-border text-foreground-muted font-medium px-4 py-2 rounded-xl text-sm hover:border-orange-300 transition">
                     <Filter className="w-4 h-4" /> Filter
                   </button>
                   <button className="flex items-center gap-2 bg-green-600 text-white font-medium px-4 py-2 rounded-xl text-sm hover:bg-green-700 transition">
@@ -681,8 +681,8 @@ export default function AutomationDashboard() {
           {page === "analytics" && (
             <div className="space-y-6">
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">Analytics</h1>
-                <p className="text-slate-500 text-sm mt-0.5">Track your automation performance</p>
+                <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
+                <p className="text-foreground-muted text-sm mt-0.5">Track your automation performance</p>
               </div>
 
               <div className="grid grid-cols-4 gap-4">
@@ -692,13 +692,13 @@ export default function AutomationDashboard() {
                 <StatCard label="Avg Response" value="2.3s" icon={TrendingUp} />
               </div>
 
-              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                <h3 className="font-semibold text-slate-900 mb-4">Weekly Performance</h3>
+              <div className="bg-card rounded-2xl p-6 border border-border shadow-sm">
+                <h3 className="font-semibold text-foreground mb-4">Weekly Performance</h3>
                 <div className="flex items-end gap-3 h-40">
                   {[65, 80, 45, 90, 75, 95, 60].map((h, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center gap-2">
                       <div className="w-full bg-gradient-to-t from-orange-500 to-rose-400 rounded-t-lg" style={{ height: `${h}%` }}></div>
-                      <span className="text-[10px] text-slate-400">{
+                      <span className="text-[10px] text-foreground-subtle">{
                         ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i]
                       }</span>
                     </div>
@@ -711,17 +711,17 @@ export default function AutomationDashboard() {
                   { label: "Top Keywords", items: ["price", "discount", "buy", "shipping", "order"] },
                   { label: "Top Rules", items: rules.slice(0, 5).map((r) => r.name) },
                 ].map(({ label, items }) => (
-                  <div key={label} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-                    <h3 className="font-semibold text-slate-900 mb-3">{label}</h3>
+                  <div key={label} className="bg-card rounded-2xl p-5 border border-border shadow-sm">
+                    <h3 className="font-semibold text-foreground mb-3">{label}</h3>
                     <div className="space-y-2">
                       {items.length > 0 ? items.map((item, i) => (
                         <div key={i} className="flex items-center gap-3 text-sm">
                           <span className="text-orange-500 font-bold text-xs">#{i + 1}</span>
-                          <span className="text-slate-700">{item}</span>
-                          <span className="ml-auto text-slate-400 text-xs">{Math.floor(Math.random() * 50) + 5} triggers</span>
+                          <span className="text-foreground">{item}</span>
+                          <span className="ml-auto text-foreground-subtle text-xs">{Math.floor(Math.random() * 50) + 5} triggers</span>
                         </div>
                       )) : (
-                        <p className="text-slate-400 text-sm">No data yet</p>
+                        <p className="text-foreground-subtle text-sm">No data yet</p>
                       )}
                     </div>
                   </div>
@@ -734,13 +734,13 @@ export default function AutomationDashboard() {
           {page === "settings" && (
             <div className="space-y-6">
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
-                <p className="text-slate-500 text-sm mt-0.5">Configure your automation preferences</p>
+                <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+                <p className="text-foreground-muted text-sm mt-0.5">Configure your automation preferences</p>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="p-5 border-b border-slate-100">
-                  <h3 className="font-semibold text-slate-900">Connected Account</h3>
+              <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+                <div className="p-5 border-b border-border">
+                  <h3 className="font-semibold text-foreground">Connected Account</h3>
                 </div>
                 {activeAccount && (
                   <div className="p-5 flex items-center gap-4">
@@ -750,9 +750,9 @@ export default function AutomationDashboard() {
                       alt=""
                     />
                     <div className="flex-1">
-                      <p className="font-semibold text-slate-900">{activeAccount.name}</p>
-                      <p className="text-slate-500 text-sm">@{activeAccount.username}</p>
-                      <p className="text-slate-400 text-xs mt-1">{activeAccount.followers_count?.toLocaleString()} followers</p>
+                      <p className="font-semibold text-foreground">{activeAccount.name}</p>
+                      <p className="text-foreground-muted text-sm">@{activeAccount.username}</p>
+                      <p className="text-foreground-subtle text-xs mt-1">{activeAccount.followers_count?.toLocaleString()} followers</p>
                     </div>
                     <button
                       onClick={async () => {
@@ -767,9 +767,9 @@ export default function AutomationDashboard() {
                 )}
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="p-5 border-b border-slate-100">
-                  <h3 className="font-semibold text-slate-900">Automation Preferences</h3>
+              <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+                <div className="p-5 border-b border-border">
+                  <h3 className="font-semibold text-foreground">Automation Preferences</h3>
                 </div>
                 <div className="p-5 space-y-4">
                   {[
@@ -779,12 +779,12 @@ export default function AutomationDashboard() {
                     { label: "Send email notification on trigger", enabled: false },
                   ].map((pref, i) => (
                     <div key={i} className="flex items-center justify-between">
-                      <span className="text-sm text-slate-700">{pref.label}</span>
+                      <span className="text-sm text-foreground">{pref.label}</span>
                       <button>
                         {pref.enabled ? (
                           <ToggleRight className="w-10 h-6 text-green-500" />
                         ) : (
-                          <ToggleLeft className="w-10 h-6 text-slate-300" />
+                          <ToggleLeft className="w-10 h-6 text-foreground-subtle" />
                         )}
                       </button>
                     </div>
@@ -792,9 +792,9 @@ export default function AutomationDashboard() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="p-5 border-b border-slate-100">
-                  <h3 className="font-semibold text-slate-900">API Configuration</h3>
+              <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+                <div className="p-5 border-b border-border">
+                  <h3 className="font-semibold text-foreground">API Configuration</h3>
                 </div>
                 <div className="p-5 space-y-3">
                   {[
@@ -802,9 +802,9 @@ export default function AutomationDashboard() {
                     { label: "INSTAGRAM_APP_SECRET", value: "••••••••••••" },
                     { label: "INSTAGRAM_REDIRECT_URI", value: "https://toolhive-red.vercel.app" },
                   ].map(({ label, value }) => (
-                    <div key={label} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
-                      <span className="text-xs text-slate-400 font-mono">{label}</span>
-                      <span className="text-xs text-slate-600 font-mono">{value}</span>
+                    <div key={label} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                      <span className="text-xs text-foreground-subtle font-mono">{label}</span>
+                      <span className="text-xs text-foreground-muted font-mono">{value}</span>
                     </div>
                   ))}
                 </div>

@@ -464,7 +464,7 @@ function TimelineGenerator() {
             {events.map((event, i) => (
               <div key={i} className={clsx(resultCard, "relative")}>
                 <div className="absolute -left-12 top-4 w-6 h-6 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 border-2 border-background flex items-center justify-center">
-                  <div className="w-2 h-2 rounded-full bg-white" />
+                  <div className="w-2 h-2 rounded-full bg-foreground" />
                 </div>
                 <div className="text-xs font-bold text-orange-500 mb-1">{event.year}</div>
                 <div className="text-sm font-semibold text-foreground mb-1">{event.title}</div>

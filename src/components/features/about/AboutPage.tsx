@@ -849,7 +849,7 @@ function JoinUsSection({ shouldReduce }: { shouldReduce: boolean }) {
             transition={{ duration: 0.45, ease: EASE_OUT }}
             className={clsx(
               "flex h-16 w-16 items-center justify-center rounded-2xl",
-              "bg-white/20 shadow-xl backdrop-blur-sm border border-white/30"
+              "bg-primary/20 shadow-xl backdrop-blur-sm border border-primary/30"
             )}
             aria-hidden="true"
           >

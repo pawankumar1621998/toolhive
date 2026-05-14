@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { notFound } from "next/navigation";
 import { CategoryHero } from "@/components/features/category/CategoryHero";
 import { CategoryPageClient } from "@/components/features/category/CategoryPageClient";
 import { ToolPageSidebar } from "@/components/features/tool/ToolPageSidebar";
-import { TOOL_CATEGORIES } from "@/config/tools";
+import { TOOL_CATEGORIES } from "@/config/navigation";
 import type { ToolCategory } from "@/types";
 
 // ─────────────────────────────────────────────
@@ -26,17 +27,35 @@ export async function generateMetadata({
   const { category } = await params;
   const cat = TOOL_CATEGORIES.find((c) => c.id === category);
   if (!cat) return {};
+
+  const canonicalUrl = `https://toolhive-red.vercel.app/tools/${category}`;
+
   return {
     title: `${cat.label} — Free Online Tools | ToolHive`,
     description: cat.description,
-    keywords: [cat.label, "free tools", "online tools", "ToolHive", category],
+    keywords: [cat.label, "free tools", "online tools", "ToolHive", category, "no signup"],
     openGraph: {
       title: `${cat.label} | ToolHive`,
       description: cat.description,
       type: "website",
+      url: canonicalUrl,
+      siteName: "ToolHive",
+      images: [
+        {
+          url: "/og-image.png",
+          width: 1200,
+          height: 630,
+          alt: `${cat.label} — Free Online Tools by ToolHive`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${cat.label} | ToolHive`,
+      description: cat.description,
     },
     alternates: {
-      canonical: `/tools/${category}`,
+      canonical: canonicalUrl,
     },
   };
 }
@@ -45,22 +64,49 @@ export async function generateMetadata({
 // JSON-LD structured data
 // ─────────────────────────────────────────────
 
-function CategoryJsonLd({
-  cat,
-}: {
-  cat: (typeof TOOL_CATEGORIES)[number];
-}) {
-  const jsonLd = {
+function CategoryJsonLd({ cat }: { cat: (typeof TOOL_CATEGORIES)[number] }) {
+  const catUrl = `https://toolhive-red.vercel.app/tools/${cat.id}`;
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://toolhive-red.vercel.app",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: cat.label,
+        item: catUrl,
+      },
+    ],
+  };
+
+  const collectionJsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: `${cat.label} — ToolHive`,
     description: cat.description,
+    url: catUrl,
   };
+
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />
+    <>
+      <Script
+        id="ld-category-breadcrumb"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <Script
+        id="ld-category"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+      />
+    </>
   );
 }
 

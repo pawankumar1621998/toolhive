@@ -962,25 +962,53 @@ function AIEmailWriter() {
 
 const PLATFORMS = ["Instagram", "Twitter/X", "LinkedIn", "TikTok", "Facebook"] as const;
 type Platform = (typeof PLATFORMS)[number];
-const MOODS = ["Inspiring", "Funny", "Educational", "Promotional", "Personal", "Question"];
-const EMOJI_STYLES = ["None", "Minimal", "Expressive"];
+const IG_POST_TYPES = ["Reels", "Post", "Carousel", "Story"] as const;
+const BRAND_VOICES = ["Professional", "Fun & Playful", "Inspirational", "Educational", "Relatable", "Bold & Edgy"] as const;
+const IG_CTA_TYPES = ["Link in Bio", "Swipe Up", "Comment", "Save", "Share", "Tag Friend"] as const;
+const EMOJI_STYLES = ["None", "Minimal", "Expressive"] as const;
 
 function SocialCaption() {
   const [platform, setPlatform] = useState<Platform>("Instagram");
   const [topic, setTopic] = useState("");
-  const [mood, setMood] = useState("Inspiring");
-  const [hashtags, setHashtags] = useState(true);
-  const [emojiStyle, setEmojiStyle] = useState("Minimal");
-  const { output, loading: isLoading, error, generate, clear } = useAIGenerate("social-caption");
+  const [postType, setPostType] = useState<typeof IG_POST_TYPES[number]>("Reels");
+  const [brandVoice, setBrandVoice] = useState<typeof BRAND_VOICES[number]>("Professional");
+  const [ctaType, setCtaType] = useState<typeof IG_CTA_TYPES[number]>("Link in Bio");
+  const [emojiStyle, setEmojiStyle] = useState<typeof EMOJI_STYLES[number]>("Minimal");
+  const [selectedCaption, setSelectedCaption] = useState(0);
+  const { output, loading: isLoading, error, generate } = useAIGenerate("social-caption");
 
-  // Parse output into individual captions (AI returns them separated by numbered list or blank lines)
-  const captions = output
-    ? output.split(/\n{2,}|\n(?=\d+\.)/).map((c) => c.replace(/^\d+\.\s*/, "").trim()).filter(Boolean).slice(0, 3)
+  const captionEmojiPref = emojiStyle === "None" ? "No" : emojiStyle === "Minimal" ? "Minimal" : "Yes";
+
+  const variations = output
+    ? output.split(/━━━ CAPTION VARIATION \d+ of 5 ━/).filter(v => v.trim().length > 10)
     : [];
 
   async function handleGenerate() {
-    if (!topic.trim()) return;
-    await generate({ topic, platform, tone: mood, hashtags, emojiStyle });
+    setSelectedCaption(0);
+    await generate({ topic, platform, emojiPref: captionEmojiPref, postType, brandVoice, ctaType });
+  }
+
+  function copyCaption(text: string) {
+    const cleaned = text.replace(/━━━ CAPTION VARIATION \d+ of 5 ━[\s\S]*?━━━/g, "").replace(/---[\s\S]*$/g, "").trim();
+    navigator.clipboard.writeText(cleaned).catch(() => {});
+  }
+
+  function parseCaption(text: string) {
+    const parts = text.split(/---/);
+    const body = parts[0]?.replace(/━━━ CAPTION VARIATION \d+ of 5 ━[\s\S]*?━━━/g, "").trim() || text;
+    const allTags = body.match(/#[\w]+/g) || [];
+    const highReach = allTags.slice(0, 3);
+    const niche = allTags.slice(3, 7);
+    const branded = allTags.slice(7);
+    const cleanedBody = body.replace(/#[\w]+/g, "").replace(/\n{3,}/g, "\n\n").trim();
+    return {
+      body: cleanedBody,
+      charCount: cleanedBody.length,
+      highReach,
+      niche,
+      branded,
+      styleHint: text.match(/\[Style:\s*([^\]]+)\]/)?.[1] || "Standard",
+    };
   }
 
   return (
@@ -988,163 +1016,138 @@ function SocialCaption() {
       {/* Platform tabs */}
       <div className="flex flex-wrap gap-1 border-b border-border pb-0">
         {PLATFORMS.map((p) => (
-          <button
-            key={p}
-            onClick={() => setPlatform(p)}
-            className={clsx(
-              "px-4 py-2.5 text-sm font-medium transition-colors relative",
-              platform === p
-                ? "text-emerald-500"
-                : "text-foreground-muted hover:text-foreground"
-            )}
-          >
+          <button key={p} onClick={() => setPlatform(p)} className={clsx("px-4 py-2.5 text-sm font-medium transition-colors relative", platform === p ? "text-pink-500" : "text-foreground-muted hover:text-foreground")}>
             {p}
-            {platform === p && (
-              <motion.div
-                layoutId="platform-underline"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-500 rounded-full"
-              />
-            )}
+            {platform === p && <motion.div layoutId="platform-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-pink-500 rounded-full" />}
           </button>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="sm:col-span-2">
-          <label className="text-sm font-medium text-foreground block mb-1.5">
-            Topic
-          </label>
-          <input
-            type="text"
-            className={inputClass}
-            placeholder="What is your post about?"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-          />
-        </div>
+      {/* Topic */}
+      <div>
+        <label className="text-sm font-medium text-foreground block mb-1.5">Post Topic *</label>
+        <textarea className={inputClass} rows={2} placeholder="What is your post about? Be specific..." value={topic} onChange={(e) => setTopic(e.target.value)} />
+      </div>
+
+      {/* Post Type + Brand Voice */}
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm font-medium text-foreground block mb-1.5">
-            Mood / Tone
-          </label>
-          <select
-            className={clsx(inputClass, "cursor-pointer")}
-            value={mood}
-            onChange={(e) => setMood(e.target.value)}
-          >
-            {MOODS.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
+          <label className="text-xs font-semibold text-foreground-muted block mb-2">Post Type</label>
+          <div className="flex flex-col gap-1.5">
+            {IG_POST_TYPES.map((pt) => (
+              <button key={pt} onClick={() => setPostType(pt)} className={clsx("px-3 py-2 rounded-xl text-xs font-medium border transition-all text-left", postType === pt ? "bg-pink-500/10 border-pink-500/40 text-pink-700 dark:text-pink-300" : "bg-background border-border text-foreground-muted hover:border-pink-500/30")}>
+                {pt === "Reels" ? "🎬 Reels" : pt === "Carousel" ? "🎠 Carousel" : pt === "Story" ? "📱 Story" : "📷 Post"}
+              </button>
             ))}
-          </select>
+          </div>
         </div>
-        <div>
-          <label className="text-sm font-medium text-foreground block mb-1.5">
-            Emoji Style
-          </label>
-          <select
-            className={clsx(inputClass, "cursor-pointer")}
-            value={emojiStyle}
-            onChange={(e) => setEmojiStyle(e.target.value)}
-          >
-            {EMOJI_STYLES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="sm:col-span-2">
-          <label className="flex items-center gap-3 cursor-pointer w-fit">
-            <button
-              role="switch"
-              aria-checked={hashtags}
-              onClick={() => setHashtags((h) => !h)}
-              className={clsx(
-                "relative w-11 h-6 rounded-full transition-colors",
-                hashtags ? "bg-emerald-500" : "bg-border"
-              )}
-            >
-              <span
-                className={clsx(
-                  "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform",
-                  hashtags ? "translate-x-5" : "translate-x-0"
-                )}
-              />
-            </button>
-            <span className="text-sm font-medium text-foreground">
-              Include Hashtags
-            </span>
-          </label>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-semibold text-foreground-muted block mb-2">Brand Voice</label>
+            <div className="flex flex-wrap gap-1.5">
+              {BRAND_VOICES.map((bv) => (
+                <button key={bv} onClick={() => setBrandVoice(bv)} className={clsx("px-2.5 py-1 rounded-lg text-xs font-medium border transition-all", brandVoice === bv ? "bg-violet-500 text-white border-violet-500" : "bg-background border-border text-foreground-muted hover:border-violet-500/30")}>{bv}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground-muted block mb-2">Call to Action</label>
+            <div className="flex flex-wrap gap-1.5">
+              {IG_CTA_TYPES.map((ct) => (
+                <button key={ct} onClick={() => setCtaType(ct)} className={clsx("px-2.5 py-1 rounded-lg text-xs font-medium border transition-all", ctaType === ct ? "bg-amber-500 text-white border-amber-500" : "bg-background border-border text-foreground-muted hover:border-amber-500/30")}>{ct}</button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      <button
-        onClick={handleGenerate}
-        disabled={!topic.trim() || isLoading}
-        className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
-      >
-        {isLoading ? (
-          <>
-            <Spinner /> Generating Captions…
-          </>
-        ) : (
-          "Generate Caption"
-        )}
+      {/* Emoji style */}
+      <div>
+        <label className="text-xs font-semibold text-foreground-muted block mb-2">Emoji Density</label>
+        <div className="flex gap-2">
+          {EMOJI_STYLES.map((s) => (
+            <button key={s} onClick={() => setEmojiStyle(s)} className={clsx("flex-1 py-2.5 rounded-xl text-xs font-semibold border transition-all", emojiStyle === s ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white border-transparent shadow-md" : "bg-background border-border text-foreground-muted hover:border-pink-500/30")}>{s}</button>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={handleGenerate} disabled={!topic.trim() || isLoading} className="w-full h-11 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition-opacity shadow-lg">
+        {isLoading ? <><Spinner /> Generating 5 Variations…</> : "Generate 5 Caption Variations"}
       </button>
 
       {error && <ErrorBanner message={error} />}
 
-      <AnimatePresence>
-        {captions.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-4"
-          >
-            {captions.map((caption, i) => (
-              <CaptionCard key={i} caption={caption} index={i + 1} />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+      {output && (
+        <div className="space-y-4">
+          {/* Caption variation tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {variations.map((v, i) => {
+              const { styleHint } = parseCaption(v);
+              return (
+                <button key={i} onClick={() => setSelectedCaption(i)} className={clsx("flex-shrink-0 px-3 py-2 rounded-xl text-xs font-semibold border transition-all", selectedCaption === i ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white border-transparent shadow-md" : "bg-background border-border text-foreground-muted hover:border-pink-500/40")}>
+                  #{i + 1} {styleHint.split(" —")[0]}
+                </button>
+              );
+            })}
+          </div>
 
-function CaptionCard({
-  caption,
-  index,
-}: {
-  caption: string;
-  index: number;
-}) {
-  const [copied, setCopied] = useState(false);
-  function handleCopy() {
-    navigator.clipboard.writeText(caption).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-  return (
-    <div className={clsx(cardClass, "flex flex-col gap-3")}>
-      <div className="flex items-center justify-between">
-        <Badge variant="default">Variation {index}</Badge>
-        <button
-          onClick={handleCopy}
-          className={clsx(
-            "text-xs px-3 py-1.5 rounded-lg border transition-colors font-medium",
-            copied
-              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600"
-              : "bg-background border-border text-foreground-muted hover:text-foreground"
-          )}
-        >
-          {copied ? "Copied ✓" : "Copy"}
-        </button>
-      </div>
-      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap flex-1">
-        {caption}
-      </p>
+          {/* Caption card */}
+          {variations[selectedCaption] && (() => {
+            const { body, charCount, highReach, niche, branded } = parseCaption(variations[selectedCaption]);
+            const overLimit = charCount > 2200;
+            return (
+              <div className="space-y-4">
+                {/* Char count */}
+                <div className="flex items-center justify-between">
+                  <span className={clsx("text-xs font-mono font-medium", overLimit ? "text-red-500" : "text-foreground-muted")}>
+                    {charCount}/2200 chars {overLimit ? "— OVER LIMIT" : "— OK"}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-full bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300 text-xs font-medium">{platform} {postType}</span>
+                </div>
+
+                {/* Caption preview card */}
+                <div className="group relative rounded-2xl border border-border bg-card p-5 hover:border-pink-500/30 transition-all">
+                  <div className="space-y-3">
+                    {body.split("\n").filter(l => l.trim()).map((line, i) => (
+                      <p key={i} className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{line}</p>
+                    ))}
+                  </div>
+                  <button onClick={() => copyCaption(body)} className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600">
+                    Copy Caption
+                  </button>
+                </div>
+
+                {/* Hashtag groups */}
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-foreground-muted uppercase tracking-wider">Hashtag Strategy</span>
+                  <div className="space-y-2">
+                    {highReach.length > 0 && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 w-16 shrink-0">🔥 High</span>
+                        {highReach.map((tag, i) => <span key={i} className="px-2 py-1 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 text-xs font-medium">{tag}</span>)}
+                      </div>
+                    )}
+                    {niche.length > 0 && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-semibold text-violet-600 dark:text-violet-400 w-16 shrink-0">🎯 Niche</span>
+                        {niche.map((tag, i) => <span key={i} className="px-2 py-1 rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 text-xs font-medium">{tag}</span>)}
+                      </div>
+                    )}
+                    {branded.length > 0 && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 w-16 shrink-0">📌 Brand</span>
+                        {branded.map((tag, i) => <span key={i} className="px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs font-medium">{tag}</span>)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <button onClick={() => copyCaption(body + "\n\n" + [...highReach, ...niche, ...branded].join(" "))} className="w-full py-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg">Copy Caption + All Hashtags</button>
+              </div>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 }
@@ -4220,7 +4223,7 @@ function NvBtn({ loading, disabled, onClick, label }: { loading: boolean; disabl
       className="w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-teal-700 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
     >
       {loading ? (
-        <><span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />Processing…</>
+        <><span className="h-4 w-4 rounded-full border-2 border-foreground-muted/30 border-t-foreground animate-spin" />Processing…</>
       ) : (label || "Generate")}
     </button>
   );
@@ -4589,36 +4592,162 @@ function InterviewPrepTool() {
   );
 }
 
+const POST_TYPES = ["Personal Story", "Thought Leadership", "How-To", "Announcement", "Poll / Question"] as const;
+const CTA_TYPES = ["Comment", "Share", "Connect", "Visit Website", "Save"] as const;
+
 function LinkedInPostTool() {
   const [topic, setTopic] = useState("");
   const [tone, setTone] = useState("Authentic & Professional");
   const [goal, setGoal] = useState("");
+  const [audience, setAudience] = useState("");
+  const [postType, setPostType] = useState<typeof POST_TYPES[number]>("Personal Story");
+  const [ctaType, setCtaType] = useState<typeof CTA_TYPES[number]>("Comment");
+  const [selectedVariation, setSelectedVariation] = useState(0);
+  const { output, loading, error, generate, clear } = useAIGenerate("linkedin-post");
+
   const tones = ["Authentic & Professional", "Inspirational", "Educational", "Storytelling", "Thought Leadership"];
   const goals = ["", "Grow network", "Showcase expertise", "Announce achievement", "Share lesson", "Promote product"];
-  const { output, loading, error, generate, clear } = useAIGenerate("linkedin-post");
+
+  const variations = output ? output.split(/━━━ POST \d+ of 3 ━/).filter(Boolean).filter(v => v.trim().length > 20) : [];
+
+  function copyPost(text: string) {
+    navigator.clipboard.writeText(text).catch(() => {});
+  }
+
+  function countWords(text: string) {
+    return text.split(/\s+/).filter(Boolean).length;
+  }
+
+  function parsePost(text: string) {
+    const readMatch = text.match(/Estimated read time:\s*([^\n]+)/);
+    const hookMatch = text.match(/HOOK LINE[^:]+:\s*\n([^\n-]+)/);
+    const parts = text.split(/---/);
+    const hashtagsMatch = text.match(/#[\w]+/g);
+    return { readTime: readMatch?.[1]?.trim(), hook: hookMatch?.[1]?.trim(), hashtags: hashtagsMatch || [] };
+  }
+
+  async function handleGenerate() {
+    setSelectedVariation(0);
+    await generate({ topic, tone, goal, audience, postType, ctaType });
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Topic */}
       <div>
         <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Post Topic *</label>
-        <textarea className={inputClass} rows={3} placeholder="e.g. I just got promoted after 2 years of hard work... / 5 things I learned building my startup..." value={topic} onChange={(e) => setTopic(e.target.value)} />
+        <textarea className={inputClass} rows={3} placeholder="e.g. I just got promoted after 2 years of hard work... / 5 things I learned building my startup... / The biggest mistake I made in my first year..." value={topic} onChange={(e) => setTopic(e.target.value)} />
       </div>
-      <div>
-        <p className="text-xs font-semibold text-foreground-muted mb-2">Post Tone</p>
-        <div className="flex flex-wrap gap-2">
-          {tones.map((t) => (
-            <button key={t} onClick={() => setTone(t)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", tone === t ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-border-strong")}>{t}</button>
-          ))}
+
+      {/* Post type + Audience */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-2">Post Type</label>
+          <div className="flex flex-col gap-1.5">
+            {POST_TYPES.map((pt) => (
+              <button key={pt} onClick={() => setPostType(pt)} className={clsx("px-3 py-2 rounded-xl text-xs font-medium border transition-all text-left", postType === pt ? "bg-blue-500/10 border-blue-500/40 text-blue-700 dark:text-blue-300" : "bg-background border-border text-foreground-muted hover:border-blue-500/30")}>
+                {pt}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Target Audience</label>
+            <input className={inputClass} placeholder="e.g. Early-stage founders, Fresh grads..." value={audience} onChange={(e) => setAudience(e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-foreground-muted mb-2">Call to Action</label>
+            <div className="flex flex-wrap gap-1.5">
+              {CTA_TYPES.map((c) => (
+                <button key={c} onClick={() => setCtaType(c)} className={clsx("px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all", ctaType === c ? "bg-violet-500 text-white border-violet-500" : "bg-background border-border text-foreground-muted hover:border-violet-500/40")}>{c}</button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
-      <div>
-        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Goal (optional)</label>
-        <select className={inputClass} value={goal} onChange={(e) => setGoal(e.target.value)}>
-          {goals.map((g) => <option key={g} value={g}>{g || "— No specific goal —"}</option>)}
-        </select>
+
+      {/* Tone + Goal */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-2">Tone</label>
+          <div className="flex flex-wrap gap-1.5">
+            {tones.map((t) => (
+              <button key={t} onClick={() => setTone(t)} className={clsx("px-2.5 py-1 rounded-lg text-xs font-medium border transition-all", tone === t ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/40")}>{t.split(" & ")[0]}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Goal</label>
+          <select className={inputClass} value={goal} onChange={(e) => setGoal(e.target.value)}>
+            {goals.map((g) => <option key={g} value={g}>{g || "— No specific goal —"}</option>)}
+          </select>
+        </div>
       </div>
-      <NvBtn loading={loading} disabled={!topic.trim()} onClick={() => generate({ topic, tone, goal })} label="Write LinkedIn Post" />
+
+      <NvBtn loading={loading} disabled={!topic.trim()} onClick={handleGenerate} label="Generate 3 LinkedIn Posts" />
+
       {error && <ErrorBanner message={error} />}
-      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="LinkedIn Post" />}</AnimatePresence>
+
+      {output && (
+        <div className="space-y-4">
+          {/* Variation tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {variations.map((v, i) => {
+              const { hook, readTime } = parsePost(v);
+              return (
+                <button key={i} onClick={() => setSelectedVariation(i)} className={clsx("flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all text-left", selectedVariation === i ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-lg" : "bg-background border-border text-foreground-muted hover:border-blue-500/40")}>
+                  <div>Post {i + 1}</div>
+                  {hook && <div className="text-xs opacity-80 font-normal mt-0.5 truncate max-w-[120px]">{hook}</div>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Post preview card */}
+          {variations[selectedVariation] && (() => {
+            const { readTime, hashtags } = parsePost(variations[selectedVariation]);
+            const body = variations[selectedVariation].replace(/━━━ POST \d+ of 3 ━[\s\S]*?━━━/g, "").replace(/---[\s\S]*$/g, "").trim();
+            const wordCount = countWords(body);
+            return (
+              <div className="space-y-3">
+                {/* Stats row */}
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 text-xs font-medium border border-blue-500/20">
+                    <span>📖</span> {readTime || "~45 sec"}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-600 text-xs font-medium border border-violet-500/20">
+                    <span>📝</span> {wordCount} words
+                  </span>
+                </div>
+
+                {/* Post card */}
+                <div className="group relative rounded-2xl border border-border bg-card p-5 hover:border-blue-500/30 transition-all">
+                  <div className="space-y-3">
+                    {body.split("\n\n").filter(p => p.trim()).map((para, i) => (
+                      <p key={i} className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{para}</p>
+                    ))}
+                  </div>
+                  <button onClick={() => copyPost(body)} className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600">
+                    Copy
+                  </button>
+                </div>
+
+                {/* Hashtags */}
+                {hashtags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {hashtags.map((tag, i) => (
+                      <span key={i} className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs font-medium">{tag}</span>
+                    ))}
+                  </div>
+                )}
+
+                <button onClick={() => copyPost(body + "\n\n" + hashtags.join(" "))} className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg">Copy Post + Hashtags</button>
+              </div>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 }
@@ -4628,38 +4757,196 @@ function YouTubeScriptTool() {
   const [niche, setNiche] = useState("");
   const [duration, setDuration] = useState("8-10 minutes");
   const [style, setStyle] = useState("Educational / Informative");
+  const [audience, setAudience] = useState("");
+  const [keywords, setKeywords] = useState("");
   const durations = ["3-5 minutes", "8-10 minutes", "15-20 minutes"];
   const styles = ["Educational / Informative", "Entertaining / Fun", "Tutorial / How-to", "Vlog / Story", "Review / Opinion"];
   const { output, loading, error, generate, clear } = useAIGenerate("youtube-script");
+
+  function copyScript() {
+    if (!output) return;
+    navigator.clipboard.writeText(output).catch(() => {});
+  }
+
+  function parseScriptOutput(text: string) {
+    const titleOptions: string[] = [];
+    const titleMatch = text.match(/^\d+\.\s*\[.*?\]\s*(.+)/m);
+    const titles: string[] = titleMatch ? text.match(/^\d+\.\s*\[.*?\]\s*(.+)/gm)?.map(t => t.replace(/^\d+\.\s*\[.*?\]\s*/, "")) || [] : [];
+    const timestamps: string[] = text.match(/\d+:\+\d+ — .+/g) || text.match(/\d+:\d+ — .+/g) || [];
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    const sections = text.split(/\[(HOOK|INTRO|MAIN|OUTRO|BODY|CONTENT|HOOK —)/i).filter(Boolean);
+    return { titles, timestamps, wordCount };
+  }
+
+  const { titles, timestamps, wordCount } = output ? parseScriptOutput(output) : { titles: [], timestamps: [], wordCount: 0 };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Title */}
       <div>
         <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Video Title / Topic *</label>
-        <input className={inputClass} placeholder="e.g. 10 Python Tips I Wish I Knew Earlier" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <textarea className={inputClass} rows={2} placeholder="e.g. 10 Python Tips I Wish I Knew Earlier / I tried this for 30 days — here's what happened" value={title} onChange={(e) => setTitle(e.target.value)} />
       </div>
-      <div>
-        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Channel Niche</label>
-        <input className={inputClass} placeholder="e.g. Tech & Programming, Finance, Fitness" value={niche} onChange={(e) => setNiche(e.target.value)} />
-      </div>
-      <div>
-        <p className="text-xs font-semibold text-foreground-muted mb-2">Video Length</p>
-        <div className="flex flex-wrap gap-2">
-          {durations.map((d) => (
-            <button key={d} onClick={() => setDuration(d)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", duration === d ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-border-strong")}>{d}</button>
-          ))}
+
+      {/* Niche + Audience row */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Channel Niche</label>
+          <input className={inputClass} placeholder="e.g. Tech & Programming" value={niche} onChange={(e) => setNiche(e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Target Audience</label>
+          <input className={inputClass} placeholder="e.g. Beginners, Pro devs" value={audience} onChange={(e) => setAudience(e.target.value)} />
         </div>
       </div>
+
+      {/* SEO Keywords */}
       <div>
-        <p className="text-xs font-semibold text-foreground-muted mb-2">Video Style</p>
-        <div className="flex flex-wrap gap-2">
-          {styles.map((s) => (
-            <button key={s} onClick={() => setStyle(s)} className={clsx("px-3 py-1.5 rounded-full text-xs font-medium border transition-colors", style === s ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-border-strong")}>{s}</button>
-          ))}
+        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">SEO Keywords (comma-separated)</label>
+        <input className={inputClass} placeholder="e.g. python tips, programming, coding for beginners" value={keywords} onChange={(e) => setKeywords(e.target.value)} />
+      </div>
+
+      {/* Duration + Style row */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-2">Video Length</label>
+          <div className="flex flex-wrap gap-2">
+            {durations.map((d) => (
+              <button key={d} onClick={() => setDuration(d)} className={clsx("px-3 py-2 rounded-xl text-xs font-semibold border transition-all", duration === d ? "bg-red-500 text-white border-red-500 shadow-md" : "bg-background border-border text-foreground-muted hover:border-red-500/40")}>{d}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-2">Video Style</label>
+          <div className="flex flex-wrap gap-2">
+            {styles.map((s) => (
+              <button key={s} onClick={() => setStyle(s)} className={clsx("px-3 py-2 rounded-xl text-xs font-semibold border transition-all", style === s ? "bg-orange-500 text-white border-orange-500 shadow-md" : "bg-background border-border text-foreground-muted hover:border-orange-500/40")}>{s.split(" / ")[0]}</button>
+            ))}
+          </div>
         </div>
       </div>
-      <NvBtn loading={loading} disabled={!title.trim()} onClick={() => generate({ title, niche, duration, style })} label="Write YouTube Script" />
+
+      <NvBtn loading={loading} disabled={!title.trim()} onClick={() => generate({ title, niche, duration, style, audience, keywords })} label="Generate YouTube Script" />
+
       {error && <ErrorBanner message={error} />}
-      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="YouTube Script" />}</AnimatePresence>
+
+      {output && (
+        <div className="space-y-5">
+          {/* Title options */}
+          {titles.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">Title Options</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {titles.map((t, i) => (
+                  <div key={i} className="group relative rounded-xl border border-border bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 p-4 hover:border-orange-500/40 transition-all cursor-pointer" onClick={() => { navigator.clipboard.writeText(t).catch(() => {}); }}>
+                    <div className="flex items-start gap-2">
+                      <span className="w-6 h-6 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                      <p className="text-sm font-medium text-foreground leading-snug">{t}</p>
+                    </div>
+                    <button className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-orange-600 font-medium">Copy</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Script with sections */}
+          <div className="space-y-3">
+            {/* Stats bar */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 text-xs font-semibold border border-red-200 dark:border-red-800">
+                <span>🎬</span> {duration}
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 text-xs font-semibold border border-orange-200 dark:border-orange-800">
+                <span>📝</span> ~{wordCount} words
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-xs font-semibold border border-amber-200 dark:border-amber-800">
+                <span>⏱️</span> ~{Math.round(wordCount / 2.5)} min
+              </span>
+            </div>
+
+            {/* Full script card */}
+            <div className="group relative rounded-2xl border border-border bg-card overflow-hidden">
+              {/* Script header */}
+              <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800/50 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                  <span className="text-xs font-semibold text-foreground-muted">Full Script</span>
+                </div>
+                <button onClick={copyScript} className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-semibold hover:bg-emerald-600 transition-colors shadow-sm">
+                  Copy Script
+                </button>
+              </div>
+
+              {/* Script body */}
+              <div className="p-5 max-h-[600px] overflow-y-auto">
+                {/* Parse and render sections */}
+                <div className="space-y-4">
+                  {/* Thumbnail idea */}
+                  {(output.includes("THUMBNAIL") || output.includes("Thumbnail")) && (() => {
+                    const thumbMatch = output.match(/\[THUMBNAIL IDEA\]([\s\S]*?)(?:\n\[|$)/i) || output.match(/Thumbnail Text overlay suggestion:([\s\S]*?)(?:\n|TEXT|$)/i);
+                    return thumbMatch ? (
+                      <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-4 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-amber-600 dark:text-amber-400 font-bold text-xs uppercase tracking-wider">🖼 Thumbnail Idea</span>
+                        </div>
+                        <p className="text-sm text-foreground leading-relaxed">{thumbMatch[1].trim()}</p>
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Timestamps */}
+                  {timestamps.length > 0 && (
+                    <div className="rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/30 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-violet-600 dark:text-violet-400 font-bold text-xs uppercase tracking-wider">⏱️ Chapters / Timestamps</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {timestamps.map((ts, i) => (
+                          <div key={i} className="flex items-center gap-3 text-sm">
+                            <span className="font-mono text-xs text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/50 px-2 py-0.5 rounded">{ts.split("—")[0].trim()}</span>
+                            <span className="text-foreground">{ts.split("—")[1]?.trim()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Main sections */}
+                  {output.split(/\n{3,}/).filter(s => s.trim()).map((section, i) => {
+                    const isHook = /\[HOOK\]|HOOK —/.test(section);
+                    const isOutro = /\[OUTRO\]|OUTRO —/.test(section);
+                    const isSection = /\[(INTRO|MAIN|BODY|CONTENT|PRODUCTION NOTES|SCRIPT)\]/i.test(section) || /━━.*━━/.test(section);
+                    const sectionLabel = section.match(/\[([A-Z ]+)\]/)?.[1] || (isHook ? "HOOK" : isOutro ? "OUTRO" : "");
+
+                    const sectionColors: Record<string, string> = {
+                      HOOK: "from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-800",
+                      INTRO: "from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800",
+                      OUTRO: "from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border-emerald-200 dark:border-emerald-800",
+                    };
+                    const colorClass = sectionColors[sectionLabel] || "from-slate-50 to-slate-50 dark:from-slate-900 dark:to-slate-900 border-border";
+
+                    return (
+                      <div key={i} className={clsx("rounded-xl border p-4 space-y-2", colorClass)}>
+                        {sectionLabel && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={clsx("font-bold text-xs uppercase tracking-wider", isHook ? "text-red-600 dark:text-red-400" : isOutro ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400")}>
+                              {sectionLabel === "HOOK" ? "🎬 HOOK — First 15 sec" : sectionLabel === "OUTRO" ? "🔚 OUTRO — Final CTA" : `📌 ${sectionLabel}`}
+                            </span>
+                          </div>
+                        )}
+                        <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{section.replace(/\[.*?\]/g, "").replace(/━━.*?━━/g, "").replace(/^\s*\*{3,}.*?\*{3,}\s*/gm, "").trim()}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -4809,28 +5096,135 @@ function DeepThinkTool() {
   );
 }
 
+const NICHE_OPTIONS = ["Tech & Programming", "Business & Startups", "Lifestyle & Personal", "Finance & Investing", "Health & Fitness", "Education & Learning", "Marketing & Growth", "Creative & Arts", "Career & Jobs", "General"] as const;
+const HOOK_TYPES = ["Hot Take", "Story", "Thread-of-Tips", "Contrarian", "Case Study", "Data-Driven"] as const;
+
 function TwitterThreadTool() {
   const [topic, setTopic] = useState("");
   const [angle, setAngle] = useState("");
   const [tweetCount, setTweetCount] = useState(10);
+  const [niche, setNiche] = useState<typeof NICHE_OPTIONS[number]>("General");
+  const [hookType, setHookType] = useState<typeof HOOK_TYPES[number]>("Thread-of-Tips");
+  const [selectedVariation, setSelectedVariation] = useState(0);
   const { output, loading, error, generate, clear } = useAIGenerate("twitter-thread");
+
+  const variations = output ? output.split(/━━━ VARIATION \d+ of 3 ━/).filter(Boolean).filter(v => v.trim().length > 10) : [];
+
+  async function handleGenerate() {
+    setSelectedVariation(0);
+    await generate({ topic, angle, tweetCount, niche, hookType });
+  }
+
+  function copyVariation(v: string) {
+    const cleaned = v.replace(/\[?\d+\/\d+\]?/g, "").replace(/━━.*?━━/g, "").trim();
+    navigator.clipboard.writeText(cleaned).catch(() => {});
+  }
+
+  function copyTweet(tweet: string) {
+    navigator.clipboard.writeText(tweet).catch(() => {});
+  }
+
+  function parseTweets(text: string) {
+    return text.split(/\n\d+\/\s*/).filter(t => t.trim()).map(t => t.replace(/^\d+\/\s*/, "").trim());
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Topic */}
       <div>
         <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Thread Topic *</label>
-        <textarea className={inputClass} rows={2} placeholder="e.g. How to grow on Twitter in 2025 / The truth about building a startup" value={topic} onChange={(e) => setTopic(e.target.value)} />
+        <textarea className={inputClass} rows={2} placeholder="e.g. How to grow on Twitter in 2025 / The truth about building a startup / I made $10K in 30 days — here's exactly how" value={topic} onChange={(e) => setTopic(e.target.value)} />
       </div>
+
+      {/* Niche + Hook Type row */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-2">Your Niche</label>
+          <div className="flex flex-wrap gap-1.5">
+            {NICHE_OPTIONS.map((n) => (
+              <button key={n} onClick={() => setNiche(n)} className={clsx("px-2.5 py-1 rounded-lg text-xs font-medium border transition-all", niche === n ? "bg-emerald-500 text-white border-emerald-500" : "bg-background border-border text-foreground-muted hover:border-emerald-500/40")}>{n.split(" & ")[0]}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-foreground-muted mb-2">Hook Style</label>
+          <div className="flex flex-wrap gap-1.5">
+            {HOOK_TYPES.map((h) => (
+              <button key={h} onClick={() => setHookType(h)} className={clsx("px-2.5 py-1 rounded-lg text-xs font-medium border transition-all", hookType === h ? "bg-rose-500 text-white border-rose-500" : "bg-background border-border text-foreground-muted hover:border-rose-500/40")}>{h}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Angle */}
       <div>
         <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Specific Angle (optional)</label>
         <input className={inputClass} placeholder="e.g. From personal experience / Contrarian take / Step-by-step guide" value={angle} onChange={(e) => setAngle(e.target.value)} />
       </div>
+
+      {/* Tweet count */}
       <div>
-        <label className="block text-xs font-semibold text-foreground-muted mb-1.5">Number of Tweets: {tweetCount}</label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs font-semibold text-foreground-muted">Tweet Count</label>
+          <span className="text-xs text-emerald-600 font-medium">{tweetCount} tweets</span>
+        </div>
         <input type="range" min={5} max={20} value={tweetCount} onChange={(e) => setTweetCount(Number(e.target.value))} className="w-full accent-emerald-500" />
       </div>
-      <NvBtn loading={loading} disabled={!topic.trim()} onClick={() => generate({ topic, angle, tweetCount })} label="Write Twitter Thread" />
+
+      <NvBtn loading={loading} disabled={!topic.trim()} onClick={handleGenerate} label="Generate 3 Thread Variations" />
+
       {error && <ErrorBanner message={error} />}
-      <AnimatePresence>{output && <OutputCard text={output} onClear={clear} label="Twitter/X Thread" />}</AnimatePresence>
+
+      {output && (
+        <div className="space-y-4">
+          {/* Variation tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {variations.map((v, i) => (
+              <button key={i} onClick={() => setSelectedVariation(i)} className={clsx("flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold border transition-all", selectedVariation === i ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-transparent shadow-md" : "bg-background border-border text-foreground-muted hover:border-emerald-500/40")}>
+                Variation {i + 1}
+              </button>
+            ))}
+          </div>
+
+          {/* Tweet cards */}
+          {variations[selectedVariation] && (() => {
+            const tweets = parseTweets(variations[selectedVariation]);
+            const styleMatch = variations[selectedVariation].match(/Style:\s*(.+)/);
+            return (
+              <div className="space-y-3">
+                {styleMatch && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-600 text-xs font-medium">
+                    <span>🎯</span> {styleMatch[1].trim()}
+                  </div>
+                )}
+                {tweets.map((tweet, i) => {
+                  const charCount = tweet.replace(/\[.*?\]/g, "").length;
+                  const overLimit = charCount > 280;
+                  return (
+                    <div key={i} className={clsx("group relative rounded-2xl border p-4 transition-all hover:border-emerald-500/30", overLimit ? "border-red-500/30 bg-red-500/5" : "border-border bg-background hover:bg-emerald-500/[0.02]")}>
+                      <div className="flex items-start gap-3">
+                        <div className={clsx("w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5", i === 0 ? "bg-rose-500 text-white" : "bg-muted text-foreground-muted")}>
+                          {i === 0 ? "🧵" : i + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{tweet.replace(/\[.*?\]/g, "")}</p>
+                          <div className="flex items-center gap-3 mt-2">
+                            <span className={clsx("text-xs font-mono", overLimit ? "text-red-500 font-bold" : "text-foreground-muted")}>{charCount}/280</span>
+                            <button onClick={() => copyTweet(tweet)} className="text-xs text-emerald-600 hover:text-emerald-700 opacity-0 group-hover:opacity-100 transition-opacity font-medium">Copy</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => copyVariation(variations[selectedVariation])} className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-md">Copy Entire Thread</button>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 }

@@ -16,7 +16,6 @@ import type { Tool } from "@/types";
 // Default content
 // ─────────────────────────────────────────────
 
-// Per-category step copy so each tool category gets relevant instructions
 const CATEGORY_STEPS: Record<string, ReturnType<typeof DEFAULT_FILE_STEPS>> = {
   "ai-writing": [
     { icon: Upload,   title: "Enter your text or details",   description: "Type or paste your text, or fill in the form fields. No file upload needed — everything works in the browser." },
@@ -93,6 +92,12 @@ const DEFAULT_FAQ = [
 // Sub-components
 // ─────────────────────────────────────────────
 
+const STEP_GRADIENTS = [
+  "from-violet-600 to-purple-500",
+  "from-blue-600 to-cyan-500",
+  "from-emerald-600 to-teal-500",
+];
+
 function StepCard({
   step,
   icon: Icon,
@@ -104,25 +109,35 @@ function StepCard({
   title: string;
   description: string;
 }) {
+  const gradient = STEP_GRADIENTS[(step - 1) % STEP_GRADIENTS.length];
+
   return (
     <li className="flex gap-4">
       {/* Step badge */}
       <div className="shrink-0 flex flex-col items-center gap-1">
         <div
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 border border-primary/20"
+          className={clsx(
+            "relative flex h-10 w-10 items-center justify-center rounded-xl",
+            `bg-gradient-to-br ${gradient}`,
+            "shadow-lg shadow-black/10"
+          )}
           aria-hidden="true"
         >
-          <span className="text-sm font-bold text-primary">{step}</span>
+          <Icon className="h-5 w-5 text-white" />
+          {/* Glow */}
+          <div
+            className={clsx("absolute inset-0 rounded-xl opacity-40", `bg-gradient-to-br ${gradient} blur-md`)}
+            style={{ transform: "scale(1.3)" }}
+          />
         </div>
-        {/* Connector line (not after last item — handled via parent) */}
-        <div className="flex-1 w-px bg-border" aria-hidden="true" />
+        {/* Connector line */}
+        <div className="flex-1 w-px bg-gradient-to-b from-border to-transparent" aria-hidden="true" />
       </div>
 
       {/* Content */}
-      <div className="pb-6 flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
-          <p className="font-semibold text-foreground">{title}</p>
+      <div className="pb-8 flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1.5">
+          <p className="text-sm font-bold text-foreground">{title}</p>
         </div>
         <p className="text-sm text-foreground-muted leading-relaxed">{description}</p>
       </div>
@@ -132,12 +147,12 @@ function StepCard({
 
 function FormatChip({ ext }: { ext: string }) {
   return (
-    <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background-subtle px-3 py-1.5">
+    <div className="flex items-center gap-1.5 rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm px-3.5 py-2">
       <CheckCircle2
-        className="h-3.5 w-3.5 text-success shrink-0"
+        className="h-4 w-4 text-emerald-500 shrink-0"
         aria-hidden="true"
       />
-      <span className="text-sm font-mono font-medium text-foreground">{ext}</span>
+      <span className="text-sm font-mono font-semibold text-foreground uppercase">{ext}</span>
     </div>
   );
 }
@@ -145,36 +160,42 @@ function FormatChip({ ext }: { ext: string }) {
 function FaqItem({
   question,
   answer,
+  index,
 }: {
   question: string;
   answer: string;
+  index: number;
 }) {
   return (
-    <details className="group rounded-xl border border-border bg-card overflow-hidden">
+    <details className={clsx(
+      "group rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden",
+      "transition-all duration-200",
+      "hover:border-violet-500/20 hover:shadow-md hover:shadow-black/5"
+    )}>
       <summary
         className={clsx(
           "flex cursor-pointer select-none items-center justify-between",
-          "px-5 py-4 text-sm font-medium text-foreground",
-          "hover:bg-background-subtle transition-colors duration-150",
+          "px-5 py-4 text-sm font-semibold text-foreground",
+          "hover:bg-background-subtle/50 transition-colors duration-150",
           "list-none [&::-webkit-details-marker]:hidden"
         )}
       >
-        <span className="flex items-center gap-2.5">
+        <span className="flex items-center gap-2.5 pr-4">
           <HelpCircle
-            className="h-4 w-4 shrink-0 text-primary/60 group-open:text-primary transition-colors"
+            className="h-4 w-4 shrink-0 text-violet-500"
             aria-hidden="true"
           />
           {question}
         </span>
         <span
-          className="ml-4 shrink-0 text-lg font-light text-foreground-muted leading-none transition-transform duration-200 group-open:rotate-45"
+          className="ml-4 shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-background-muted text-sm font-bold text-foreground-muted leading-none transition-all duration-200 group-open:bg-violet-500 group-open:text-white group-open:rotate-180"
           aria-hidden="true"
         >
-          +
+          ‣
         </span>
       </summary>
-      <div className="px-5 pb-4 pt-0">
-        <p className="text-sm text-foreground-muted leading-relaxed pl-6.5">
+      <div className="px-5 pb-5 pt-1">
+        <p className="text-sm text-foreground-muted leading-relaxed pl-6">
           {answer}
         </p>
       </div>
@@ -194,15 +215,6 @@ interface ToolInfoPanelProps {
 // ToolInfoPanel — Server Component
 // ─────────────────────────────────────────────
 
-/**
- * ToolInfoPanel — informational section below the workspace.
- *
- * Sections:
- * 1. "How to use" — numbered steps with icons
- * 2. Supported formats — chip grid
- * 3. FAQ accordion — uses native <details>/<summary> (no JS)
- * 4. Security note — trust signal
- */
 export function ToolInfoPanel({ tool }: ToolInfoPanelProps) {
   const steps =
     tool.howItWorks?.map((s, i) => ({
@@ -226,12 +238,17 @@ export function ToolInfoPanel({ tool }: ToolInfoPanelProps) {
 
       {/* ── How to use ───────────────────────────────────── */}
       <section aria-labelledby="how-it-works-heading">
-        <h2
-          id="how-it-works-heading"
-          className="text-xl font-bold text-foreground mb-6"
-        >
-          How to use {tool.name}
-        </h2>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 shadow-lg shadow-violet-500/20">
+            <Settings className="h-5 w-5 text-white" />
+          </div>
+          <h2
+            id="how-it-works-heading"
+            className="text-xl lg:text-2xl font-bold text-foreground tracking-tight"
+          >
+            How to use {tool.name}
+          </h2>
+        </div>
         <ol
           className="relative space-y-0"
           role="list"
@@ -252,28 +269,32 @@ export function ToolInfoPanel({ tool }: ToolInfoPanelProps) {
       {/* ── Supported formats ────────────────────────────── */}
       {tool.acceptedFileTypes.length > 0 && (
         <section aria-labelledby="formats-heading">
-          <h2
-            id="formats-heading"
-            className="text-xl font-bold text-foreground mb-4"
-          >
-            Supported formats
-          </h2>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-500 shadow-lg shadow-emerald-500/20">
+              <CheckCircle2 className="h-5 w-5 text-white" />
+            </div>
+            <h2
+              id="formats-heading"
+              className="text-xl lg:text-2xl font-bold text-foreground tracking-tight"
+            >
+              Supported formats
+            </h2>
+          </div>
           <div className="flex flex-wrap gap-2">
             {tool.acceptedFileTypes.map((ext) => (
               <FormatChip key={ext} ext={ext} />
             ))}
           </div>
           {tool.maxFileSizeMB > 0 && (
-            <p className="mt-3 text-sm text-foreground-muted">
+            <p className="mt-4 text-sm text-foreground-muted">
               Maximum file size:{" "}
-              <span className="font-semibold text-foreground">
+              <span className="font-bold text-foreground">
                 {tool.maxFileSizeMB} MB
               </span>
               {tool.maxFiles > 1 && (
                 <>
-                  {" "}
-                  &middot; Up to{" "}
-                  <span className="font-semibold text-foreground">
+                  {" "}&middot; Up to{" "}
+                  <span className="font-bold text-foreground">
                     {tool.maxFiles} files
                   </span>{" "}
                   at once
@@ -286,50 +307,59 @@ export function ToolInfoPanel({ tool }: ToolInfoPanelProps) {
 
       {/* ── FAQ ──────────────────────────────────────────── */}
       <section aria-labelledby="faq-heading">
-        <h2
-          id="faq-heading"
-          className="text-xl font-bold text-foreground mb-4"
-        >
-          Frequently asked questions
-        </h2>
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 shadow-lg shadow-blue-500/20">
+            <HelpCircle className="h-5 w-5 text-white" />
+          </div>
+          <h2
+            id="faq-heading"
+            className="text-xl lg:text-2xl font-bold text-foreground tracking-tight"
+          >
+            Frequently asked questions
+          </h2>
+        </div>
         <div className="space-y-2.5">
-          {faqItems.map(({ question, answer }) => (
-            <FaqItem key={question} question={question} answer={answer} />
+          {faqItems.map(({ question, answer }, i) => (
+            <FaqItem key={`${question}-${i}`} question={question} answer={answer} index={i} />
           ))}
         </div>
       </section>
 
       {/* ── Security note ────────────────────────────────── */}
       <section
-        className="rounded-2xl border border-border bg-background-subtle p-6"
+        className={clsx(
+          "rounded-2xl overflow-hidden",
+          "border border-violet-500/20 bg-gradient-to-br",
+          "from-violet-500/[0.04] to-purple-500/[0.04]",
+          "backdrop-blur-md p-6 lg:p-8"
+        )}
         aria-labelledby="security-heading"
       >
         <div className="flex items-start gap-4">
           <div
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10"
-            aria-hidden="true"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-purple-500 shadow-xl shadow-violet-500/30"
           >
-            <Lock className="h-5 w-5 text-primary" />
+            <Lock className="h-6 w-6 text-white" />
           </div>
           <div>
             <h2
               id="security-heading"
-              className="text-base font-bold text-foreground mb-1"
+              className="text-base lg:text-lg font-bold text-foreground mb-1.5"
             >
               Your privacy is our priority
             </h2>
-            <p className="text-sm text-foreground-muted leading-relaxed max-w-2xl">
+            <p className="text-sm lg:text-base text-foreground-muted leading-relaxed max-w-2xl">
               All files are transferred over{" "}
-              <strong className="font-semibold text-foreground">
+              <strong className="font-bold text-foreground">
                 TLS 1.3 encrypted connections
               </strong>{" "}
               and processed in isolated environments. Files are{" "}
-              <strong className="font-semibold text-foreground">
+              <strong className="font-bold text-foreground">
                 automatically deleted within 1 hour
               </strong>{" "}
               — we never store, share, or train AI models on your data.
             </p>
-            <div className="mt-3 flex flex-wrap gap-3">
+            <div className="mt-4 flex flex-wrap gap-3">
               {[
                 { icon: Shield, label: "TLS 1.3 encrypted" },
                 { icon: Server, label: "EU / US servers" },
@@ -338,12 +368,9 @@ export function ToolInfoPanel({ tool }: ToolInfoPanelProps) {
               ].map(({ icon: Icon, label }) => (
                 <span
                   key={label}
-                  className="inline-flex items-center gap-1.5 text-xs text-foreground-muted"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground-muted rounded-full px-3 py-1.5 bg-card/80 backdrop-blur-sm border border-border/50"
                 >
-                  <Icon
-                    className="h-3.5 w-3.5 text-success"
-                    aria-hidden="true"
-                  />
+                  <Icon className="h-3.5 w-3.5 text-emerald-500 shrink-0" aria-hidden="true" />
                   {label}
                 </span>
               ))}

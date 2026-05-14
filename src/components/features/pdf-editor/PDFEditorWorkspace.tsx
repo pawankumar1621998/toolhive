@@ -389,7 +389,7 @@ function PDFCanvasEditor({
       </div>
 
       {/* Canvas Container */}
-      <div className="relative border border-border rounded-xl overflow-auto bg-gray-100 dark:bg-gray-800 p-4">
+      <div className="relative border border-border rounded-xl overflow-auto bg-background-muted p-4">
         <div className="relative inline-block shadow-lg">
           <canvas ref={canvasRef} className="block" />
           <canvas
@@ -736,7 +736,7 @@ function CVBuilder({ onGenerate }: { onGenerate: (data: CVData) => void }) {
             <button onClick={handleGenerate} disabled={isGenerating || !cvData.name} className={primaryBtn + " flex items-center gap-2"}>
               {isGenerating ? (
                 <>
-                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   Generating...
                 </>
               ) : (
@@ -998,7 +998,7 @@ function CVFromReference({ onGenerate }: { onGenerate: (data: CVData) => void })
           <button onClick={handleGenerate} disabled={isGenerating || !cvData.name} className={primaryBtn + " w-full flex items-center justify-center gap-2"}>
             {isGenerating ? (
               <>
-                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                 Generating CV...
               </>
             ) : (

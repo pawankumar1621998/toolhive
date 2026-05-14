@@ -137,21 +137,21 @@ function TemplateCard({
         {/* Visual layout hint */}
         {template.layout === "two-row" && (
           <div className="absolute inset-0 flex flex-col">
-            <div className="flex-1 border-b border-white/10 flex items-center justify-center">
-              <div className="w-8 h-1 rounded bg-white/20" />
+            <div className="flex-1 border-b border-border/20 flex items-center justify-center">
+              <div className="w-8 h-1 rounded bg-foreground/10" />
             </div>
             <div className="flex-1 flex items-center justify-center">
-              <div className="w-12 h-1 rounded bg-white/30" />
+              <div className="w-12 h-1 rounded bg-foreground/30" />
             </div>
           </div>
         )}
         {template.layout === "split" && (
           <div className="absolute inset-0 flex">
-            <div className="flex-1 border-r border-white/10 flex items-center justify-center">
-              <div className="w-6 h-6 rounded-full bg-white/20" />
+            <div className="flex-1 border-r border-border/20 flex items-center justify-center">
+              <div className="w-6 h-6 rounded-full bg-foreground/10" />
             </div>
             <div className="flex-1 flex items-center justify-center">
-              <div className="w-6 h-6 rounded-full bg-white/30" />
+              <div className="w-6 h-6 rounded-full bg-foreground/30" />
             </div>
           </div>
         )}
@@ -160,7 +160,7 @@ function TemplateCard({
             {[0.15, 0.25, 0.35, 0.45].map((opacity, i) => (
               <div
                 key={i}
-                className="flex-1 border-b border-white/10 flex items-center px-2"
+                className="flex-1 border-b border-border/20 flex items-center px-2"
               >
                 <div
                   className="h-1 rounded bg-white"
@@ -580,17 +580,17 @@ export function MemeGeneratorUI({ tool }: { tool: Tool }) {
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 {selectedTemplate.layout === "two-row" && (
                   <div className="w-full h-full flex flex-col">
-                    <div className="flex-1 border-b border-white/10" />
+                    <div className="flex-1 border-b border-border/20" />
                     <div className="flex-1" />
                   </div>
                 )}
                 {selectedTemplate.layout === "split" && (
                   <div className="w-full h-full flex">
-                    <div className="flex-1 border-r border-white/10 flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-white/10" />
+                    <div className="flex-1 border-r border-border/20 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-full bg-foreground/10" />
                     </div>
                     <div className="flex-1 flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-white/15" />
+                      <div className="w-12 h-12 rounded-full bg-foreground/15" />
                     </div>
                   </div>
                 )}
@@ -599,7 +599,7 @@ export function MemeGeneratorUI({ tool }: { tool: Tool }) {
                     {[...Array(4)].map((_, i) => (
                       <div
                         key={i}
-                        className="flex-1 border-b border-white/10 last:border-0"
+                        className="flex-1 border-b border-border/20 last:border-0"
                       />
                     ))}
                   </div>

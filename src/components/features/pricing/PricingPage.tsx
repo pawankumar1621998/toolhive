@@ -32,7 +32,6 @@ const FREE_FEATURES = [
 const TOOL_CATEGORIES = [
   { icon: FileText, label: "PDF Tools",   count: "14 tools", color: "from-rose-500 to-orange-400",   href: "/tools/pdf"        },
   { icon: Image,    label: "Image Tools", count: "12 tools", color: "from-violet-500 to-purple-400", href: "/tools/image"      },
-  { icon: Video,    label: "Video Tools", count: "9 tools",  color: "from-blue-500 to-cyan-400",     href: "/tools/video"      },
   { icon: Pen,      label: "AI Writing",  count: "13 tools", color: "from-emerald-500 to-teal-400",  href: "/tools/ai-writing" },
 ];
 

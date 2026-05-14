@@ -52,7 +52,7 @@ function HashtagAnalyzer() {
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
           <h4 className="text-sm font-semibold text-foreground">Suggested Hashtags</h4>
           {results.map((r, i) => (
-            <div key={i} className="flex items-center justify-between bg-white rounded-xl p-3 border">
+            <div key={i} className="flex items-center justify-between bg-card rounded-xl p-3 border">
               <div className="flex items-center gap-2">
                 <Hash className="w-4 h-4 text-orange-500" />
                 <span className="text-sm font-medium text-foreground">{r.tag}</span>
@@ -60,7 +60,7 @@ function HashtagAnalyzer() {
               <div className="flex items-center gap-4 text-xs text-foreground-muted">
                 <span>Reach: <b className="text-foreground">{r.reach}</b></span>
                 <span className={`px-2 py-0.5 rounded-full ${r.competition === 'Low' ? 'bg-green-100 text-green-600' : r.competition === 'Medium' ? 'bg-yellow-100 text-yellow-600' : 'bg-red-100 text-red-600'}`}>{r.competition}</span>
-                <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="w-16 h-2 bg-border rounded-full overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-orange-500 to-amber-400" style={{ width: `${r.score}%` }}></div>
                 </div>
               </div>
@@ -177,7 +177,7 @@ function CaptionFormatter() {
         {formatted && <button onClick={copy} className="px-6 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-background-subtle flex items-center gap-2"><Copy className="w-4 h-4" /> Copy</button>}
       </div>
       {formatted && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl p-4 border">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-card rounded-xl p-4 border">
           <pre className="text-sm text-foreground whitespace-pre-wrap font-sans">{formatted}</pre>
         </motion.div>
       )}
@@ -217,7 +217,7 @@ function PostGenerator() {
         {loading ? "Generating..." : "Generate Post"}
       </button>
       {output && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl p-4 border">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-card rounded-xl p-4 border">
           <pre className="text-sm text-foreground whitespace-pre-wrap font-sans">{output}</pre>
           <button onClick={() => navigator.clipboard.writeText(output)} className="mt-3 flex items-center gap-1 text-xs text-orange-500 hover:text-orange-600">
             <Copy className="w-3 h-3" /> Copy to clipboard
@@ -265,7 +265,7 @@ function MemeGenerator() {
         {loading ? "Creating..." : "Create Meme"}
       </button>
       {output && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl p-4 border text-center">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-card rounded-xl p-4 border text-center">
           <pre className="text-sm text-foreground whitespace-pre-wrap font-sans">{output}</pre>
         </motion.div>
       )}

@@ -173,7 +173,7 @@ export function PomodoroTimer() {
             ↺
           </button>
           <button onClick={() => { setRunning(r => !r); if (!running) playBeep(440, 0.1); }}
-            className="h-12 px-10 rounded-2xl bg-white text-gray-800 font-black text-base hover:bg-white/90 transition-colors shadow-lg">
+            className="h-12 px-10 rounded-2xl bg-primary text-primary-foreground font-black text-base hover:opacity-90 transition-colors shadow-lg">
             {running ? "⏸ Pause" : "▶ Start"}
           </button>
           <button onClick={advance}

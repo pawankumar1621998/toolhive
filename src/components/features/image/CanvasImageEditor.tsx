@@ -2215,7 +2215,7 @@ export function CanvasImageEditor({ tool, editorMode }: CanvasImageEditorProps) 
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-6 bg-black/40 backdrop-blur-sm">
             {!aiProcessing ? (
               <div className="flex flex-col items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-foreground/10 border border-foreground/20 backdrop-blur-sm">
                   <Sparkles className="h-8 w-8 text-white" />
                 </div>
                 <button
@@ -2265,7 +2265,7 @@ export function CanvasImageEditor({ tool, editorMode }: CanvasImageEditorProps) 
                 <img
                   src={ci.url}
                   alt={ci.file.name}
-                  className="h-12 w-12 rounded-lg object-cover border border-white/20"
+                  className="h-12 w-12 rounded-lg object-cover border border-foreground/20"
                 />
                 <button
                   type="button"

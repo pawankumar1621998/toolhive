@@ -639,7 +639,7 @@ export function SmartResumeBuilder() {
                 <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
               </div>
               <div className="overflow-auto p-4" style={{ maxHeight: "780px" }}>
-                <div ref={previewRef} className="bg-white shadow-lg mx-auto" style={{ width: "595px", minHeight: "842px", maxWidth: "100%" }}>
+                <div ref={previewRef} className="bg-card shadow-lg mx-auto" style={{ width: "595px", minHeight: "842px", maxWidth: "100%" }}>
                   <LivePreview form={form} template={template} company={selectedField.name} color={accentColor} />
                 </div>
               </div>

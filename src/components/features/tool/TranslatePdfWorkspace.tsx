@@ -101,7 +101,7 @@ export function TranslatePdfWorkspace() {
             {file ? (
               /* ── File selected ── */
               <div className="flex flex-col items-center gap-3 text-center">
-                <div className="w-28 h-36 bg-white dark:bg-background border border-border rounded-xl shadow-md flex flex-col items-center justify-center gap-2 relative">
+                <div className="w-28 h-36 bg-card dark:bg-background border border-border rounded-xl shadow-md flex flex-col items-center justify-center gap-2 relative">
                   <FileText className="h-10 w-10 text-red-500" />
                   <span className="text-xs font-bold text-red-500 tracking-wide">PDF</span>
                 </div>
@@ -233,7 +233,7 @@ export function TranslatePdfWorkspace() {
               >
                 {processing ? (
                   <>
-                    <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    <span className="h-4 w-4 rounded-full border-2 border-foreground-muted/30 border-t-foreground animate-spin" />
                     Translating…
                   </>
                 ) : (

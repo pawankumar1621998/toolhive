@@ -92,7 +92,7 @@ function StepTargetRole({ data, onChange, onBuildFromJD, jdLoading, jdFilled }: 
       {data.jobDescription.trim().length > 50 && (
         <button type="button" onClick={onBuildFromJD} disabled={jdLoading}
           className={clsx("flex items-center justify-center gap-2 w-full py-3 rounded-xl text-white font-semibold text-sm transition-opacity", jdLoading ? "opacity-60 cursor-wait" : "hover:opacity-90", "bg-gradient-to-r from-violet-500 to-indigo-600")}>
-          {jdLoading ? <><span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />AI is building your resume…</> : <><Sparkles className="h-4 w-4" />Build Resume from Job Description</>}
+          {jdLoading ? <><span className="h-4 w-4 rounded-full border-2 border-foreground-muted/30 border-t-foreground animate-spin" />AI is building your resume…</> : <><Sparkles className="h-4 w-4" />Build Resume from Job Description</>}
         </button>
       )}
       {jdFilled && (
@@ -838,7 +838,7 @@ export function ResumeBuilder() {
               </button>
             </div>
             <div className="overflow-auto p-4" style={{ maxHeight: "700px" }}>
-              <div className="bg-white shadow-lg mx-auto" style={{ width: "595px", minHeight: "842px", maxWidth: "100%" }}>
+              <div className="bg-card shadow-lg mx-auto" style={{ width: "595px", minHeight: "842px", maxWidth: "100%" }}>
                 <PreviewComp data={resumeData} />
               </div>
             </div>
