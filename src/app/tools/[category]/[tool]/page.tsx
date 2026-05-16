@@ -61,8 +61,35 @@ export async function generateMetadata({
   // Build canonical URL with correct production domain
   const canonicalUrl = `https://toolhive-red.vercel.app/tools/${category}/${toolSlug}`;
 
+  // Build keyword-rich title for SEO (TinyWow-style: descriptive + brand)
+  const keywordTitleMap: Record<string, string> = {
+    "compress": "Compress PDF Online Free — No Signup, No Limit, No Watermark",
+    "merge": "Merge PDF Files Online Free — Combine Multiple PDFs Instantly",
+    "split": "Split PDF Online Free — Separate PDF Pages Instantly",
+    "rotate": "Rotate PDF Online Free — Fix PDF Orientation Instantly",
+    "sign": "Sign PDF Online Free — Add Digital Signature, No Signup",
+    "watermark": "Add Watermark to PDF Free — Text & Image Watermark",
+    "page-numbers": "Add Page Numbers to PDF Free — Number PDF Pages Instantly",
+    "pdf-to-word": "Convert PDF to Word Online Free — No Signup Required",
+    "pdf-to-excel": "Convert PDF to Excel Free — Extract Tables Instantly",
+    "pdf-to-jpg": "Convert PDF to JPG Free — PDF to Image Online",
+    "remove-background": "Remove Image Background Free — AI Powered, No Watermark",
+    "resize": "Resize Image Free Online — No Signup, No Watermark",
+    "img-compress": "Compress Image Free Online — Reduce Size Without Quality Loss",
+    "convert": "Convert Image Format Free — JPG PNG WebP GIF Online",
+    "summarize": "AI Summarizer Free — Summarize Text Articles Documents Instantly",
+    "grammar-check": "Free Grammar Checker Online — No Signup, No Limit",
+    "rewrite": "AI Rewriter Free — Paraphrase Text Improve Clarity Instantly",
+    "translate": "AI Translator Free — Translate 100+ Languages Online",
+  };
+
+  const titleSuffix = keywordTitleMap[toolSlug] || `${tool.name} — Free Online Tool | ToolHive`;
+  const seoTitle = toolSlug in keywordTitleMap
+    ? `${keywordTitleMap[toolSlug]} | ToolHive`
+    : `${tool.name} — Free Online Tool | ToolHive`;
+
   return {
-    title: tool.name,
+    title: seoTitle,
     description: tool.description,
     keywords: [
       tool.name,
