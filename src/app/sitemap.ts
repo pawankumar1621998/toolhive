@@ -27,6 +27,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Guide pages
     { url: `${BASE_URL}/guides/pdf-tools-faq`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
     { url: `${BASE_URL}/guides/ai-writing-faq`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
+    // Blog posts
+    { url: `${BASE_URL}/blog/getting-started-with-ai-image-tools`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/blog/pdf-compression-tips`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/blog/video-editing-in-browser`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/blog/keyboard-shortcuts-power-users`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/blog/ai-writing-best-practices`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/blog/batch-processing-workflow`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/blog/toolhive-v2-launch`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/blog/march-2026-product-updates`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/guides/ai-writing-faq`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
     // Standalone tool pages (from Navbar AI Tools + Quick Tools)
     { url: `${BASE_URL}/resume-builder`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE_URL}/smart-resume`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },

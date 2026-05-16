@@ -1,5 +1,5 @@
 # ToolHive — Free AI Tools Platform
-**URL:** https://toolhive.app
+**URL:** https://toolhive-red.vercel.app
 **Description:** ToolHive offers 200+ free AI-powered tools for PDF, image, video, writing, calculators, and more. No signup required. Works in your browser instantly.
 
 ## About
@@ -18,37 +18,37 @@ ToolHive is a free online AI tools platform. We believe powerful tools should be
 
 ## PDF Tools
 ### Compress PDF
-**URL:** https://toolhive.app/tools/pdf/compress
+**URL:** https://toolhive-red.vercel.app/tools/pdf/compress
 **Keywords:** compress PDF online free no signup, compress PDF online free no limit, free PDF compressor, no watermark, batch compress
 **Description:** Compress PDF online free — no signup, no limit, no watermark. Reduce PDF file size by up to 90% with AI-powered compression. Batch compress unlimited PDF files instantly.
 
 ### AI PDF Summarizer
-**URL:** https://toolhive.app/tools/pdf/summarize-pdf
+**URL:** https://toolhive-red.vercel.app/tools/pdf/summarize-pdf
 **Keywords:** AI PDF summarizer free no signup, free AI PDF summarizer, pdf summarizer, document summarizer, no limit
 **Description:** Summarize any PDF document with AI — completely free, no signup required, no limits. Upload your PDF and get instant AI-powered summaries with key points.
 
 ### Merge PDF
-**URL:** https://toolhive.app/tools/pdf/merge
+**URL:** https://toolhive-red.vercel.app/tools/pdf/merge
 **Keywords:** merge PDF, combine PDF, join PDF files
 **Description:** Combine multiple PDF files into one. Drag to reorder pages before merging.
 
 ### Split PDF
-**URL:** https://toolhive.app/tools/pdf/split
+**URL:** https://toolhive-red.vercel.app/tools/pdf/split
 **Keywords:** split PDF, separate PDF pages, extract PDF pages
 **Description:** Split a PDF into individual pages or custom page ranges.
 
 ### PDF to Word
-**URL:** https://toolhive.app/tools/pdf/pdf-to-word
+**URL:** https://toolhive-red.vercel.app/tools/pdf/pdf-to-word
 **Keywords:** PDF to Word, convert PDF to DOCX, editable PDF
 **Description:** Convert PDF documents to editable Word (.docx) files with AI-powered layout preservation.
 
 ### PDF OCR
-**URL:** https://toolhive.app/tools/pdf/ocr
+**URL:** https://toolhive-red.vercel.app/tools/pdf/ocr
 **Keywords:** PDF OCR, extract text from scanned PDF, searchable PDF
 **Description:** Extract text from scanned PDFs and images using AI-powered OCR. Supports 40+ languages.
 
 ### Sign PDF
-**URL:** https://toolhive.app/tools/pdf/sign
+**URL:** https://toolhive-red.vercel.app/tools/pdf/sign
 **Keywords:** sign PDF, digital signature, esign
 **Description:** Add digital signatures to PDF files. Draw, type, or upload your signature.
 
@@ -56,32 +56,32 @@ ToolHive is a free online AI tools platform. We believe powerful tools should be
 
 ## Image Tools
 ### Remove Background
-**URL:** https://toolhive.app/tools/image/remove-background
+**URL:** https://toolhive-red.vercel.app/tools/image/remove-background
 **Keywords:** remove background from image free no watermark, background remover free no signup, transparent background, AI background remover
 **Description:** Remove background from image free online — no signup, no watermark, instant results. Get transparent PNG backgrounds in seconds using AI.
 
 ### Resize Image
-**URL:** https://toolhive.app/tools/image/resize
+**URL:** https://toolhive-red.vercel.app/tools/image/resize
 **Keywords:** free image resize, resize image free, image resizer online, resize photo free
 **Description:** Free image resize — no signup, no watermark, no quality loss. Resize images to exact pixel dimensions. Works for passport photos, social media, print, and web.
 
 ### Compress Image
-**URL:** https://toolhive.app/tools/image/img-compress
+**URL:** https://toolhive-red.vercel.app/tools/image/img-compress
 **Keywords:** compress image, reduce image size, optimize image
 **Description:** Compress JPEG, PNG, WebP images up to 90% smaller with no visible quality loss.
 
 ### AI Image Upscaler
-**URL:** https://toolhive.app/tools/image/upscale
+**URL:** https://toolhive-red.vercel.app/tools/image/upscale
 **Keywords:** upscale image, AI image enhancement, increase resolution
 **Description:** Upscale images 2x or 4x using high-quality resampling with sharpening.
 
 ### QR Code Generator
-**URL:** https://toolhive.app/tools/image/qr-code
+**URL:** https://toolhive-red.vercel.app/tools/image/qr-code
 **Keywords:** QR code generator, generate QR code, QR code
 **Description:** Generate QR codes for URLs, text, Wi-Fi, vCard, and more.
 
 ### Convert Image
-**URL:** https://toolhive.app/tools/image/convert
+**URL:** https://toolhive-red.vercel.app/tools/image/convert
 **Keywords:** convert image format, JPG to PNG, PNG to JPG, WebP
 **Description:** Convert between JPG, PNG, WebP, AVIF, GIF and more. Batch convert hundreds of images.
 
@@ -89,47 +89,47 @@ ToolHive is a free online AI tools platform. We believe powerful tools should be
 
 ## AI Writing Tools
 ### AI Summarizer
-**URL:** https://toolhive.app/tools/ai-writing/summarize
+**URL:** https://toolhive-red.vercel.app/tools/ai-writing/summarize
 **Keywords:** AI summarizer, text summarizer, summarize text, condense text
 **Description:** Summarize long articles, documents, or text into clear bullet points or concise paragraphs with one click. Free AI summarizer — no signup, no limit.
 
 ### Grammar Checker
-**URL:** https://toolhive.app/tools/ai-writing/grammar-check
+**URL:** https://toolhive-red.vercel.app/tools/ai-writing/grammar-check
 **Keywords:** grammar checker free no signup, free grammar checker, AI grammar checker, spell check
 **Description:** Free grammar checker — no signup, no limit. Instantly fix grammar, spelling, and punctuation errors with AI-powered corrections.
 
 ### AI Paraphraser
-**URL:** https://toolhive.app/tools/ai-writing/paraphrase
+**URL:** https://toolhive-red.vercel.app/tools/ai-writing/paraphrase
 **Keywords:** paraphrasing tool free no signup, free paraphrasing tool, reword text, avoid plagiarism
 **Description:** Free paraphrasing tool — no signup, no limit. Reword any text while keeping the original meaning. Choose from multiple paraphrase modes.
 
 ### AI Translator
-**URL:** https://toolhive.app/tools/ai-writing/translate
+**URL:** https://toolhive-red.vercel.app/tools/ai-writing/translate
 **Keywords:** AI translator, translate text, language translator, 100+ languages
 **Description:** Translate text between 100+ languages with context-aware AI translation.
 
 ### AI Rewriter
-**URL:** https://toolhive.app/tools/ai-writing/rewrite
+**URL:** https://toolhive-red.vercel.app/tools/ai-writing/rewrite
 **Keywords:** AI rewriter, rewrite text, improve writing
 **Description:** Rewrite any text to improve clarity, tone, or style. Choose from professional, casual, formal, or creative modes.
 
 ### Twitter Thread Writer
-**URL:** https://toolhive.app/tools/ai-writing/twitter-thread
+**URL:** https://toolhive-red.vercel.app/tools/ai-writing/twitter-thread
 **Keywords:** Twitter thread generator AI free, free twitter thread generator, ai thread generator, viral twitter thread
 **Description:** Free AI Twitter thread generator — no signup needed. Write viral Twitter/X threads instantly with hooks, numbered points, and engaging CTAs.
 
 ### LinkedIn Post Writer
-**URL:** https://toolhive.app/tools/ai-writing/linkedin-post
+**URL:** https://toolhive-red.vercel.app/tools/ai-writing/linkedin-post
 **Keywords:** LinkedIn post generator AI free, free linkedin post generator, viral linkedin post
 **Description:** Free AI LinkedIn post generator — no signup required. Write engaging, viral LinkedIn posts about career wins, lessons, and insights.
 
 ### YouTube Script Writer
-**URL:** https://toolhive.app/tools/ai-writing/youtube-script
+**URL:** https://toolhive-red.vercel.app/tools/ai-writing/youtube-script
 **Keywords:** YouTube script generator AI free, free youtube script generator, video script writer
 **Description:** Free AI YouTube script generator — no signup needed. Write complete YouTube video scripts with hooks, intros, main content, transitions, and CTAs.
 
 ### AI Caption Generator
-**URL:** https://toolhive.app/tools/ai-writing/caption-generator
+**URL:** https://toolhive-red.vercel.app/tools/ai-writing/caption-generator
 **Keywords:** caption generator, social media caption, instagram caption
 **Description:** Generate engaging captions for Instagram, Twitter, LinkedIn, and TikTok with hashtag suggestions.
 
@@ -137,27 +137,27 @@ ToolHive is a free online AI tools platform. We believe powerful tools should be
 
 ## Resume Tools
 ### Resume Builder
-**URL:** https://toolhive.app/tools/resume/builder
+**URL:** https://toolhive-red.vercel.app/tools/resume/builder
 **Keywords:** free premium resume builder, premium resume builder no signup, resume builder free, create resume, professional resume
 **Description:** Free premium resume builder — no signup, no watermark, no limit. Create professional resumes with AI-powered suggestions, 50+ premium templates, and smart formatting.
 
 ### Resume Analyzer
-**URL:** https://toolhive.app/tools/resume/analyzer
+**URL:** https://toolhive-red.vercel.app/tools/resume/analyzer
 **Keywords:** resume analyzer, AI resume feedback, resume improvement
 **Description:** Upload your resume and get detailed AI-powered feedback. Fix common mistakes, improve formatting.
 
 ### LinkedIn Profile Writer
-**URL:** https://toolhive.app/tools/resume/linkedin-writer
+**URL:** https://toolhive-red.vercel.app/tools/resume/linkedin-writer
 **Keywords:** LinkedIn profile writer, optimize linkedin profile, linkedin headline
 **Description:** Optimize your LinkedIn profile with AI. Generate compelling headline, About section, and experience bullets.
 
 ### Cover Letter Generator
-**URL:** https://toolhive.app/tools/resume/cover-letter
+**URL:** https://toolhive-red.vercel.app/tools/resume/cover-letter
 **Keywords:** cover letter generator, AI cover letter, job application
 **Description:** Generate personalized cover letters in seconds. Input your details and job description for a tailored letter.
 
 ### Resume ATS Checker
-**URL:** https://toolhive.app/tools/resume/ats-checker
+**URL:** https://toolhive-red.vercel.app/tools/resume/ats-checker
 **Keywords:** ATS checker, resume ATS, applicant tracking system
 **Description:** Check how well your resume passes Applicant Tracking Systems. Get ATS compatibility score with actionable fixes.
 
@@ -171,7 +171,7 @@ ToolHive is a free online AI tools platform. We believe powerful tools should be
 ### Discount Calculator
 ### Age Calculator
 ### Date Difference Calculator
-**URL:** https://toolhive.app/tools/calculator
+**URL:** https://toolhive-red.vercel.app/tools/calculator
 
 ---
 
@@ -190,7 +190,7 @@ ToolHive is a free online AI tools platform. We believe powerful tools should be
 ### Random Number Generator
 ### Remove Duplicates
 ### Base64 Encoder/Decoder
-**URL:** https://toolhive.app/tools/converter
+**URL:** https://toolhive-red.vercel.app/tools/converter
 
 ---
 
@@ -210,7 +210,7 @@ ToolHive is a free online AI tools platform. We believe powerful tools should be
 **Stack:** Next.js 16, React 19, TypeScript, Tailwind CSS v4
 **Hosting:** Deployed on Vercel
 **HTTPS:** Enabled
-**Sitemap:** https://toolhive.app/sitemap.xml
-**Contact:** https://toolhive.app/contact
-**Privacy Policy:** https://toolhive.app/privacy
-**Terms of Service:** https://toolhive.app/terms
+**Sitemap:** https://toolhive-red.vercel.app/sitemap.xml
+**Contact:** https://toolhive-red.vercel.app/contact
+**Privacy Policy:** https://toolhive-red.vercel.app/privacy
+**Terms of Service:** https://toolhive-red.vercel.app/terms
