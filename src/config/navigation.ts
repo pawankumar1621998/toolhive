@@ -22,7 +22,7 @@ export const TOOL_CATEGORIES = [
   {
     id: "pdf",
     label: "PDF Tools",
-    description: "Compress, merge, split, convert, and sign PDF files.",
+    description: "Free PDF tools online — compress PDF, merge, split, convert, sign, add watermark. No signup, no limits, no watermarks. 100% free PDF tools for everyone.",
     icon: "📄",
     iconName: "FileText",
     color: "rose",
@@ -33,7 +33,7 @@ export const TOOL_CATEGORIES = [
   {
     id: "image",
     label: "Image Tools",
-    description: "Resize, compress, convert, and enhance images with AI.",
+    description: "Free image tools online — remove background, resize, compress, convert images. No signup, no watermark. AI-powered image editing 100% free.",
     icon: "🖼️",
     iconName: "Image",
     color: "violet",
@@ -44,7 +44,7 @@ export const TOOL_CATEGORIES = [
   {
     id: "ai-writing",
     label: "AI Writing",
-    description: "Rewrite, summarize, translate, and improve any text with AI.",
+    description: "Free AI writing tools — grammar checker, paraphrasing, summarizer, translator, Twitter thread generator, LinkedIn post generator. No signup required.",
     icon: "✍️",
     iconName: "Pen",
     color: "emerald",

@@ -200,6 +200,42 @@ function ToolJsonLd({ tool, url }: { tool: NonNullable<ReturnType<typeof getTool
     ],
   };
 
+  // HowTo schema for step-by-step instructions (TinyWow-style)
+  const toolCategorySteps: Record<string, string[]> = {
+    pdf: [
+      "Upload your PDF file by dragging and dropping or clicking the upload area",
+      "Arrange pages if needed using drag-and-drop reordering",
+      "Click the process button to apply changes",
+      "Download your processed PDF file instantly — no signup required",
+    ],
+    image: [
+      "Upload your image by dragging and dropping or clicking to select files",
+      "Adjust settings if needed (size, format, quality)",
+      "Click the process button to apply changes",
+      "Download your processed image instantly — no signup required",
+    ],
+    default: [
+      "Enter your text, URL, or upload your file",
+      "Configure any optional settings as needed",
+      "Click the process button to generate results",
+      "Download or copy your result instantly — no signup required",
+    ],
+  };
+
+  const steps = toolCategorySteps[tool.category] || toolCategorySteps.default;
+
+  const howToJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: `How to use ${tool.name} — Free Online Tool`,
+    description: tool.shortDescription || tool.description.substring(0, 200),
+    step: steps.map((text, index) => ({
+      "@type": "HowToStep",
+      position: index + 1,
+      text: text,
+    })),
+  };
+
   const appJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -234,6 +270,11 @@ function ToolJsonLd({ tool, url }: { tool: NonNullable<ReturnType<typeof getTool
         id="ld-tool-faq"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <Script
+        id="ld-tool-howto"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }}
       />
       <Script
         id="ld-tool"
