@@ -123,7 +123,7 @@ function ThemeSwitcherButton() {
           "transition-all duration-200"
         )}
         aria-label="Change theme"
-        aria-expanded={open}
+        aria-expanded={open ? "true" : "false"}
         aria-haspopup="true"
       >
         <CurrentIcon className="h-4 w-4" />
@@ -197,7 +197,7 @@ function MoreDropdown({ pathname }: { pathname: string }) {
           "flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150",
           "text-foreground-muted hover:text-foreground hover:bg-background-subtle"
         )}
-        aria-expanded={open}
+        aria-expanded={open ? "true" : "false"}
         aria-haspopup="true"
       >
         More
@@ -373,7 +373,7 @@ function NavSearch() {
           aria-label="Search tools"
           aria-autocomplete="list"
           aria-controls={isOpen ? "nav-search-results" : undefined}
-          aria-expanded={isOpen}
+          aria-expanded={isOpen ? "true" : "false"}
           role="combobox"
         />
         {query && (
@@ -642,7 +642,7 @@ export function Navbar() {
             className="md:hidden shrink-0 flex h-10 w-10 items-center justify-center rounded-xl text-foreground-muted hover:text-foreground hover:bg-background-subtle transition-all duration-150"
             onClick={() => setMobileOpen(true)}
             aria-label="Open navigation menu"
-            aria-expanded={mobileOpen}
+            aria-expanded={mobileOpen ? "true" : "false"}
             aria-controls="mobile-drawer"
           >
             <Menu className="h-5 w-5" />
