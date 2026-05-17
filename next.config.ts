@@ -7,8 +7,12 @@ const nextConfig: NextConfig = {
 
   serverExternalPackages: ["sharp", "pdf-parse", "docx", "exceljs", "@distube/ytdl-core", "pdfjs-dist"],
 
+  // Generate production source maps for better debugging
+  productionBrowserSourceMaps: true,
+
   experimental: {
-    instantNavigationDevToolsToggle: true,
+    optimizeCss: true,
+    optimizePackageImports: ["lucide-react", "framer-motion"],
   },
 
   turbopack: {},
