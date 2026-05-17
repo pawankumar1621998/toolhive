@@ -351,7 +351,8 @@ function HeroSearchBar() {
           aria-label="Search tools"
           autoComplete="off"
           aria-autocomplete="list"
-          aria-expanded={showSuggestions}
+          aria-expanded={showSuggestions ? "true" : "false"}
+          aria-controls="search-suggestions"
         />
 
         {/* Clear button */}
@@ -396,6 +397,8 @@ function HeroSearchBar() {
       <AnimatePresence>
         {(showSuggestions || showTrending) && (
           <motion.div
+            id="search-suggestions"
+            role="listbox"
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
