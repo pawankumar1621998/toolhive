@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     "PDF splitter free",
     "iLovePDF alternative",
   ],
-  alternates: { canonical: "https://toolhive-red.vercel.app/compare/toolhive-vs-ilovepdf" },
+  alternates: { canonical: "https://toolhive.co.in/compare/toolhive-vs-ilovepdf" },
   openGraph: {
     title: "ToolHive vs iLovePDF — Free PDF Tools Compared",
     description: "ToolHive vs iLovePDF: which free PDF tool wins? ToolHive has 200+ free tools with no account required. Compare features, limits, and quality.",

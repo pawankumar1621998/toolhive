@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     "PDF watermark removal",
     "People also ask PDF tools",
   ],
-  alternates: { canonical: "https://toolhive-red.vercel.app/guides/pdf-tools-faq" },
+  alternates: { canonical: "https://toolhive.co.in/guides/pdf-tools-faq" },
   openGraph: {
     title: "PDF Tools FAQ — Your Questions Answered",
     description: "Find answers to common PDF tool questions. Free compression, merge, split, and more — no signup required.",

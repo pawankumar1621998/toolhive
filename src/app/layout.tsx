@@ -19,19 +19,19 @@ const LD_JSON_WEBSITE = {
   "@type": "WebSite",
   name: "ToolHive",
   description: "200+ free AI-powered tools for PDF, image, video, and writing — no signup required",
-  url: "https://toolhive-red.vercel.app",
+  url: "https://toolhive.co.in",
   potentialAction: {
     "@type": "SearchAction",
     target: {
       "@type": "EntryPoint",
-      urlTemplate: "https://toolhive-red.vercel.app/search?q={search_term_string}",
+      urlTemplate: "https://toolhive.co.in/search?q={search_term_string}",
     },
     "query-input": "required name=search_term_string",
   },
   publisher: {
     "@type": "Organization",
     name: "ToolHive",
-    url: "https://toolhive-red.vercel.app",
+    url: "https://toolhive.co.in",
   },
 };
 
@@ -39,10 +39,10 @@ const LD_JSON_ORG = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "ToolHive",
-  url: "https://toolhive-red.vercel.app",
+  url: "https://toolhive.co.in",
   logo: {
     "@type": "ImageObject",
-    url: "https://toolhive-red.vercel.app/favicon.ico",
+    url: "https://toolhive.co.in/favicon.ico",
   },
   description:
     "ToolHive provides 200+ free AI-powered online tools for PDF, image, video, and writing tasks. No signup required, works instantly in your browser. Founded by Pawan Kumar from Haryana, India.",
@@ -77,7 +77,7 @@ const LD_JSON_SOFTWARE = {
   name: "ToolHive",
   description:
     "Free online AI tools including PDF compressor, background remover, AI writer, grammar checker, paraphrasing tool, Twitter thread generator, LinkedIn post generator, YouTube script generator, image generator, and more — all free, no signup required.",
-  url: "https://toolhive-red.vercel.app",
+  url: "https://toolhive.co.in",
   applicationCategory: "UtilityApplication",
   operatingSystem: "All",
   offers: {
@@ -147,14 +147,14 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "ToolHive" }],
   creator: "ToolHive",
-  metadataBase: new URL("https://toolhive-red.vercel.app"),
+  metadataBase: new URL("https://toolhive.co.in"),
   alternates: {
-    canonical: "https://toolhive-red.vercel.app",
+    canonical: "https://toolhive.co.in",
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://toolhive-red.vercel.app",
+    url: "https://toolhive.co.in",
     siteName: "ToolHive",
     title: "ToolHive — AI-Powered Tools for Everyone",
     description:

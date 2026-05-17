@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     "PDF tools no signup",
     "smallpdf alternative free",
   ],
-  alternates: { canonical: "https://toolhive-red.vercel.app/compare/toolhive-vs-smallpdf" },
+  alternates: { canonical: "https://toolhive.co.in/compare/toolhive-vs-smallpdf" },
   openGraph: {
     title: "ToolHive vs Smallpdf — Free PDF Tools Compared",
     description: "Which free PDF tool is better? ToolHive offers unlimited free PDF tools with no signup. Smallpdf requires signup after limited uses. See the full comparison.",

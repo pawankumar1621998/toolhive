@@ -29,22 +29,22 @@ export function createWebSiteSchema() {
     "@type": "WebSite",
     name: "ToolHive",
     description: "200+ free AI-powered tools for PDF, image, video, and writing. No signup required.",
-    url: "https://toolhive-red.vercel.app",
+    url: "https://toolhive.co.in",
     potentialAction: {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: "https://toolhive-red.vercel.app/search?q={search_term_string}",
+        urlTemplate: "https://toolhive.co.in/search?q={search_term_string}",
       },
       "query-input": "required name=search_term_string",
     },
     publisher: {
       "@type": "Organization",
       name: "ToolHive",
-      url: "https://toolhive-red.vercel.app",
+      url: "https://toolhive.co.in",
       logo: {
         "@type": "ImageObject",
-        url: "https://toolhive-red.vercel.app/favicon.ico",
+        url: "https://toolhive.co.in/favicon.ico",
       },
     },
   };
@@ -61,7 +61,7 @@ export function createSoftwareApplicationSchema() {
     name: "ToolHive",
     description:
       "200+ free online AI tools including PDF compressor, background remover, AI summarizer, grammar checker, paraphrasing tool, Twitter thread generator, YouTube script generator, and more. No signup required.",
-    url: "https://toolhive-red.vercel.app",
+    url: "https://toolhive.co.in",
     applicationCategory: "UtilityApplication",
     operatingSystem: "All",
     offers: {
@@ -98,10 +98,10 @@ export function createOrganizationSchema() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "ToolHive",
-    url: "https://toolhive-red.vercel.app",
+    url: "https://toolhive.co.in",
     logo: {
       "@type": "ImageObject",
-      url: "https://toolhive-red.vercel.app/favicon.ico",
+      url: "https://toolhive.co.in/favicon.ico",
     },
     description:
       "ToolHive provides 200+ free AI-powered online tools for PDF, image, video, and writing tasks. No signup required, works instantly in your browser.",
@@ -216,7 +216,7 @@ export function createCollectionPageSchema(category: ToolCategoryConfig) {
     "@type": "CollectionPage",
     name: `${category.label} — ToolHive`,
     description: category.description,
-    url: `https://toolhive-red.vercel.app/tools/${category.id}`,
+    url: `https://toolhive.co.in/tools/${category.id}`,
   };
 }
 
@@ -234,7 +234,7 @@ export function createWebPageSchema(title: string, description: string, url: str
     isPartOf: {
       "@type": "WebSite",
       name: "ToolHive",
-      url: "https://toolhive-red.vercel.app",
+      url: "https://toolhive.co.in",
     },
   };
 }

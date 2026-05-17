@@ -800,7 +800,7 @@ export default function AutomationDashboard() {
                   {[
                     { label: "INSTAGRAM_APP_ID", value: "••••••••829" },
                     { label: "INSTAGRAM_APP_SECRET", value: "••••••••••••" },
-                    { label: "INSTAGRAM_REDIRECT_URI", value: "https://toolhive-red.vercel.app" },
+                    { label: "INSTAGRAM_REDIRECT_URI", value: "https://toolhive.co.in" },
                   ].map(({ label, value }) => (
                     <div key={label} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                       <span className="text-xs text-foreground-subtle font-mono">{label}</span>

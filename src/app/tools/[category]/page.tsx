@@ -28,7 +28,7 @@ export async function generateMetadata({
   const cat = TOOL_CATEGORIES.find((c) => c.id === category);
   if (!cat) return {};
 
-  const canonicalUrl = `https://toolhive-red.vercel.app/tools/${category}`;
+  const canonicalUrl = `https://toolhive.co.in/tools/${category}`;
 
   return {
     title: `${cat.label} — Free Online Tools | ToolHive`,
@@ -65,7 +65,7 @@ export async function generateMetadata({
 // ─────────────────────────────────────────────
 
 function CategoryJsonLd({ cat }: { cat: (typeof TOOL_CATEGORIES)[number] }) {
-  const catUrl = `https://toolhive-red.vercel.app/tools/${cat.id}`;
+  const catUrl = `https://toolhive.co.in/tools/${cat.id}`;
 
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
@@ -75,7 +75,7 @@ function CategoryJsonLd({ cat }: { cat: (typeof TOOL_CATEGORIES)[number] }) {
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: "https://toolhive-red.vercel.app",
+        item: "https://toolhive.co.in",
       },
       {
         "@type": "ListItem",

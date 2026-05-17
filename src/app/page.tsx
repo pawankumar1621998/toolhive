@@ -60,7 +60,7 @@ export const metadata: Metadata = {
       "PDF, Image, Video, AI Writing & Calculator tools — all free, no account needed.",
   },
   alternates: {
-    canonical: "https://toolhive-red.vercel.app",
+    canonical: "https://toolhive.co.in",
   },
 };
 
@@ -98,7 +98,7 @@ const FAQ_JSON_LD = {
       name: "How to compress PDF online free?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "To compress PDF online free: 1) Go to toolhive-red.vercel.app/tools/pdf/compress, 2) Drag and drop your PDF file or click to upload, 3) Wait ~3 seconds for AI-powered compression, 4) Download your compressed PDF instantly. No signup, no watermarks, reduce file size by up to 90%.",
+        text: "To compress PDF online free: 1) Go to toolhive.co.in/tools/pdf/compress, 2) Drag and drop your PDF file or click to upload, 3) Wait ~3 seconds for AI-powered compression, 4) Download your compressed PDF instantly. No signup, no watermarks, reduce file size by up to 90%.",
       },
     },
     {
@@ -106,7 +106,7 @@ const FAQ_JSON_LD = {
       name: "How to remove background from image free?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "To remove background from image free: 1) Visit toolhive-red.vercel.app/tools/image/remove-background, 2) Upload your image (JPG, PNG, WebP up to 10MB), 3) AI automatically removes background in ~5 seconds, 4) Download transparent PNG. No signup, no watermarks, completely free.",
+        text: "To remove background from image free: 1) Visit toolhive.co.in/tools/image/remove-background, 2) Upload your image (JPG, PNG, WebP up to 10MB), 3) AI automatically removes background in ~5 seconds, 4) Download transparent PNG. No signup, no watermarks, completely free.",
       },
     },
     {
@@ -130,7 +130,7 @@ const FAQ_JSON_LD = {
       name: "How does free AI image generation work?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "ToolHive's AI image generator at toolhive-red.vercel.app/text-to-image uses NVIDIA FLUX to create stunning images from text descriptions. Simply enter any text prompt — 'a sunset over mountains in anime style' — and get AI-generated images in seconds. Supports photorealistic, anime, oil painting, cinematic, and many more styles. 100% free, no signup needed.",
+        text: "ToolHive's AI image generator at toolhive.co.in/text-to-image uses NVIDIA FLUX to create stunning images from text descriptions. Simply enter any text prompt — 'a sunset over mountains in anime style' — and get AI-generated images in seconds. Supports photorealistic, anime, oil painting, cinematic, and many more styles. 100% free, no signup needed.",
       },
     },
   ],

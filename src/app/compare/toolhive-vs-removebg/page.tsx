@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     "remove background from image free no watermark",
     "remove.bg alternative free",
   ],
-  alternates: { canonical: "https://toolhive-red.vercel.app/compare/toolhive-vs-removebg" },
+  alternates: { canonical: "https://toolhive.co.in/compare/toolhive-vs-removebg" },
   openGraph: {
     title: "ToolHive vs remove.bg — Free Background Removal Compared",
     description: "Which free background removal tool is better? ToolHive offers unlimited free BG removal at full resolution. remove.bg limits free users to 3 exports/month. See the full comparison.",

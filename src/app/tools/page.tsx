@@ -6,7 +6,7 @@ import { SectionSkeleton } from "@/components/ui/Skeletons";
 export const metadata: Metadata = {
   title: "All Tools — ToolHive",
   description: "Browse 200+ free AI-powered tools for PDF, image, video, writing, audio, and more. No signup required.",
-  alternates: { canonical: "https://toolhive-red.vercel.app/tools" },
+  alternates: { canonical: "https://toolhive.co.in/tools" },
   openGraph: {
     title: "All Tools — ToolHive",
     description: "Browse 200+ free AI-powered tools.",

@@ -15,7 +15,7 @@ Disallow: /dashboard/
 Disallow: /auth/
 
 # Sitemap
-Sitemap: https://toolhive-red.vercel.app/sitemap.xml
+Sitemap: https://toolhive.co.in/sitemap.xml
 
 # Crawl delay for polite bots
 Crawl-delay: 1

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     "free AI writing no signup",
     "People also ask AI writing",
   ],
-  alternates: { canonical: "https://toolhive-red.vercel.app/guides/ai-writing-faq" },
+  alternates: { canonical: "https://toolhive.co.in/guides/ai-writing-faq" },
   openGraph: {
     title: "AI Writing Tools FAQ — Your Questions Answered",
     description: "Answers to questions about free AI writing tools. Grammar check, paraphrase, summarize — all without signup.",

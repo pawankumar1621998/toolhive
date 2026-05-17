@@ -59,7 +59,7 @@ export async function generateMetadata({
   const categoryConfig = TOOL_CATEGORIES.find((c) => c.id === category);
 
   // Build canonical URL with correct production domain
-  const canonicalUrl = `https://toolhive-red.vercel.app/tools/${category}/${toolSlug}`;
+  const canonicalUrl = `https://toolhive.co.in/tools/${category}/${toolSlug}`;
 
   // Build keyword-rich title for SEO (TinyWow-style: descriptive + brand)
   const keywordTitleMap: Record<string, string> = {
@@ -142,13 +142,13 @@ function ToolJsonLd({ tool, url }: { tool: NonNullable<ReturnType<typeof getTool
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: "https://toolhive-red.vercel.app",
+        item: "https://toolhive.co.in",
       },
       {
         "@type": "ListItem",
         position: 2,
         name: categoryName,
-        item: `https://toolhive-red.vercel.app/tools/${tool.category}`,
+        item: `https://toolhive.co.in/tools/${tool.category}`,
       },
       {
         "@type": "ListItem",
@@ -315,7 +315,7 @@ export default async function ToolPage({
   const tool = getToolBySlug(toolSlug, category);
   if (!tool) notFound();
 
-  const canonicalUrl = `https://toolhive-red.vercel.app/tools/${category}/${toolSlug}`;
+  const canonicalUrl = `https://toolhive.co.in/tools/${category}/${toolSlug}`;
 
   return (
     <>

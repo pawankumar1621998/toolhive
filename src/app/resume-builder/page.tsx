@@ -7,13 +7,13 @@ export const metadata: Metadata = {
   description:
     "Build a professional resume in minutes with our free AI-powered resume builder. Live preview, 3 templates, ATS-friendly PDF download. No signup required. 100% free premium resume builder.",
   keywords: ["resume builder", "free resume maker", "AI resume builder", "ATS friendly resume", "professional resume free", "premium resume builder no signup", "create resume online free"],
-  alternates: { canonical: "https://toolhive-red.vercel.app/resume-builder" },
+  alternates: { canonical: "https://toolhive.co.in/resume-builder" },
   openGraph: {
     title: "Free Premium Resume Builder | ToolHive",
     description: "Build a professional ATS-friendly resume for free. AI-powered, live preview, instant PDF download. No signup.",
     type: "website",
     siteName: "ToolHive",
-    url: "https://toolhive-red.vercel.app/resume-builder",
+    url: "https://toolhive.co.in/resume-builder",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Free Resume Builder by ToolHive" }],
   },
   twitter: {
@@ -31,13 +31,13 @@ const BREADCRUMB_JSON_LD = {
       "@type": "ListItem",
       position: 1,
       name: "Home",
-      item: "https://toolhive-red.vercel.app",
+      item: "https://toolhive.co.in",
     },
     {
       "@type": "ListItem",
       position: 2,
       name: "Resume Builder",
-      item: "https://toolhive-red.vercel.app/resume-builder",
+      item: "https://toolhive.co.in/resume-builder",
     },
   ],
 };
@@ -47,7 +47,7 @@ const APP_JSON_LD = {
   "@type": "WebApplication",
   name: "Free Resume Builder",
   description: "Build a professional ATS-friendly resume for free. AI-powered resume builder with live preview, 3 templates, and instant PDF download. No signup required.",
-  url: "https://toolhive-red.vercel.app/resume-builder",
+  url: "https://toolhive.co.in/resume-builder",
   applicationCategory: "UtilityApplication",
   operatingSystem: "All",
   offers: {

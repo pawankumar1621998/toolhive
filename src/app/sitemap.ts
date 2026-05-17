@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { TOOLS } from "@/config/tools";
 import { TOOL_CATEGORIES } from "@/config/navigation";
 
-const BASE_URL = "https://toolhive-red.vercel.app";
+const BASE_URL = "https://toolhive.co.in";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes: MetadataRoute.Sitemap = [

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     "AI writing tools comparison",
     "quillbot alternative free",
   ],
-  alternates: { canonical: "https://toolhive-red.vercel.app/compare/toolhive-vs-quillbot" },
+  alternates: { canonical: "https://toolhive.co.in/compare/toolhive-vs-quillbot" },
   openGraph: {
     title: "ToolHive vs QuillBot — Free AI Writing Tools Compared",
     description: "ToolHive offers grammar checker, paraphrasing, and summarizer completely free with no signup. QuillBot limits free use. Compare features and find your best free writing tool.",

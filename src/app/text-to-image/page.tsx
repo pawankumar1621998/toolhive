@@ -44,7 +44,7 @@ export const metadata: Metadata = {
       "Generate stunning AI images from text for free. No signup, no watermark.",
   },
   alternates: {
-    canonical: "https://toolhive-red.vercel.app/text-to-image",
+    canonical: "https://toolhive.co.in/text-to-image",
   },
 };
 
@@ -52,8 +52,8 @@ const BREADCRUMB_JSON_LD = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
   itemListElement: [
-    { "@type": "ListItem", position: 1, name: "Home", item: "https://toolhive-red.vercel.app" },
-    { "@type": "ListItem", position: 2, name: "AI Image Generator", item: "https://toolhive-red.vercel.app/text-to-image" },
+    { "@type": "ListItem", position: 1, name: "Home", item: "https://toolhive.co.in" },
+    { "@type": "ListItem", position: 2, name: "AI Image Generator", item: "https://toolhive.co.in/text-to-image" },
   ],
 };
 
@@ -63,7 +63,7 @@ const LD_JSON = {
   name: "AI Image Generator — Text to Image",
   description:
     "Free AI image generator that creates stunning images from text descriptions. Supports photorealistic, anime, oil painting, and cinematic styles. No signup required, no watermark.",
-  url: "https://toolhive-red.vercel.app/text-to-image",
+  url: "https://toolhive.co.in/text-to-image",
   applicationCategory: "UtilityApplication",
   operatingSystem: "All",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD", availability: "https://schema.org/InStock" },
