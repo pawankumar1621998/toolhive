@@ -74,19 +74,17 @@ const nextConfig: NextConfig = {
       { source: "/remove-background", destination: "/tools/image/remove-background", permanent: true },
       { source: "/image-resize", destination: "/tools/image/resize", permanent: true },
       { source: "/background-remover", destination: "/tools/image/remove-background", permanent: true },
-      { source: "/image-generator", destination: "/tools/image/image-generator", permanent: true },
 
       // AI Writing tools
-      { source: "/twitter-thread-generator", destination: "/tools/ai-writing/twitter-thread-generator", permanent: true },
-      { source: "/linkedin-post-generator", destination: "/tools/ai-writing/linkedin-post-generator", permanent: true },
-      { source: "/youtube-script-generator", destination: "/tools/ai-writing/youtube-script-generator", permanent: true },
+      { source: "/twitter-thread-generator", destination: "/tools/ai-writing/twitter-thread", permanent: true },
       { source: "/grammar-checker", destination: "/tools/ai-writing/grammar-check", permanent: true },
       { source: "/paraphrasing-tool", destination: "/tools/ai-writing/paraphrase", permanent: true },
 
-      // Resume
+      // Standalone tools
       { source: "/resume-builder", destination: "/tools/resume/builder", permanent: true },
       { source: "/free-resume", destination: "/tools/resume/builder", permanent: true },
       { source: "/premium-resume", destination: "/tools/resume/builder", permanent: true },
+      { source: "/text-to-image", destination: "/text-to-image", permanent: true },
     ];
   },
 };

@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 
 const ChatBot = dynamic(
-  () => import("./ChatBot").then((m) => m.ChatBot),
+  () => import("./ChatBot").then((m) => ({ default: m.ChatBot })),
   {
     ssr: false,
     loading: () => null,
@@ -11,6 +11,5 @@ const ChatBot = dynamic(
 );
 
 export function ChatBotWrapper() {
-  if (typeof window === "undefined") return null;
   return <ChatBot />;
 }
