@@ -81,6 +81,14 @@ export async function generateMetadata({
     "grammar-check": "Free Grammar Checker Online — No Signup, No Limit",
     "rewrite": "AI Rewriter Free — Paraphrase Text Improve Clarity Instantly",
     "translate": "AI Translator Free — Translate 100+ Languages Online",
+    "morse-code": "Morse Code Translator Free — Encode Decode Text Online",
+    "body-fat": "Body Fat Calculator Free — Indian Body Fat Calculator Online",
+    "speech-to-text": "Speech to Text Converter Free — Transcribe Audio Online",
+    "twitter-thread": "Twitter Thread Generator Free — AI Write Viral Threads",
+    "linkedin-post": "LinkedIn Post Generator Free — AI Write Engaging Posts",
+    "youtube-script": "YouTube Script Generator Free — AI Write Video Scripts",
+    "paraphrase": "Paraphrasing Tool Free — Rewrite Text Without Plagiarism",
+    "ocr": "PDF OCR Free — Extract Text from Scanned PDF Online",
   };
 
   const titleSuffix = keywordTitleMap[toolSlug] || `${tool.name} — Free Online Tool | ToolHive`;
