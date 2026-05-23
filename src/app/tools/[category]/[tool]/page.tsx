@@ -89,6 +89,12 @@ export async function generateMetadata({
     "youtube-script": "YouTube Script Generator Free — AI Write Video Scripts",
     "paraphrase": "Paraphrasing Tool Free — Rewrite Text Without Plagiarism",
     "ocr": "PDF OCR Free — Extract Text from Scanned PDF Online",
+    "cover-letter": "Cover Letter Generator Free — AI Write Professional Cover Letters",
+    "ats-checker": "ATS Checker Free — Check Resume Score & Pass Screening",
+    "note-maker": "AI Notes Generator Free — Create Notes from Any Text",
+    "gst": "GST Calculator Free — Calculate GST Amount Online India",
+    "trip-distance": "Trip Distance Calculator Free — Calculate Travel Distance Online",
+    "smart-resume": "Smart Resume Builder Free — Create ATS-Friendly Resume Online",
   };
 
   const titleSuffix = keywordTitleMap[toolSlug] || `${tool.name} — Free Online Tool | ToolHive`;
