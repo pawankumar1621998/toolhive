@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/dashboard/", "/auth/"],
       },
     ],
-    sitemap: "https://toolhive.app/sitemap.xml",
+    sitemap: "https://toolhive.co.in/sitemap.xml",
   };
 }
