@@ -99,8 +99,8 @@ export async function generateMetadata({
 
   const titleSuffix = keywordTitleMap[toolSlug] || `${tool.name} — Free Online Tool | ToolHive`;
   const seoTitle = toolSlug in keywordTitleMap
-    ? `${keywordTitleMap[toolSlug]} | ToolHive`
-    : `${tool.name} — Free Online Tool | ToolHive`;
+    ? keywordTitleMap[toolSlug]
+    : `${tool.name} — Free Online Tool`;
 
   return {
     title: seoTitle,
