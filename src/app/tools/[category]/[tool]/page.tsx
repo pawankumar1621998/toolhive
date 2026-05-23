@@ -211,6 +211,22 @@ function ToolJsonLd({ tool, url }: { tool: NonNullable<ReturnType<typeof getTool
             : "Works with any text input. No file upload required.",
         },
       },
+      {
+        "@type": "Question",
+        name: `Does ${tool.name} leave watermarks?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "No watermarks ever. Your output is 100% clean and ready to use without any ToolHive branding.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: `Can I use ${tool.name} on mobile?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes, works perfectly on mobile phones and tablets. No app download required — just open in your browser.",
+        },
+      },
     ],
   };
 
@@ -218,20 +234,32 @@ function ToolJsonLd({ tool, url }: { tool: NonNullable<ReturnType<typeof getTool
   const toolCategorySteps: Record<string, string[]> = {
     pdf: [
       "Upload your PDF file by dragging and dropping or clicking the upload area",
-      "Arrange pages if needed using drag-and-drop reordering",
-      "Click the process button to apply changes",
+      "Configure your preferred settings (compression level, output quality, page range)",
+      "Click the process button to apply changes to your PDF",
       "Download your processed PDF file instantly — no signup required",
     ],
     image: [
       "Upload your image by dragging and dropping or clicking to select files",
-      "Adjust settings if needed (size, format, quality)",
-      "Click the process button to apply changes",
-      "Download your processed image instantly — no signup required",
+      "Choose your preferred settings (output format, quality level, dimensions)",
+      "Click the process button to apply changes to your image",
+      "Download your processed image file instantly — no signup required",
+    ],
+    calculator: [
+      "Enter your input values in the calculator fields provided",
+      "Select your preferred units and measurement options if applicable",
+      "Click calculate or press enter to get your results instantly",
+      "Copy or download your results — no signup required",
+    ],
+    converter: [
+      "Enter your text, URL, or content to convert",
+      "Select your preferred output format and settings",
+      "Click the convert button to process your request instantly",
+      "Copy or download your converted result — no signup required",
     ],
     default: [
-      "Enter your text, URL, or upload your file",
-      "Configure any optional settings as needed",
-      "Click the process button to generate results",
+      "Enter your text, URL, or upload your file to get started",
+      "Configure any optional settings as needed for your task",
+      "Click the process or generate button to create your output",
       "Download or copy your result instantly — no signup required",
     ],
   };
