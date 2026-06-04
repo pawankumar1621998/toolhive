@@ -84,7 +84,6 @@ const nextConfig: NextConfig = {
       { source: "/resume-builder", destination: "/tools/resume/builder", permanent: true },
       { source: "/free-resume", destination: "/tools/resume/builder", permanent: true },
       { source: "/premium-resume", destination: "/tools/resume/builder", permanent: true },
-      { source: "/text-to-image", destination: "/text-to-image", permanent: true },
     ];
   },
 };
