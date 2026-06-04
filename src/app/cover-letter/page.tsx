@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CoverLetterBuilder } from "@/components/features/cover-letter/CoverLetterBuilder";
 
 export const metadata: Metadata = {
-  title: "AI Cover Letter Builder — Company-Specific | ToolHive",
+  title: "AI Cover Letter Builder Free — Company-Specific Letters",
   description: "Generate a tailored, professional cover letter for any company. AI analyzes what each company values and writes your letter accordingly.",
 };
 

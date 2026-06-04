@@ -99,7 +99,7 @@ const LD_JSON_SOFTWARE = {
 export const metadata: Metadata = {
   title: {
     default: "ToolHive — AI-Powered Tools for Everyone",
-    template: "%s | ToolHive",
+    template: "%s",
   },
   description:
     "200+ free online AI tools for PDF, image, video, and writing. No signup required. Available instantly. AI PDF summarizer, background remover, compress PDF, grammar checker, paraphrasing tool, Twitter thread generator, LinkedIn post generator, YouTube script generator, image generator — all free.",
