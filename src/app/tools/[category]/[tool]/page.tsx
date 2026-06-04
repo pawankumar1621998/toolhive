@@ -95,6 +95,11 @@ export async function generateMetadata({
     "gst": "GST Calculator Free — Calculate GST Amount Online India",
     "trip-distance": "Trip Distance Calculator Free — Calculate Travel Distance Online",
     "smart-resume": "Smart Resume Builder Free — Create ATS-Friendly Resume Online",
+    "random-color": "Random Color Generator Free — Generate Random Colors HEX RGB",
+    "random-name-generator": "Random Name Generator Free — Pick Random Names Online",
+    "trace-route": "Traceroute Online Free — Trace Network Route Instantly",
+    "remove-duplicates": "Remove Duplicates Online Free — Delete Duplicate Lines Instantly",
+    "salary": "Salary Calculator India Free — Calculate Take Home Pay Online",
   };
 
   const titleSuffix = keywordTitleMap[toolSlug] || `${tool.name} — Free Online Tool | ToolHive`;
