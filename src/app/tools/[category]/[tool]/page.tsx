@@ -122,9 +122,21 @@ export async function generateMetadata({
     "tracert": "Tracert Tool Free — Network Route Tracer",
     "trace-route": "Trace Route Tool Free — Website Tracer",
     "online-traceroute": "Online Traceroute Free — Web Network Tracer",
-    "travel-distance": "Travel Distance Calculator Free — Distance Between Places",
+    "travel-distance": "Travel Distance Calculator Free — Distance Between Places",\n    "trip-distance": "Trip Distance Calculator Free — Calculate Travel Distance",\n    "online-notes-maker": "Online Notes Maker Free — AI Note Generator",\n    "notes-maker-online": "Notes Maker Online Free — Create Notes Instantly",\n    "online-body-fat-calculator": "Online Body Fat Calculator Free — Accurate %",\n    "timezone-converter": "Timezone Converter Free — World Time Online",\n    "convert-timezone": "Convert Timezone Free — Time Zone Calculator",\n    "ai-legal-document": "AI Legal Document Analyzer Free — Contract Review",\n    "legal-document-analysis": "Legal Document Analysis Free — AI Tool",\n    "spin-wheel": "Spin Wheel Free — Random Picker Wheel",\n    "free-spin-wheel": "Free Spin Wheel — Random Name Picker",\n    "random-wheel": "Random Wheel Picker Free — Spin the Wheel",
     "smart-resume": "Smart Resume Builder Free — ATS-Friendly Resume Maker",
     "ats-checker": "ATS Resume Checker Free — Pass Applicant Tracking System",
+    // Additional keywords
+    "trip-distance": "Trip Distance Calculator Free — Calculate Travel Distance",
+    "online-notes-maker": "Online Notes Maker Free — AI Note Generator",
+    "notes-maker-online": "Notes Maker Online Free — Create Notes Instantly",
+    "online-body-fat-calculator": "Online Body Fat Calculator Free — Accurate %",
+    "timezone-converter": "Timezone Converter Free — World Time Online",
+    "convert-timezone": "Convert Timezone Free — Time Zone Calculator",
+    "ai-legal-document": "AI Legal Document Analyzer Free — Contract Review",
+    "legal-document-analysis": "Legal Document Analysis Free — AI Tool",
+    "spin-wheel": "Spin Wheel Free — Random Picker Wheel",
+    "free-spin-wheel": "Free Spin Wheel — Random Name Picker",
+    "random-wheel": "Random Wheel Picker Free — Spin the Wheel",
   };
 
   // Keyword-rich meta descriptions for better CTR
