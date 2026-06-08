@@ -36,7 +36,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/blog/batch-processing-workflow`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE_URL}/blog/toolhive-v2-launch`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE_URL}/blog/march-2026-product-updates`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
-    { url: `${BASE_URL}/guides/ai-writing-faq`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
     // Standalone tool pages (from Navbar AI Tools + Quick Tools)
     { url: `${BASE_URL}/resume-builder`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE_URL}/smart-resume`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },

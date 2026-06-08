@@ -100,6 +100,45 @@ export async function generateMetadata({
     "trace-route": "Traceroute Online Free — Trace Network Route Instantly",
     "remove-duplicates": "Remove Duplicates Online Free — Delete Duplicate Lines Instantly",
     "salary": "Salary Calculator India Free — Calculate Take Home Pay Online",
+    // Next-level keywords from GSC (position < 50, close to page 1)
+    "pdf-to-image": "PDF to Image Converter Free — Convert PDF to JPG PNG Online",
+    "convert-pdf-to-image": "Convert PDF to Image Free — PDF to Picture Online",
+    "pdf-to-img": "PDF to IMG Converter Free — Extract Images from PDF",
+    "convert-speech-to-text": "Convert Speech to Text Free — Audio to Text Online",
+    "speechtexter": "SpeechTexter Online Free — Speech to Text Converter",
+    "online-speech-to-text": "Online Speech to Text Free — AI Transcribe Instantly",
+    "note-maker": "AI Note Maker Free — Generate Notes from Text",
+    "notes-maker": "Notes Maker Free Online — AI Note Generator",
+    "generate-random-color": "Generate Random Color Free — Color Picker Tool",
+    "generate-random-colors": "Generate Random Colors Free — Hex RGB Color Generator",
+    "cover-letter": "Cover Letter Generator Free — Create in 2 Minutes",
+    "cover-letter-writer": "Cover Letter Writer Free — AI Professional Writer",
+    "free-cover-letter-generator": "Free Cover Letter Generator — No Signup Required",
+    "free-cover-letter-builder": "Free Cover Letter Builder — PDF Letter Maker",
+    "hinglish-transcribe": "Hinglish Transcriber Free — Hindi English Speech to Text",
+    "online-notes-maker": "Online Notes Maker Free — AI Notes Generator",
+    "notes-maker-online": "Notes Maker Online Free — Create Notes Instantly",
+    "traceroute": "Traceroute Tool Free — Trace Network Path",
+    "tracert": "Tracert Tool Free — Network Route Tracer",
+    "trace-route": "Trace Route Tool Free — Website Tracer",
+    "online-traceroute": "Online Traceroute Free — Web Network Tracer",
+    "travel-distance": "Travel Distance Calculator Free — Distance Between Places",
+    "smart-resume": "Smart Resume Builder Free — ATS-Friendly Resume Maker",
+    "ats-checker": "ATS Resume Checker Free — Pass Applicant Tracking System",
+  };
+
+  // Keyword-rich meta descriptions for better CTR
+  const metaDescriptionMap: Record<string, string> = {
+    "body-fat": "Calculate your body fat percentage instantly with our free Indian body fat calculator. Uses US Navy method. No signup required.",
+    "cover-letter": "Generate professional cover letters in 2 minutes with AI. Free cover letter generator with 50+ templates. Create PDF cover letter now.",
+    "note-maker": "Create smart notes from any text with AI. Free note maker tool. Convert articles, documents to organized notes instantly.",
+    "random-color": "Generate random colors in HEX, RGB, HSL formats. Free color generator for designers. Copy codes with one click.",
+    "trace-route": "Trace any website's network route instantly. Free online traceroute tool. See IP path and hops in real-time.",
+    "pdf-to-image": "Convert PDF to JPG PNG images free online. No signup, no watermark. Extract images from PDF instantly.",
+    "salary": "Calculate your take-home salary in India. Free salary calculator with tax deductions. Know your in-hand pay.",
+    "trip-distance": "Calculate travel distance between two places. Free trip distance calculator for road trips in India.",
+    "ats-checker": "Check if your resume passes ATS. Free resume score checker. Get suggestions to pass applicant tracking systems.",
+    "speech-to-text": "Transcribe audio to text free online. Speech to text converter supports 50+ languages. No signup required.",
   };
 
   const titleSuffix = keywordTitleMap[toolSlug] || `${tool.name} — Free Online Tool | ToolHive`;
@@ -109,7 +148,7 @@ export async function generateMetadata({
 
   return {
     title: seoTitle,
-    description: tool.description,
+    description: metaDescriptionMap[toolSlug] || tool.description,
     keywords: [
       tool.name,
       ...tool.tags,
